@@ -1,0 +1,5 @@
+*.log
+/.vs
+/Win32
+/packages
+/x64
