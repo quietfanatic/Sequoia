@@ -50,10 +50,15 @@ Window::Window () {
         {
             ASSERT_HR(hr);
             shell = webview;
-            RECT bounds;
-            GetClientRect(hwnd, &bounds);
-            shell->put_Bounds(bounds);
+            ASSERT(shell_hwnd = GetWindow(hwnd, GW_CHILD));
+            EventRegistrationToken token;
+            shell->add_WebMessageReceived(
+                Callback<IWebView2WebMessageReceivedEventHandler>(
+                    this, &Window::on_shell_WebMessageReceived
+                ).Get(), &token
+            );
             shell->Navigate(exe_relative(L"shell.html").c_str());
+            resize_everything();
             return S_OK;
         }).Get()));
         return S_OK;
@@ -63,11 +68,7 @@ Window::Window () {
 LRESULT Window::window_message (UINT message, WPARAM w, LPARAM l) {
     switch (message) {
     case WM_SIZE:
-        if (shell) {
-            RECT bounds;
-            GetClientRect(hwnd, &bounds);
-            shell->put_Bounds(bounds);
-        };
+        resize_everything();
         return 0;
     case WM_NCDESTROY:
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);
@@ -78,3 +79,37 @@ LRESULT Window::window_message (UINT message, WPARAM w, LPARAM l) {
     return DefWindowProc(hwnd, message, w, l);
 }
 
+HRESULT Window::on_shell_WebMessageReceived (
+    IWebView2WebView* sender,
+    IWebView2WebMessageReceivedEventArgs* args
+) {
+    ASSERT_HR(webview_environment->CreateWebView(hwnd,
+        Callback<IWebView2CreateWebViewCompletedHandler>(
+            [this](HRESULT hr, IWebView2WebView* webview) -> HRESULT
+    {
+        ASSERT_HR(hr);
+        page = webview;
+        page->Navigate(L"https://duckduckgo.com/");
+        resize_everything();
+        return S_OK;
+    }).Get()));
+    return S_OK;
+}
+
+void Window::resize_everything () {
+    RECT bounds;
+    GetClientRect(hwnd, &bounds);
+    if (shell) {
+        shell->put_Bounds(bounds);
+        SetWindowPos(
+            shell_hwnd, HWND_BOTTOM,
+            0, 0, 0, 0,
+            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
+        );
+    };
+    if (page) {
+        bounds.top += 68;
+        bounds.right -= 244;
+        page->put_Bounds(bounds);
+    };
+}
