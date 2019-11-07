@@ -1,3 +1,4 @@
+#pragma once
 #include "stuff.h"
 
 #include <WebView2.h>
