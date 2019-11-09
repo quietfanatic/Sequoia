@@ -1,5 +1,6 @@
 *.log
 /.vs
-/Win32
-/packages
-/x64
+packages
+x64
+Debug
+Release
