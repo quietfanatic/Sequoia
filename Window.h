@@ -8,11 +8,9 @@
 // This will delete itself when the window is closed.
 struct Window {
     HWND hwnd = nullptr;
-    wil::com_ptr<IWebView2Environment> webview_environment;
     wil::com_ptr<IWebView2WebView> shell;
     HWND shell_hwnd = nullptr;
     wil::com_ptr<IWebView2WebView> page;
-    RECT page_bounds;
 
     Window ();
 
@@ -21,6 +19,7 @@ struct Window {
         IWebView2WebView* sender,
         IWebView2WebMessageReceivedEventArgs* args
     );
+
     void resize_everything ();
 };
 

@@ -1,8 +1,7 @@
 #include "Window.h"
 
-#include <wrl.h>
 #include <stdexcept>
-
+#include <wrl.h>
 #include "assert.h"
 #include "json/json.h"
 #include "main.h"
@@ -42,29 +41,21 @@ Window::Window () {
     ));
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
     ShowWindow(hwnd, SW_SHOWDEFAULT);
-    ASSERT_HR(CreateWebView2EnvironmentWithDetails(
-        nullptr, nullptr, nullptr,
-        Callback<IWebView2CreateWebView2EnvironmentCompletedHandler>(
-            [this](HRESULT hr, IWebView2Environment* environment) -> HRESULT
+    ASSERT_HR(webview_environment->CreateWebView(hwnd,
+        Callback<IWebView2CreateWebViewCompletedHandler>(
+            [this](HRESULT hr, IWebView2WebView* webview)
     {
-        webview_environment = environment;
-        ASSERT_HR(webview_environment->CreateWebView(hwnd,
-            Callback<IWebView2CreateWebViewCompletedHandler>(
-                [this](HRESULT hr, IWebView2WebView* webview)
-        {
-            ASSERT_HR(hr);
-            shell = webview;
-            ASSERT(shell_hwnd = GetWindow(hwnd, GW_CHILD));
-            EventRegistrationToken token;
-            shell->add_WebMessageReceived(
-                Callback<IWebView2WebMessageReceivedEventHandler>(
-                    this, &Window::on_shell_WebMessageReceived
-                ).Get(), &token
-            );
-            shell->Navigate(exe_relative(L"shell.html").c_str());
-            resize_everything();
-            return S_OK;
-        }).Get()));
+        ASSERT_HR(hr);
+        shell = webview;
+        ASSERT(shell_hwnd = GetWindow(hwnd, GW_CHILD));
+        EventRegistrationToken token;
+        shell->add_WebMessageReceived(
+            Callback<IWebView2WebMessageReceivedEventHandler>(
+                this, &Window::on_shell_WebMessageReceived
+            ).Get(), &token
+        );
+        shell->Navigate(exe_relative(L"shell.html").c_str());
+        resize_everything();
         return S_OK;
     }).Get()));
 }
