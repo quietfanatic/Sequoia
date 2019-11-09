@@ -8,32 +8,54 @@ using namespace std;
 
 namespace json {
 
-Value::Value (const Value& v) : type(v.type) {
-    switch (type) {
-    case BOOL: boolean = v.boolean; break;
-    case NUMBER: number = v.number; break;
-    case STRING: new (&string) String(v.string); break;
-    case ARRAY: new (&array) Array(v.array); break;
-    case OBJECT: new (&object) Object(v.object); break;
-    }
-}
-
 Value::Value (Value&& v) : type(v.type) {
     switch (type) {
     case BOOL: boolean = v.boolean; break;
     case NUMBER: number = v.number; break;
-    case STRING: new (&string) String(std::move(v.string)); break;
-    case ARRAY: new (&array) Array(std::move(v.array)); break;
-    case OBJECT: new (&object) Object(std::move(v.object)); break;
+    case STRING: string = v.string; v.string = nullptr; break;
+    case ARRAY: array = v.array; v.array = nullptr; break;
+    case OBJECT: object = v.object; v.object = nullptr; break;
     }
     v.type = NULL;
 }
 
 Value::~Value () {
     switch (type) {
-    case STRING: string.~String(); break;
-    case ARRAY: array.~Array(); break;
-    case OBJECT: object.~Object(); break;
+    case STRING: delete string; break;
+    case ARRAY: delete array; break;
+    case OBJECT: delete object; break;
+    }
+}
+
+bool operator== (const Value& a, const Value& b) {
+    if (a.type != b.type) return false;
+    switch (a.type) {
+        case NULL: return true;
+        case BOOL: return a.boolean == b.boolean;
+        case NUMBER: return a.number == b.number;
+        case STRING: return *a.string == *b.string;
+        case ARRAY: {
+            if (a.array->size() != b.array->size()) return false;
+            for (size_t i = 0; i < a.array->size(); i++) {
+                if ((*a.array)[i] != (*b.array)[i]) return false;
+            }
+            return true;
+        }
+        case OBJECT: {
+            if (a.object->size() != b.object->size()) return false;
+            for (auto& ae : *a.object) {
+                for (auto& be : *b.object) {
+                    if (ae.first == be.first) {
+                        if (ae.second != be.second) return false;
+                        goto next_ae;
+                    }
+                    return false;
+                }
+                next_ae: { }
+            }
+            return true;
+        }
+        default: throw std::logic_error("Invalid json::Value type");
     }
 }
 
@@ -113,13 +135,13 @@ struct Parser {
             ws();
             Array a;
             if (*pos == L']') {
-                get(); return a;
+                get(); return std::move(a);
             }
             while (1) {
                 a.emplace_back(value());
                 ws();
                 switch (get()) {
-                case L']': return a;
+                case L']': return std::move(a);
                 case L',': break;
                 default: throw error();
                 }
@@ -129,7 +151,7 @@ struct Parser {
             ws();
             Object o;
             if (*pos == L'}') {
-                get(); return o;
+                get(); return std::move(o);
             }
             while (1) {
                 if (get() != L'"') throw error();  //"
@@ -139,7 +161,7 @@ struct Parser {
                 o.emplace_back(key, value());
                 ws();
                 switch (get()) {
-                case L'}': return o;
+                case L'}': return std::move(o);
                 case L',': break;
                 default: throw error();
                 }
@@ -173,7 +195,7 @@ String stringify (const Value& v) {
     case STRING: {
          // Not particularly efficient
         String r = L"\"";
-        for (auto c : v.string)
+        for (auto c : *v.string)
         switch (c) {
         case L'"': r += L"\\\""; break;
         case L'\\': r += L"\\\\"; break;
@@ -188,8 +210,8 @@ String stringify (const Value& v) {
     }
     case ARRAY: {
         String r = L"[";
-        for (auto& e : v.array) {
-            if (&e != &v.array.front()) {
+        for (auto& e : *v.array) {
+            if (&e != &v.array->front()) {
                 r += L",";
             }
             r += stringify(e);
@@ -198,8 +220,8 @@ String stringify (const Value& v) {
     }
     case OBJECT: {
         String r = L"{";
-        for (auto& e : v.object) {
-            if (&e != &v.object.front()) {
+        for (auto& e : *v.object) {
+            if (&e != &v.object->front()) {
                 r += L",";
             }
             r += stringify(e.first);
