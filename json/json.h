@@ -81,6 +81,7 @@ inline bool operator!= (const Value& a, const Value& b) { return !(a == b); }
 String stringify (const Value& v);
 
 Value parse (const String& s);
+Value parse (const Char* s);
 
 } // namespace json
 

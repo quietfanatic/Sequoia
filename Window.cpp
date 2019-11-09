@@ -1,10 +1,14 @@
 #include "Window.h"
 
 #include <wrl.h>
+#include <stdexcept>
+
 #include "assert.h"
+#include "json/json.h"
 #include "main.h"
 
 using namespace Microsoft::WRL;
+using namespace std;
 
 static LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto self = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -83,16 +87,26 @@ HRESULT Window::on_shell_WebMessageReceived (
     IWebView2WebView* sender,
     IWebView2WebMessageReceivedEventArgs* args
 ) {
-    ASSERT_HR(webview_environment->CreateWebView(hwnd,
-        Callback<IWebView2CreateWebViewCompletedHandler>(
-            [this](HRESULT hr, IWebView2WebView* webview) -> HRESULT
-    {
-        ASSERT_HR(hr);
-        page = webview;
-        page->Navigate(L"https://duckduckgo.com/");
-        resize_everything();
-        return S_OK;
-    }).Get()));
+    wchar_t* raw;
+    args->get_WebMessageAsJson(&raw);
+    auto message = json::parse(raw);
+    if (message.type != json::OBJECT) throw logic_error("Unexpected message JSON type");
+    if (message.object->size() != 1) throw logic_error("Wrong size of message object");
+    if ((*message.object)[0].first == L"ready") {
+        ASSERT_HR(webview_environment->CreateWebView(hwnd,
+            Callback<IWebView2CreateWebViewCompletedHandler>(
+                [this](HRESULT hr, IWebView2WebView* webview) -> HRESULT
+        {
+            ASSERT_HR(hr);
+            page = webview;
+            page->Navigate(L"https://duckduckgo.com/");
+            resize_everything();
+            return S_OK;
+        }).Get()));
+    }
+    else {
+        throw logic_error("Unknown message name");
+    }
     return S_OK;
 }
 
