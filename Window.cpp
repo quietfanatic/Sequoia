@@ -96,10 +96,17 @@ HRESULT Window::on_shell_WebMessageReceived (
     if (message.type != json::OBJECT) throw logic_error("Unexpected message JSON type");
     if (message.object->size() != 1) throw logic_error("Wrong size of message object");
     auto command = (*message.object)[0].first;
+    auto arg = (*message.object)[0].second;
 
     if (command == L"ready") {
         if (!activities.empty()) throw logic_error("Recieved ready message after initialization");
         activities.emplace_back(this);
+    }
+    else if (command == L"navigate") {
+        if (arg.type != json::STRING) throw logic_error("Wrong navigate command arg type");
+        if (activities.size()) {
+            activities[0].page->Navigate(arg.string->c_str());
+        }
     }
     else {
         throw logic_error("Unknown message name");

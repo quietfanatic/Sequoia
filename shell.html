@@ -26,9 +26,17 @@ button { border:none; background:none; }
 
 <script>
 
-let address = document.getElementById("address");
+let host = window.chrome.webview;
 
-window.chrome.webview.addEventListener("message", e=>{
+let address = document.getElementById("address");
+address.addEventListener("keydown", e=>{
+    if (e.key == "Enter") {
+        host.postMessage({navigate:address.value});
+    }
+});
+
+
+host.addEventListener("message", e=>{
     if ('set_url' in e.data) {
         address.value = e.data.set_url;
     }
@@ -36,7 +44,8 @@ window.chrome.webview.addEventListener("message", e=>{
         console.log("Shell received Unknown message received");
     }
 });
-window.chrome.webview.postMessage({"ready":null});
+
+host.postMessage({ready:null});
 </script>
 
 </body></html>
