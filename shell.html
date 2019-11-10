@@ -15,7 +15,7 @@ button { border:none; background:none; }
 <button id="back">&lt;</button>
 <button id="forward">&gt;</button>
 <input id="address" />
-<button id="menu?">...</button>
+<button id="menu">...</button>
 </nav>
 
 <nav id="tree">
@@ -28,6 +28,11 @@ button { border:none; background:none; }
 
 let host = window.chrome.webview;
 
+let back = document.getElementById("back");
+back.addEventListener("press", e=>{
+    host.postMessage({"back":null});
+});
+
 let address = document.getElementById("address");
 address.addEventListener("keydown", e=>{
     if (e.key == "Enter") {
@@ -35,10 +40,12 @@ address.addEventListener("keydown", e=>{
     }
 });
 
-
 host.addEventListener("message", e=>{
-    if ('set_url' in e.data) {
-        address.value = e.data.set_url;
+    if ("document_state_changed" in e.data) {
+        arg = e.data.document_state_changed;
+        address.value = arg.url;
+        back.enabled = arg.back;
+        forward.enabled = arg.forward;
     }
     else {
         console.log("Shell received Unknown message received");

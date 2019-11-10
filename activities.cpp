@@ -3,6 +3,7 @@
 #include <wrl.h>
 
 #include "assert.h"
+#include "json/json.h"
 #include "main.h"
 #include "Window.h"
 
@@ -40,7 +41,20 @@ Activity::Activity(Window* window_) : window(window_) {
         {
             wil::unique_cotaskmem_string url;
             page->get_Source(&url);
-            if (window) window->set_url(url.get());
+            BOOL back;
+            page->get_CanGoBack(&back);
+            BOOL forward;
+            page->get_CanGoForward(&forward);
+            if (window) {
+                json::Object message {
+                    {L"document_state_changed", json::Object{
+                        {L"url", url.get()},
+                        {L"back", !!back},
+                        {L"forward", !!forward}
+                    }}
+                };
+                window->shell->PostWebMessageAsJson(json::stringify(message).c_str());
+            }
             return S_OK;
         }).Get(), &token));
 
