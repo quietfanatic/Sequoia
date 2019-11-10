@@ -123,11 +123,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="activities.cpp" />
     <ClCompile Include="json/json.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="activities.h" />
     <ClInclude Include="assert.h" />
     <ClInclude Include="json/json.h" />
     <ClInclude Include="main.h" />

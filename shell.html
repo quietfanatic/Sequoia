@@ -25,6 +25,17 @@ button { border:none; background:none; }
 <div id="content"></div>
 
 <script>
+
+let address = document.getElementById("address");
+
+window.chrome.webview.addEventListener("message", e=>{
+    if ('set_url' in e.data) {
+        address.value = e.data.set_url;
+    }
+    else {
+        console.log("Shell received Unknown message received");
+    }
+});
 window.chrome.webview.postMessage({"ready":null});
 </script>
 

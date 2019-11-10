@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <wrl.h>
+#include "activities.h"
 #include "assert.h"
 #include "json/json.h"
 #include "main.h"
@@ -60,6 +61,17 @@ Window::Window () {
     }).Get()));
 }
 
+void Window::set_title (const wchar_t* title) {
+    ASSERT(SetWindowText(hwnd, title));
+}
+
+void Window::set_url (const wchar_t* url) {
+    json::Object message {
+        {L"set_url", url}
+    };
+    shell->PostWebMessageAsJson(json::stringify(std::move(message)).c_str());
+}
+
 LRESULT Window::window_message (UINT message, WPARAM w, LPARAM l) {
     switch (message) {
     case WM_SIZE:
@@ -83,17 +95,11 @@ HRESULT Window::on_shell_WebMessageReceived (
     auto message = json::parse(raw);
     if (message.type != json::OBJECT) throw logic_error("Unexpected message JSON type");
     if (message.object->size() != 1) throw logic_error("Wrong size of message object");
-    if ((*message.object)[0].first == L"ready") {
-        ASSERT_HR(webview_environment->CreateWebView(hwnd,
-            Callback<IWebView2CreateWebViewCompletedHandler>(
-                [this](HRESULT hr, IWebView2WebView* webview) -> HRESULT
-        {
-            ASSERT_HR(hr);
-            page = webview;
-            page->Navigate(L"https://duckduckgo.com/");
-            resize_everything();
-            return S_OK;
-        }).Get()));
+    auto command = (*message.object)[0].first;
+
+    if (command == L"ready") {
+        if (!activities.empty()) throw logic_error("Recieved ready message after initialization");
+        activities.emplace_back(this);
     }
     else {
         throw logic_error("Unknown message name");
@@ -112,9 +118,9 @@ void Window::resize_everything () {
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
         );
     };
-    if (page) {
+    if (activities.size()) {
         bounds.top += 68;
         bounds.right -= 244;
-        page->put_Bounds(bounds);
+        activities[0].page->put_Bounds(bounds);
     };
 }

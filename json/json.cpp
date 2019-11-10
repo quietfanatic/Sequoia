@@ -8,6 +8,16 @@ using namespace std;
 
 namespace json {
 
+Value::Value (const Value& v) : type(v.type) {
+    switch (type) {
+    case BOOL: boolean = v.boolean; break;
+    case NUMBER: number = v.number; break;
+    case STRING: string = new String(*v.string); break;
+    case ARRAY: array = new Array(*v.array); break;
+    case OBJECT: object = new Object(*v.object); break;
+    }
+}
+
 Value::Value (Value&& v) : type(v.type) {
     switch (type) {
     case BOOL: boolean = v.boolean; break;

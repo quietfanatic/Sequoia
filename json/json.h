@@ -37,17 +37,23 @@ struct Value {
     Value (const Char* v) : type(STRING), string(new String(v)) { }
     Value (const String& v) : type(STRING), string(new String(v)) { }
     Value (String&& v) : type(STRING), string(new String(std::move(v))) { }
+    Value (const Array& v) : type(ARRAY), array(new Array(std::move(v))) { }
     Value (Array&& v) : type(ARRAY), array(new Array(std::move(v))) { }
+    Value (const Object& v) : type(OBJECT), object(new Object(std::move(v))) { }
     Value (Object&& v) : type(OBJECT), object(new Object(std::move(v))) { }
 
     Value (String*&& v) : type(STRING), string(v) { v = nullptr; }
     Value (Array*&& v) : type(ARRAY), array(v) { v = nullptr; }
     Value (Object*&& v) : type(OBJECT), object(v) { v = nullptr; }
 
-    Value (const Value& v) = delete;
+    Value (const Value& v);
     Value (Value&& v);
 
-    Value& operator= (const Value& v) = delete;
+    Value& operator= (const Value& v) {
+        this->~Value();
+        new (this) Value(v);
+        return *this;
+    }
     Value& operator= (Value&& v) {
         this->~Value();
         new (this) Value(std::move(v));
