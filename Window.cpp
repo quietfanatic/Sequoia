@@ -1,13 +1,10 @@
 #include "Window.h"
 
 #include <stdexcept>
-#include <wrl.h>
 #include "activities.h"
 #include "assert.h"
-#include "json/json.h"
 #include "main.h"
 
-using namespace Microsoft::WRL;
 using namespace std;
 
 static LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
@@ -16,7 +13,7 @@ static LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     return DefWindowProc(hwnd, message, w, l);
 }
 
-Window::Window () {
+static HWND create_hwnd (Window* owner) {
     auto class_name = L"Sequoia";
     static bool init = []{
         WNDCLASSEX c {};
@@ -29,7 +26,7 @@ Window::Window () {
         ASSERT(RegisterClassEx(&c));
         return true;
     }();
-    ASSERT(hwnd = CreateWindow(
+    HWND hwnd = CreateWindow(
         class_name,
         L"Sequoia",
         WS_OVERLAPPEDWINDOW,
@@ -39,37 +36,17 @@ Window::Window () {
         nullptr,
         GetModuleHandle(nullptr),
         nullptr
-    ));
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
+    );
+    ASSERT(hwnd);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)owner);
     ShowWindow(hwnd, SW_SHOWDEFAULT);
-    ASSERT_HR(webview_environment->CreateWebView(hwnd,
-        Callback<IWebView2CreateWebViewCompletedHandler>(
-            [this](HRESULT hr, IWebView2WebView* webview)
-    {
-        ASSERT_HR(hr);
-        shell = webview;
-        ASSERT(shell_hwnd = GetWindow(hwnd, GW_CHILD));
-        EventRegistrationToken token;
-        shell->add_WebMessageReceived(
-            Callback<IWebView2WebMessageReceivedEventHandler>(
-                this, &Window::on_shell_WebMessageReceived
-            ).Get(), &token
-        );
-        shell->Navigate(exe_relative(L"shell.html").c_str());
-        resize_everything();
-        return S_OK;
-    }).Get()));
+    return hwnd;
 }
+
+Window::Window () : hwnd(create_hwnd(this)), shell(this) { }
 
 void Window::set_title (const wchar_t* title) {
     ASSERT(SetWindowText(hwnd, title));
-}
-
-void Window::set_url (const wchar_t* url) {
-    json::Object message {
-        {L"set_url", url}
-    };
-    shell->PostWebMessageAsJson(json::stringify(std::move(message)).c_str());
 }
 
 LRESULT Window::window_message (UINT message, WPARAM w, LPARAM l) {
@@ -86,41 +63,17 @@ LRESULT Window::window_message (UINT message, WPARAM w, LPARAM l) {
     return DefWindowProc(hwnd, message, w, l);
 }
 
-HRESULT Window::on_shell_WebMessageReceived (
-    IWebView2WebView* sender,
-    IWebView2WebMessageReceivedEventArgs* args
-) {
-    wchar_t* raw;
-    args->get_WebMessageAsJson(&raw);
-    auto message = json::parse(raw);
-    if (message.type != json::OBJECT) throw logic_error("Unexpected message JSON type");
-    if (message.object->size() != 1) throw logic_error("Wrong size of message object");
-    auto command = (*message.object)[0].first;
-    auto arg = (*message.object)[0].second;
-
-    if (command == L"ready") {
-        if (!activities.empty()) throw logic_error("Recieved ready message after initialization");
-        activities.emplace_back(this);
-    }
-    else if (command == L"navigate") {
-        if (arg.type != json::STRING) throw logic_error("Wrong navigate command arg type");
-        if (activities.size()) {
-            activities[0].page->Navigate(arg.string->c_str());
-        }
-    }
-    else {
-        throw logic_error("Unknown message name");
-    }
-    return S_OK;
+void Window::shell_ready () {
+    activities.emplace_back(this);
 }
 
 void Window::resize_everything () {
     RECT bounds;
     GetClientRect(hwnd, &bounds);
-    if (shell) {
-        shell->put_Bounds(bounds);
+    if (shell.webview) {
+        shell.webview->put_Bounds(bounds);
         SetWindowPos(
-            shell_hwnd, HWND_BOTTOM,
+            shell.webview_hwnd, HWND_BOTTOM,
             0, 0, 0, 0,
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
         );

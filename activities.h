@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include <WebView2.h>
 #include <wil/com.h>
 
+struct IWebView2WebView4;
 struct Window;
 
 struct Activity {

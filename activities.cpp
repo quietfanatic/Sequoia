@@ -1,9 +1,9 @@
 #include "activities.h"
 
+#include <WebView2.h>
 #include <wrl.h>
 
 #include "assert.h"
-#include "json/json.h"
 #include "main.h"
 #include "Window.h"
 
@@ -46,14 +46,7 @@ Activity::Activity(Window* window_) : window(window_) {
             BOOL forward;
             page->get_CanGoForward(&forward);
             if (window) {
-                json::Object message {
-                    {L"document_state_changed", json::Object{
-                        {L"url", url.get()},
-                        {L"back", !!back},
-                        {L"forward", !!forward}
-                    }}
-                };
-                window->shell->PostWebMessageAsJson(json::stringify(message).c_str());
+                window->shell.document_state_changed(url.get(), back, forward);
             }
             return S_OK;
         }).Get(), &token));

@@ -126,6 +126,7 @@
     <ClCompile Include="activities.cpp" />
     <ClCompile Include="json/json.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="shell.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +134,7 @@
     <ClInclude Include="assert.h" />
     <ClInclude Include="json/json.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="shell.h" />
     <ClInclude Include="stuff.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
