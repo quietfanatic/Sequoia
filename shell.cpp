@@ -12,13 +12,13 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-Shell::Shell (Window* window_) : window(window_) {
+Shell::Shell (Window* owner) : window(owner) {
     ASSERT_HR(webview_environment->CreateWebView(window->hwnd,
         Callback<IWebView2CreateWebViewCompletedHandler>(
-            [this](HRESULT hr, IWebView2WebView* webview_)
+            [this](HRESULT hr, IWebView2WebView* wv)
     {
         ASSERT_HR(hr);
-        webview = webview_;
+        webview = wv;
         ASSERT(webview_hwnd = GetWindow(window->hwnd, GW_CHILD));
         EventRegistrationToken token;
         webview->add_WebMessageReceived(
@@ -53,8 +53,8 @@ void Shell::interpret_web_message (const json::Value& message) {
     }
     else if (command == L"navigate") {
         if (arg.type != json::STRING) throw logic_error("Wrong navigate command arg type");
-        if (window->activities.size()) {
-            window->activities[0].page->Navigate(arg.string->c_str());
+        if (window->activity) {
+            window->activity->webview->Navigate(arg.string->c_str());
         }
     }
     else {
@@ -62,9 +62,9 @@ void Shell::interpret_web_message (const json::Value& message) {
     }
 }
 
-void Shell::document_state_changed (const wchar_t* url, bool back, bool forward) {
+void Shell::activity_updated (const wchar_t* url, bool back, bool forward) {
     json::Object message {
-        {L"document_state_changed", json::Object{
+        {L"activity_updated", json::Object{
             {L"url", url},
             {L"back", back},
             {L"forward", forward}

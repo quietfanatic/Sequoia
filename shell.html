@@ -41,8 +41,8 @@ address.addEventListener("keydown", e=>{
 });
 
 host.addEventListener("message", e=>{
-    if ("document_state_changed" in e.data) {
-        arg = e.data.document_state_changed;
+    if ("activity_updated" in e.data) {
+        arg = e.data.activity_updated;
         address.value = arg.url;
         back.enabled = arg.back;
         forward.enabled = arg.forward;

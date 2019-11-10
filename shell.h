@@ -16,5 +16,5 @@ struct Shell {
 
     void interpret_web_message (const json::Value& message);
 
-    void document_state_changed (const wchar_t* url, bool back, bool forward);
+    void activity_updated (const wchar_t* url, bool back, bool forward);
 };

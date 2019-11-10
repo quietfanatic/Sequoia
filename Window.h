@@ -12,14 +12,17 @@ struct Activity;
 struct Window {
     HWND hwnd;
     Shell shell;
-
-    std::vector<Activity> activities;
+    Activity* activity = nullptr;
 
     Window ();
 
+    ~Window ();
+
+    void set_activity (Activity*);
     void set_title (const wchar_t*);
 
     void shell_ready ();
+    void update_shell ();
 
     void resize_everything ();
 
