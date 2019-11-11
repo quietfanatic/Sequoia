@@ -47,7 +47,7 @@ $address.addEventListener("keydown", e=>{
 
 host.addEventListener("message", e=>{
     if ("update" in e.data) {
-        arg = e.data.activity_updated;
+        arg = e.data.update;
         $address.value = arg.url;
         $back.enabled = arg.back;
         $forward.enabled = arg.forward;

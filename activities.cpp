@@ -107,6 +107,8 @@ void Activity::set_window (Window* w) {
             SetParent(webview_hwnd, window->hwnd);
         }
         window->activity = this;
+        window->resize_everything();
+        window->update();
     }
     else {
         if (webview) {

@@ -68,6 +68,9 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
     case WM_SIZE:
         resize_everything();
         return 0;
+    case WM_DESTROY:
+         // Prevent webview's window from getting destroyed.
+        if (activity) activity->set_window(nullptr);
     case WM_NCDESTROY:
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);
         delete this;
