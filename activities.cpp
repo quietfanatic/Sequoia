@@ -4,6 +4,7 @@
 #include <wrl.h>
 
 #include "assert.h"
+#include "tabs.h"
 #include "main.h"
 #include "Window.h"
 
@@ -11,9 +12,8 @@ using namespace Microsoft::WRL;
 
 std::set<Activity*> all_activities;
 
-Activity::Activity () {
-    all_activities.insert(this);
 
+static HWND get_nursery () {
     static HWND nursery = []{
         static auto class_name = L"Sequoia Nursery";
         static bool init = []{
@@ -39,18 +39,21 @@ Activity::Activity () {
         ASSERT(hwnd);
         return hwnd;
     }();
+    return nursery;
+}
 
-    ASSERT_HR(webview_environment->CreateWebView(nursery,
+Activity::Activity (Tab* t) : tab(t) {
+    ASSERT(!tab->activity);
+    tab->activity = this;
+
+    ASSERT_HR(webview_environment->CreateWebView(get_nursery(),
         Callback<IWebView2CreateWebViewCompletedHandler>(
             [this](HRESULT hr, IWebView2WebView* wv) -> HRESULT
     {
         ASSERT_HR(hr);
-        wv->QueryInterface(IID_PPV_ARGS(&webview));
-        ASSERT(webview_hwnd = GetWindow(nursery, GW_CHILD));
-        ASSERT(SetParent(webview_hwnd, HWND_MESSAGE));
-
-        webview->Navigate(L"https://duckduckgo.com/");
-        if (window) window->resize_everything();
+        ASSERT_HR(wv->QueryInterface(IID_PPV_ARGS(&webview)));
+        ASSERT(webview_hwnd = GetWindow(get_nursery(), GW_CHILD));
+        set_window(window);
 
         EventRegistrationToken token;
         ASSERT_HR(webview->add_DocumentTitleChanged(
@@ -59,9 +62,11 @@ Activity::Activity () {
         {
             wil::unique_cotaskmem_string title;
             webview->get_DocumentTitle(&title);
-            if (window) window->set_title(title.get());
+            tab->set_title(title.get());
+            if (window) window->update();
             return S_OK;
         }).Get(), &token));
+
         ASSERT_HR(webview->add_DocumentStateChanged(
             Callback<IWebView2DocumentStateChangedEventHandler>([this](
                 IWebView2WebView* sender,
@@ -69,24 +74,56 @@ Activity::Activity () {
         {
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
-            url = source.get();
+            tab->set_url(source.get());
+
             BOOL back;
             webview->get_CanGoBack(&back);
             can_go_back = back;
+
             BOOL forward;
             webview->get_CanGoForward(&forward);
             can_go_forward = forward;
-            if (window) window->update_shell();
+
+            if (window) window->update();
             return S_OK;
         }).Get(), &token));
 
+        webview->Navigate(tab->url.c_str());
+
         return S_OK;
     }).Get()));
+
+    all_activities.insert(this);
 }
 
-Activity::~Activity() {
+void Activity::set_window (Window* w) {
+    if (window) {
+        window->activity = nullptr;
+    }
+    window = w;
+    if (window) {
+        if (webview) {
+            ASSERT_HR(webview->put_IsVisible(TRUE));
+            SetParent(webview_hwnd, window->hwnd);
+        }
+        window->activity = this;
+    }
+    else {
+        if (webview) {
+            SetParent(webview_hwnd, HWND_MESSAGE);
+            ASSERT_HR(webview->put_IsVisible(FALSE));
+        }
+    }
+}
+
+void Activity::resize (RECT bounds) {
+    if (webview) webview->put_Bounds(bounds);
+}
+
+Activity::~Activity () {
     all_activities.erase(this);
-    if (window) window->set_activity(nullptr);
+    tab->activity = nullptr;
+    if (window) window->activity = nullptr;
     webview->Close();
 }
 

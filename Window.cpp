@@ -1,15 +1,18 @@
 #include "Window.h"
 
 #include <stdexcept>
+#include <WebView2.h>
+
 #include "activities.h"
 #include "assert.h"
 #include "main.h"
+#include "tabs.h"
 
 using namespace std;
 
-static LRESULT CALLBACK WndProc (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
+static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto self = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    if (self) return self->window_message(message, w, l);
+    if (self) return self->WndProc(message, w, l);
     return DefWindowProc(hwnd, message, w, l);
 }
 
@@ -19,7 +22,7 @@ static HWND create_hwnd () {
         WNDCLASSEX c {};
         c.cbSize = sizeof(WNDCLASSEX);
         c.style = CS_HREDRAW | CS_VREDRAW;
-        c.lpfnWndProc = WndProc;
+        c.lpfnWndProc = WndProcStatic;
         c.hInstance = GetModuleHandle(nullptr);
         c.hCursor = LoadCursor(NULL, IDC_ARROW);
         c.lpszClassName = class_name;
@@ -28,7 +31,7 @@ static HWND create_hwnd () {
     }();
     HWND hwnd = CreateWindow(
         class_name,
-        L"Sequoia",
+        L"(Sequoia)",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         1280, 1280,
@@ -46,37 +49,21 @@ Window::Window () : hwnd(create_hwnd()), shell(this) {
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 }
 
-Window::~Window () {
-    if (activity) activity->window = nullptr;
-}
-
-void Window::set_activity (Activity* a) {
+void Window::focus_tab (Tab* t) {
     if (activity) {
-        if (activity->webview) {
-            ASSERT(SetParent(activity->webview_hwnd, HWND_MESSAGE));
-            activity->webview->put_IsVisible(FALSE);
-        }
-        activity->window = nullptr;
+        activity->set_window(nullptr);
     }
-    activity = a;
-    if (activity) {
-        if (activity->window) {
-            throw logic_error("Steal NYI");
-        }
-        activity->window = this;
-        if (activity->webview) {
-            ASSERT(SetParent(activity->webview_hwnd, hwnd));
-            activity->webview->put_IsVisible(TRUE);
-        }
+    tab = t;
+    if (tab) {
+        activity = tab->activity;
+        if (!activity) activity = new Activity(tab);
+        activity->set_window(this);
     }
-    update_shell();
+    resize_everything();
+    update();
 }
 
-void Window::set_title (const wchar_t* title) {
-    ASSERT(SetWindowText(hwnd, title));
-}
-
-LRESULT Window::window_message (UINT message, WPARAM w, LPARAM l) {
+LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
     switch (message) {
     case WM_SIZE:
         resize_everything();
@@ -90,39 +77,21 @@ LRESULT Window::window_message (UINT message, WPARAM w, LPARAM l) {
     return DefWindowProc(hwnd, message, w, l);
 }
 
-void Window::update_shell () {
-    if (activity) {
-        shell.activity_updated(
-            activity->url.c_str(),
-            activity->can_go_back,
-            activity->can_go_forward
-        );
-    }
-    else {
-        shell.activity_updated(L"", false, false);
-    }
-    resize_everything();
-}
-
-void Window::shell_ready () {
-    set_activity(new Activity);
+void Window::update () {
+    shell.update();
+    ASSERT(SetWindowText(hwnd, tab ? tab->title.c_str() : L"(Sequoia)"));
 }
 
 void Window::resize_everything () {
-    RECT bounds;
-    GetClientRect(hwnd, &bounds);
-    if (shell.webview) {
-        shell.webview->put_Bounds(bounds);
-         // Put shell behind the page
-        SetWindowPos(
-            shell.webview_hwnd, HWND_BOTTOM,
-            0, 0, 0, 0,
-            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
-        );
-    };
-    if (activity && activity->webview) {
-        bounds.top += 68;
-        bounds.right -= 244;
-        activity->webview->put_Bounds(bounds);
+    RECT outer;
+    GetClientRect(hwnd, &outer);
+    RECT inner = shell.resize(outer);
+    if (activity) {
+        activity->resize(inner);
     };
 }
+
+Window::~Window () {
+    if (activity) activity->set_window(nullptr);
+}
+

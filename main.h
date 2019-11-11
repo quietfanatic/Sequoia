@@ -2,8 +2,9 @@
 #include "stuff.h"
 
 #include <string>
-#include <WebView2.h>
 #include <wil/com.h>
+
+struct IWebView2Environment;
 
 extern wil::com_ptr<IWebView2Environment> webview_environment;
 

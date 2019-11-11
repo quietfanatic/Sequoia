@@ -18,9 +18,7 @@ button { border:none; background:none; }
 <button id="menu">...</button>
 </nav>
 
-<nav id="tree">
-
-</nav>
+<nav id="tree"></nav>
 
 <div id="content"></div>
 
@@ -28,27 +26,37 @@ button { border:none; background:none; }
 
 let host = window.chrome.webview;
 
-let back = document.getElementById("back");
-back.addEventListener("press", e=>{
+let $tree = document.getElementById("tree");
+
+let $back = document.getElementById("back");
+$back.addEventListener("click", e=>{
     host.postMessage({"back":null});
 });
 
-let address = document.getElementById("address");
-address.addEventListener("keydown", e=>{
+let $forward = document.getElementById("forward");
+$forward.addEventListener("click", e=>{
+    host.postMessage({"forward":null});
+});
+
+let $address = document.getElementById("address");
+$address.addEventListener("keydown", e=>{
     if (e.key == "Enter") {
-        host.postMessage({navigate:address.value});
+        host.postMessage({navigate:$address.value});
     }
 });
 
 host.addEventListener("message", e=>{
-    if ("activity_updated" in e.data) {
+    if ("update" in e.data) {
         arg = e.data.activity_updated;
-        address.value = arg.url;
-        back.enabled = arg.back;
-        forward.enabled = arg.forward;
+        $address.value = arg.url;
+        $back.enabled = arg.back;
+        $forward.enabled = arg.forward;
+    }
+    else if ("new_tab" in e.data) {
+        arg = e.data.new_tab;
     }
     else {
-        console.log("Shell received Unknown message received");
+        console.log("Shell received Unknown message");
     }
 });
 

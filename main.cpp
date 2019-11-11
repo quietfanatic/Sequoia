@@ -2,15 +2,23 @@
 
 #include <fstream>
 #include <string>
+#include <WebView2.h>
 #include <wrl.h>
 
 #include "assert.h"
+#include "tabs.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
 
 wil::com_ptr<IWebView2Environment> webview_environment;
+
+void start_browser () {
+    Tab* test_tab = Tab::open_webpage(0, L"http://duckduckgo.com");
+    Window* window = new Window();
+    window->focus_tab(test_tab);
+}
 
 int wWinMain (
     HINSTANCE hInstance,
@@ -27,7 +35,9 @@ int wWinMain (
     {
         ASSERT_HR(hr);
         webview_environment = environment;
-        new Window;
+
+        start_browser();
+
         return S_OK;
     }).Get()));
 

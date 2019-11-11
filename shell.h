@@ -5,16 +5,15 @@
 
 namespace json { struct Value; }
 
-struct IWebView2WebView;
 struct Window;
 
 struct Shell {
     Window* window;
-    wil::com_ptr<IWebView2WebView> webview;
+    wil::com_ptr<WebView> webview;
     HWND webview_hwnd = nullptr;
     Shell (Window*);
 
     void interpret_web_message (const json::Value& message);
-
-    void activity_updated (const wchar_t* url, bool back, bool forward);
+    void update ();
+    RECT resize (RECT available);
 };

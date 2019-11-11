@@ -6,26 +6,24 @@
 #include "shell.h"
 
 struct Activity;
+struct Tab;
 
 // Represents one application window on the desktop.
 // This will delete itself when the window is closed.
 struct Window {
     HWND hwnd;
     Shell shell;
+    Tab* tab = nullptr;
     Activity* activity = nullptr;
 
     Window ();
 
-    ~Window ();
-
-    void set_activity (Activity*);
-    void set_title (const wchar_t*);
-
-    void shell_ready ();
-    void update_shell ();
-
+    void focus_tab (Tab*);
+    void update ();
     void resize_everything ();
 
-    LRESULT window_message (UINT message, WPARAM w, LPARAM l);
+    LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
+
+    ~Window ();
 };
 

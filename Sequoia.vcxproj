@@ -127,6 +127,7 @@
     <ClCompile Include="json/json.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shell.cpp" />
+    <ClCompile Include="tabs.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -136,6 +137,7 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="shell.h" />
     <ClInclude Include="stuff.h" />
+    <ClInclude Include="tabs.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
