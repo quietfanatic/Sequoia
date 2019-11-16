@@ -14,6 +14,7 @@ using uint8 = uint8_t;
 using uint16 = uint16_t;
 using uint32 = uint32_t;
 using uint64 = uint64_t;
+using char16 = wchar_t;
 
 struct IWebView2WebView4;
 using WebView = IWebView2WebView4;

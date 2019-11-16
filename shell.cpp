@@ -30,7 +30,7 @@ Shell::Shell (Window* owner) : window(owner) {
                     IWebView2WebMessageReceivedEventArgs* args
                 )
         {
-            wchar_t* raw;
+            char16* raw;
             args->get_WebMessageAsJson(&raw);
             interpret_web_message(json::parse(raw));
             return S_OK;
