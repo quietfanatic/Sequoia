@@ -49,9 +49,9 @@ void Shell::interpret_web_message (const Value& message) {
     if (message.type != ARRAY) throw logic_error("Unexpected message JSON type");
     if (message.as<Array>().size() < 1) throw logic_error("Empty message received from shell");
     if (message[0].type != STRING) throw logic_error("Invalid command JSON type");
-    auto& command = message[0].as<String>();
+    const auto& command = message[0].as<String>();
 
-    auto arg = [&](int i){
+    auto arg = [&](int i) -> const Value& {
         if (message.as<Array>().size() < i + 2) {
             throw logic_error("Missing required message argument from shell");
         }
@@ -62,10 +62,11 @@ void Shell::interpret_web_message (const Value& message) {
         window->update();
     }
     else if (command == L"navigate") {
-        auto& url = arg(0).as<String>();
+        const auto& url = arg(0).as<String>();
         if (window->activity && window->activity->webview) {
             window->activity->webview->Navigate(url.c_str());
         }
+        window = window;
     }
     else {
         throw logic_error("Unknown message name");

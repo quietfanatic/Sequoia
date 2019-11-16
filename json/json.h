@@ -49,7 +49,7 @@ struct Value {
 
     template <class T>
     const T& as () const {
-        static_assert("Can't get JSON as this type"); return *(T*)nullptr;
+        static_assert("Can't call json::Value::as with this type"); return *(T*)nullptr;
     }
 
     template <> const nullptr_t& as<nullptr_t> () const {
