@@ -20,7 +20,7 @@ void start_browser () {
     window->focus_tab(test_tab);
 }
 
-int wWinMain (
+int WINAPI wWinMain (
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
     LPWSTR lpCmdLine,
