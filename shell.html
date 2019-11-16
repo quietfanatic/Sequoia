@@ -42,7 +42,7 @@ $forward.addEventListener("click", e=>{
 let $address = document.getElementById("address");
 $address.addEventListener("keydown", e=>{
     if (e.key == "Enter") {
-        host.postMessage({navigate:$address.value});
+        host.postMessage(["navigate", $address.value]);
     }
 });
 
@@ -68,7 +68,7 @@ host.addEventListener("message", e=>{
     }
 });
 
-host.postMessage({ready:null});
+host.postMessage(["ready"]);
 </script>
 
 </body></html>

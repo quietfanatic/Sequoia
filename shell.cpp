@@ -13,6 +13,7 @@
 
 using namespace Microsoft::WRL;
 using namespace std;
+using namespace json;
 
 Shell::Shell (Window* owner) : window(owner) {
     ASSERT_HR(webview_environment->CreateWebView(window->hwnd,
@@ -32,7 +33,7 @@ Shell::Shell (Window* owner) : window(owner) {
         {
             char16* raw;
             args->get_WebMessageAsJson(&raw);
-            interpret_web_message(json::parse(raw));
+            interpret_web_message(parse(raw));
             return S_OK;
         }).Get(), &token);
 
@@ -44,19 +45,26 @@ Shell::Shell (Window* owner) : window(owner) {
     }).Get()));
 };
 
-void Shell::interpret_web_message (const json::Value& message) {
-    if (message.type != json::OBJECT) throw logic_error("Unexpected message JSON type");
-    if (message.object->size() != 1) throw logic_error("Wrong size of message object");
-    auto command = (*message.object)[0].first;
-    auto arg = (*message.object)[0].second;
+void Shell::interpret_web_message (const Value& message) {
+    if (message.type != ARRAY) throw logic_error("Unexpected message JSON type");
+    if (message.as<Array>().size() < 1) throw logic_error("Empty message received from shell");
+    if (message[0].type != STRING) throw logic_error("Invalid command JSON type");
+    auto& command = message[0].as<String>();
+
+    auto arg = [&](int i){
+        if (message.as<Array>().size() < i + 2) {
+            throw logic_error("Missing required message argument from shell");
+        }
+        return message[i+1];
+    };
 
     if (command == L"ready") {
         window->update();
     }
     else if (command == L"navigate") {
-        if (arg.type != json::STRING) throw logic_error("Wrong navigate command arg type");
+        auto& url = arg(0).as<String>();
         if (window->activity && window->activity->webview) {
-            window->activity->webview->Navigate(arg.string->c_str());
+            window->activity->webview->Navigate(url.c_str());
         }
     }
     else {
@@ -70,8 +78,8 @@ void Shell::update () {
     auto url = tab ? tab->url.c_str() : L"";
     auto back = tab && tab->activity && tab->activity->can_go_back;
     auto forward = tab && tab->activity && tab->activity->can_go_forward;
-    json::Array message {L"update", url, back, forward};
-    webview->PostWebMessageAsJson(json::stringify(message).c_str());
+    Array message {L"update", url, back, forward};
+    webview->PostWebMessageAsJson(stringify(message).c_str());
 };
 
 RECT Shell::resize (RECT bounds) {

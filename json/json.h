@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <string>
 #include <utility>
 #include <vector>
@@ -45,6 +46,30 @@ struct Value {
     Value (String*&& v) : type(STRING), string(v) { v = nullptr; }
     Value (Array*&& v) : type(ARRAY), array(v) { v = nullptr; }
     Value (Object*&& v) : type(OBJECT), object(v) { v = nullptr; }
+
+    template <class T>
+    const T& as () const {
+        static_assert("Can't get JSON as this type"); return *(T*)nullptr;
+    }
+
+    template <> const nullptr_t& as<nullptr_t> () const {
+        assert(type == NULL); return nullptr;
+    }
+    template <> const bool& as<bool> () const {
+        assert(type == BOOL); return boolean;
+    }
+    template <> const double& as<double> () const {
+        assert(type == NUMBER); return number;
+    }
+    template <> const String& as<String> () const {
+        assert(type == STRING); return *string;
+    }
+    template <> const Array& as<Array> () const {
+        assert(type == ARRAY); return *array;
+    }
+    template <> const Object& as<Object> () const {
+        assert(type == OBJECT); return *object;
+    }
 
     Value (const Value& v);
     Value (Value&& v);
