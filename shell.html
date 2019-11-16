@@ -23,6 +23,7 @@ button { border:none; background:none; }
 <div id="content"></div>
 
 <script>
+"use strict";
 
 let host = window.chrome.webview;
 
@@ -45,18 +46,25 @@ $address.addEventListener("keydown", e=>{
     }
 });
 
+let commands = {
+    update (url, back, forward) {
+        $address.value = url;
+        $back.enabled = back;
+        $forward.enabled = forward;
+    },
+};
+
 host.addEventListener("message", e=>{
-    if ("update" in e.data) {
-        arg = e.data.update;
-        $address.value = arg.url;
-        $back.enabled = arg.back;
-        $forward.enabled = arg.forward;
+    if (e.data.length < 1) {
+        console.log("Shell received unrecognized message format");
+        return;
     }
-    else if ("new_tab" in e.data) {
-        arg = e.data.new_tab;
+    let command = e.data.shift();
+    if (command in commands) {
+        commands[command].apply(undefined, e.data)
     }
     else {
-        console.log("Shell received Unknown message");
+        console.log("Shell received unknown message");
     }
 });
 

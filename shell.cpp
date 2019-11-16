@@ -70,13 +70,7 @@ void Shell::update () {
     auto url = tab ? tab->url.c_str() : L"";
     auto back = tab && tab->activity && tab->activity->can_go_back;
     auto forward = tab && tab->activity && tab->activity->can_go_forward;
-    json::Object message {
-        {L"update", json::Object{
-            {L"url", url},
-            {L"back", back},
-            {L"forward", forward}
-        }}
-    };
+    json::Array message {L"update", url, back, forward};
     webview->PostWebMessageAsJson(json::stringify(message).c_str());
 };
 
