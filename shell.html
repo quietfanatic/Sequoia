@@ -4,7 +4,6 @@
 <title>Sequoia Shell</title>
 <style>
 #toolbar { display:flex; align-items:center; position:absolute; left:0; top:0; right:0; height:32px; border-bottom:2px solid; }
-button { border:none; background:none; }
 #address { flex-grow:1; height:28px; padding-left:0.4rem; padding-right:0.4rem; border:none; }
 #tree { position:absolute; right:0; top:34px; width:120px; bottom:0; border-left:2px solid; }
 </style>
@@ -31,12 +30,12 @@ let $tree = document.getElementById("tree");
 
 let $back = document.getElementById("back");
 $back.addEventListener("click", e=>{
-    host.postMessage({"back":null});
+    host.postMessage(["back"]);
 });
 
 let $forward = document.getElementById("forward");
 $forward.addEventListener("click", e=>{
-    host.postMessage({"forward":null});
+    host.postMessage(["forward"]);
 });
 
 let $address = document.getElementById("address");

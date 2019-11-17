@@ -63,10 +63,13 @@ void Shell::interpret_web_message (const Value& message) {
     }
     else if (command == L"navigate") {
         const auto& url = arg(0).as<String>();
-        if (window->activity && window->activity->webview) {
-            window->activity->webview->Navigate(url.c_str());
-        }
-        window = window;
+        if (auto wv = active_webview()) wv->Navigate(url.c_str());
+    }
+    else if (command == L"back") {
+        if (auto wv = active_webview()) wv->GoBack();
+    }
+    else if (command == L"forward") {
+        if (auto wv = active_webview()) wv->GoForward();
     }
     else {
         throw logic_error("Unknown message name");
@@ -96,4 +99,9 @@ RECT Shell::resize (RECT bounds) {
     bounds.top += 68;
     bounds.right -= 244;
     return bounds;
+}
+
+IWebView2WebView4* Shell::active_webview () {
+    if (window->activity && window->activity->webview) return window->activity->webview.get();
+    else return nullptr;
 }
