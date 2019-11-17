@@ -6,6 +6,7 @@
 
 #include "activities.h"
 #include "assert.h"
+#include "hash.h"
 #include "json/json.h"
 #include "main.h"
 #include "tabs.h"
@@ -47,32 +48,32 @@ Shell::Shell (Window* owner) : window(owner) {
 
 void Shell::interpret_web_message (const Value& message) {
     if (message.type != ARRAY) throw logic_error("Unexpected message JSON type");
-    if (message.as<Array>().size() < 1) throw logic_error("Empty message received from shell");
+    if (message.array->size() < 1) throw logic_error("Empty message received from shell");
+
     if (message[0].type != STRING) throw logic_error("Invalid command JSON type");
     const auto& command = message[0].as<String>();
 
-    auto arg = [&](int i) -> const Value& {
-        if (message.as<Array>().size() < i + 2) {
-            throw logic_error("Missing required message argument from shell");
-        }
-        return message[i+1];
-    };
-
-    if (command == L"ready") {
+    switch (x31_hash(command.c_str())) {
+    case x31_hash(L"ready"): {
         window->update();
+        break;
     }
-    else if (command == L"navigate") {
-        const auto& url = arg(0).as<String>();
+    case x31_hash(L"navigate"): {
+        const auto& url = message.array->at(1).as<String>();
         if (auto wv = active_webview()) wv->Navigate(url.c_str());
+        break;
     }
-    else if (command == L"back") {
+    case x31_hash(L"back"): {
         if (auto wv = active_webview()) wv->GoBack();
+        break;
     }
-    else if (command == L"forward") {
+    case x31_hash(L"forward"): {
         if (auto wv = active_webview()) wv->GoForward();
+        break;
     }
-    else {
+    default: {
         throw logic_error("Unknown message name");
+    }
     }
 }
 

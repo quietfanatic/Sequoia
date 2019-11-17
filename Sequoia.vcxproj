@@ -138,6 +138,7 @@
     <ClInclude Include="shell.h" />
     <ClInclude Include="stuff.h" />
     <ClInclude Include="tabs.h" />
+    <ClInclude Include="util.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
