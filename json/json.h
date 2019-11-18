@@ -34,6 +34,16 @@ struct Value {
 
     Value (nullptr_t v = nullptr) : type(NULL) { }
     Value (bool v) : type(BOOL), boolean(v) { }
+    Value (signed char v) : type(NUMBER), number(double(v)) { }
+    Value (unsigned char v) : type(NUMBER), number(double(v)) { }
+    Value (short v) : type(NUMBER), number(double(v)) { }
+    Value (unsigned short v) : type(NUMBER), number(double(v)) { }
+    Value (int v) : type(NUMBER), number(double(v)) { }
+    Value (unsigned int v) : type(NUMBER), number(double(v)) { }
+    Value (long v) : type(NUMBER), number(double(v)) { }
+    Value (unsigned long v) : type(NUMBER), number(double(v)) { }
+    Value (long long v) : type(NUMBER), number(double(v)) { }
+    Value (unsigned long long v) : type(NUMBER), number(double(v)) { }
     Value (double v) : type(NUMBER), number(v) { }
     Value (const Char* v) : type(STRING), string(new String(v)) { }
     Value (const String& v) : type(STRING), string(new String(v)) { }

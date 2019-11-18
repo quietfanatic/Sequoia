@@ -56,6 +56,7 @@ void Shell::interpret_web_message (const Value& message) {
     switch (x31_hash(command.c_str())) {
     case x31_hash(L"ready"): {
         window->update();
+        if (window->tab) add_tab(window->tab);
         break;
     }
     case x31_hash(L"navigate"): {
@@ -75,6 +76,12 @@ void Shell::interpret_web_message (const Value& message) {
         throw logic_error("Unknown message name");
     }
     }
+}
+
+void Shell::add_tab (Tab* tab) {
+    if (!webview) return;
+    Array message {L"add_tab", tab->id, tab->parent, tab->next, tab->prev, tab->child_count, tab->title};
+    webview->PostWebMessageAsJson(stringify(message).c_str());
 }
 
 void Shell::update () {

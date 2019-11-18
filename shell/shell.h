@@ -5,7 +5,7 @@
 
 namespace json { struct Value; }
 
-struct IWebView2WebView4;
+struct Tab;
 struct Window;
 
 struct Shell {
@@ -15,8 +15,10 @@ struct Shell {
     Shell (Window*);
 
     void interpret_web_message (const json::Value& message);
+
+    void add_tab (Tab* tab);
     void update ();
     RECT resize (RECT available);
 
-    IWebView2WebView4* active_webview ();
+    WebView* active_webview ();
 };

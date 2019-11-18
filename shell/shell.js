@@ -26,7 +26,6 @@ $(document.body, {}, [
     ]),
     $tree = $("nav", {id:"tree", class:"list"}),
 ]);
-console.log(document.body);
 
 let items_by_id = {};
 
@@ -35,6 +34,7 @@ function on_close_clicked (event) {
 
 let commands = {
     add_tab (id, parent, next, prev, child_count, title) {
+        console.log(0);
         let $tab = $("div", {class:"tab"}, [
             child_count > 1 ? title + " (" + child_count + ")" : title,
             $("button", {}, "✗", {click:on_close_clicked})
