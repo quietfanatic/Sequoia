@@ -62,8 +62,9 @@ void Window::focus_tab (Tab* t) {
 
 void Window::set_activity (Activity* a) {
     if (a == activity) return;
-    if (activity) activity->set_window(nullptr);
+    auto old_activity = activity;
     activity = a;
+    if (old_activity) old_activity->set_window(nullptr);
     if (activity) activity->set_window(this);
 
     resize_everything();

@@ -108,8 +108,9 @@ Activity::Activity (Tab* t) : tab(t) {
 
 void Activity::set_window (Window* w) {
     if (w == window) return;
-    if (window) window->set_activity(nullptr);
+    auto old_window = window;
     window = w;
+    if (old_window) old_window->set_activity(nullptr);
     if (window) {
         if (webview) {
             ASSERT_HR(webview->put_IsVisible(TRUE));
