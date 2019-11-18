@@ -4,13 +4,13 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "activities.h"
-#include "assert.h"
-#include "hash.h"
-#include "json/json.h"
-#include "main.h"
-#include "tabs.h"
-#include "Window.h"
+#include "../activities.h"
+#include "../assert.h"
+#include "../hash.h"
+#include "../json/json.h"
+#include "../main.h"
+#include "../tabs.h"
+#include "../Window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -38,7 +38,7 @@ Shell::Shell (Window* owner) : window(owner) {
             return S_OK;
         }).Get(), &token);
 
-        webview->Navigate(exe_relative(L"shell.html").c_str());
+        webview->Navigate(exe_relative(L"shell/shell.html").c_str());
 
         window->resize_everything();
 

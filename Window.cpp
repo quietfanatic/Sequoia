@@ -34,7 +34,7 @@ static HWND create_hwnd () {
         L"(Sequoia)",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
-        1280, 1280,
+        1280, 960,
         nullptr,
         nullptr,
         GetModuleHandle(nullptr),
@@ -50,15 +50,22 @@ Window::Window () : hwnd(create_hwnd()), shell(this) {
 }
 
 void Window::focus_tab (Tab* t) {
-    if (activity) {
-        activity->set_window(nullptr);
-    }
+    if (t == tab) return;
     tab = t;
     if (tab) {
-        activity = tab->activity;
-        if (!activity) activity = new Activity(tab);
-        activity->set_window(this);
+        if (!tab->activity) {
+            tab->activity = new Activity(tab);
+        }
+        set_activity(tab->activity);
     }
+}
+
+void Window::set_activity (Activity* a) {
+    if (a == activity) return;
+    if (activity) activity->set_window(nullptr);
+    activity = a;
+    if (activity) activity->set_window(this);
+
     resize_everything();
     update();
 }

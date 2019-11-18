@@ -1,5 +1,5 @@
 #pragma once
-#include "stuff.h"
+#include "../stuff.h"
 
 #include <wil/com.h>
 

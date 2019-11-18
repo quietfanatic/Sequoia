@@ -53,7 +53,17 @@ Activity::Activity (Tab* t) : tab(t) {
         ASSERT_HR(hr);
         ASSERT_HR(wv->QueryInterface(IID_PPV_ARGS(&webview)));
         ASSERT(webview_hwnd = GetWindow(get_nursery(), GW_CHILD));
-        set_window(window);
+
+        if (window) {
+            ASSERT_HR(webview->put_IsVisible(TRUE));
+            SetParent(webview_hwnd, window->hwnd);
+            window->resize_everything();
+            window->update();
+        }
+        else {
+            SetParent(webview_hwnd, HWND_MESSAGE);
+            ASSERT_HR(webview->put_IsVisible(FALSE));
+        }
 
         EventRegistrationToken token;
         ASSERT_HR(webview->add_DocumentTitleChanged(
@@ -97,18 +107,15 @@ Activity::Activity (Tab* t) : tab(t) {
 }
 
 void Activity::set_window (Window* w) {
-    if (window) {
-        window->activity = nullptr;
-    }
+    if (w == window) return;
+    if (window) window->set_activity(nullptr);
     window = w;
     if (window) {
         if (webview) {
             ASSERT_HR(webview->put_IsVisible(TRUE));
             SetParent(webview_hwnd, window->hwnd);
         }
-        window->activity = this;
-        window->resize_everything();
-        window->update();
+        window->set_activity(this);
     }
     else {
         if (webview) {

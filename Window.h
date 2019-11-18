@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "shell.h"
+#include "shell/shell.h"
 
 struct Activity;
 struct Tab;
@@ -19,6 +19,7 @@ struct Window {
     Window ();
 
     void focus_tab (Tab*);
+    void set_activity (Activity*);
     void update ();
     void resize_everything ();
 

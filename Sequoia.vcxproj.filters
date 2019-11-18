@@ -21,6 +21,18 @@
     <ClCompile Include="Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="activities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="json/json.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="shell/shell.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tabs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assert.h">
@@ -35,12 +47,29 @@
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="activities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json/json.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shell/shell.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tabs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="$(MSBuildThisFileDirectory)$(EffectivePlatform)\WebView2Loader.dll" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="shell.html" />
+    <CopyFileToFolders Include="shell/domifier.js" />
+    <CopyFileToFolders Include="shell/shell.html" />
+    <CopyFileToFolders Include="shell/shell.js" />
   </ItemGroup>
 </Project>
