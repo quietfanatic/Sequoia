@@ -131,6 +131,7 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="_windows.h" />
     <ClInclude Include="activities.h" />
     <ClInclude Include="assert.h" />
     <ClInclude Include="json/json.h" />
