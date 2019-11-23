@@ -1,9 +1,10 @@
 #pragma once
-#include "stuff.h"
 
+#include "_windows.h"
 #include <vector>
 
 #include "shell/shell.h"
+#include "stuff.h"
 
 struct Activity;
 struct Tab;

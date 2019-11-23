@@ -1,7 +1,9 @@
 #pragma once
-#include "../stuff.h"
 
 #include <wil/com.h>
+
+#include "../_windows.h"
+#include "../stuff.h"
 
 namespace json { struct Value; }
 

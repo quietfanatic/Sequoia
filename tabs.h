@@ -1,8 +1,9 @@
 #pragma once
-#include "stuff.h"
 
 #include <map>
 #include <string>
+
+#include "stuff.h"
 
 struct Activity;
 

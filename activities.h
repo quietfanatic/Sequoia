@@ -1,9 +1,11 @@
 #pragma once
-#include "stuff.h"
 
+#include "_windows.h"
 #include <set>
 #include <string>
 #include <wil/com.h>
+
+#include "stuff.h"
 
 struct Tab;
 struct Window;

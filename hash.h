@@ -1,10 +1,10 @@
 #pragma once
 
-#include "util.h"
+#include "stuff.h"
 
 template <class T>
-constexpr uint64_t x31_hash (const T* s) {
-    uint64_t h = 0;
+constexpr uint64 x31_hash (const T* s) {
+    uint64 h = 0;
     for (; *s != 0; s++) {
         h = (h << 5) - h + *s;
     }
