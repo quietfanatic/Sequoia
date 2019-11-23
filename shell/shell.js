@@ -33,17 +33,21 @@ function on_close_clicked (event) {
 }
 
 let commands = {
-    add_tab (id, parent, next, prev, child_count, title) {
-        console.log(0);
-        let $tab = $("div", {class:"tab"}, [
-            child_count > 1 ? title + " (" + child_count + ")" : title,
-            $("button", {}, "✗", {click:on_close_clicked})
-        ]);
+    add_tab (id, parent, next, prev, child_count, title, url) {
+        let tooltip = title;
+        if (url) title += "\n" + url;
+        if (child_count > 1) title += "\n(" + child_count + ")";
+
+        let $title = $("div", {class:"title"}, title);
+        let $close = $("button", {class:"close"}, "✗", {click:on_close_clicked})
+        let $tab = $("div", {class:"tab", title:tooltip}, [$title, $close]);
         let $list = $("div", {class:"list"});
         let $item = $("div", {class:"item"}, [$tab, $list]);
+
         items_by_id[id] = {
             $item: $item,
             $tab: $tab,
+            $title: $title,
             $list: $list
         };
 
@@ -52,7 +56,15 @@ let commands = {
         let $next = next == 0 ? null : tabs_by_id[next].$item;
         $parent_list.insertBefore($item, $next);
     },
-    update_tab (id, parent, next, prev, child_count, title) {
+    update_tab (id, child_count, title, url) {
+        let item = items_by_id[id];
+        if (item) {
+            let tooltip = title;
+            if (url) title += "\n" + url;
+            if (child_count > 1) title += "\n(" + child_count + ")";
+            item.$tab.setAttribute("title", tooltip);
+            item.$title.innerText = title;
+        }
     },
     remove_tab (id) {
     },
