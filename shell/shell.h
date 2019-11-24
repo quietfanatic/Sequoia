@@ -16,10 +16,12 @@ struct Shell {
     HWND webview_hwnd = nullptr;
     Shell (Window*);
 
-    void interpret_web_message (const json::Value& message);
+    void message_from_shell (json::Value&& message);
+    void message_to_shell (json::Value&& message);
 
-    void add_tab (Tab* tab);
-    void update_tab (Tab* tab);
+    void update_tabs (Tab** tabs, size_t length);
+    void update_tab (Tab* t) { update_tabs(&t, 1); }
+
     RECT resize (RECT available);
 
     WebView* active_webview ();

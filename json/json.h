@@ -53,13 +53,17 @@ struct Value {
     Value (const Object& v) : type(OBJECT), object(new Object(std::move(v))) { }
     Value (Object&& v) : type(OBJECT), object(new Object(std::move(v))) { }
 
-    Value (String*&& v) : type(STRING), string(v) { v = nullptr; }
-    Value (Array*&& v) : type(ARRAY), array(v) { v = nullptr; }
-    Value (Object*&& v) : type(OBJECT), object(v) { v = nullptr; }
+    explicit Value (String*&& v) : type(STRING), string(v) { v = nullptr; }
+    explicit Value (Array*&& v) : type(ARRAY), array(v) { v = nullptr; }
+    explicit Value (Object*&& v) : type(OBJECT), object(v) { v = nullptr; }
+
+    template <class T>
+    Value (T* v) { static_assert(false, "Can't convert this pointer to json::Value"); }
 
     template <class T>
     const T& as () const {
-        static_assert("Can't call json::Value::as with this type"); return *(T*)nullptr;
+        static_assert(false, "Can't call json::Value::as with this type");
+        return *(T*)nullptr;
     }
 
     template <> const nullptr_t& as<nullptr_t> () const {

@@ -34,7 +34,7 @@ Shell::Shell (Window* owner) : window(owner) {
         {
             char16* raw;
             args->get_WebMessageAsJson(&raw);
-            interpret_web_message(parse(raw));
+            message_from_shell(parse(raw));
             return S_OK;
         }).Get(), &token);
 
@@ -46,7 +46,7 @@ Shell::Shell (Window* owner) : window(owner) {
     }).Get()));
 };
 
-void Shell::interpret_web_message (const Value& message) {
+void Shell::message_from_shell (Value&& message) {
     if (message.type != ARRAY) throw logic_error("Unexpected message JSON type");
     if (message.array->size() < 1) throw logic_error("Empty message received from shell");
 
@@ -56,7 +56,6 @@ void Shell::interpret_web_message (const Value& message) {
     switch (x31_hash(command.c_str())) {
     case x31_hash(L"ready"): {
         if (window->tab) {
-            add_tab(window->tab);
             window->update_tab(window->tab);
         }
         break;
@@ -80,24 +79,43 @@ void Shell::interpret_web_message (const Value& message) {
     }
 }
 
-void Shell::add_tab (Tab* tab) {
+void Shell::message_to_shell (Value&& message) {
     if (!webview) return;
-    Array message {L"add_tab", tab->id, tab->parent, tab->next, tab->prev, tab->child_count, tab->title};
     webview->PostWebMessageAsJson(stringify(message).c_str());
 }
 
-void Shell::update_tab (Tab* tab) {
-    if (!webview) return;
-    Array message {
-        L"update_tab",
-        tab->id,
-        tab->child_count,
-        tab->title,
-        tab->url,
-        tab->activity && tab->activity->can_go_back,
-        tab->activity && tab->activity->can_go_forward
-    };
-    webview->PostWebMessageAsJson(stringify(message).c_str());
+void Shell::update_tabs (Tab** tabs, size_t length) {
+    Array updates;
+    updates.reserve(length);
+    for (size_t i = 0; i < length; i++) {
+        Tab* tab = tabs[i];
+        if (window->tab == tab) {
+            updates.emplace_back(Array{
+                tab->id,
+                tab->parent,
+                tab->next,
+                tab->prev,
+                tab->child_count,
+                tab->title,
+                tab->url,
+                true,
+                tab->activity && tab->activity->can_go_back,
+                tab->activity && tab->activity->can_go_forward
+            });
+        }
+        else {
+            updates.emplace_back(Array{
+                tab->id,
+                tab->parent,
+                tab->next,
+                tab->prev,
+                tab->child_count,
+                tab->title,
+                tab->url
+            });
+        }
+    }
+    message_to_shell(Array{L"update", updates});
 };
 
 RECT Shell::resize (RECT bounds) {

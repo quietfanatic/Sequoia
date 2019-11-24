@@ -34,7 +34,6 @@ struct Tab {
     void set_url (const std::wstring& u);
     void set_title (const std::wstring& t);
     void close ();
-
 };
 
 extern std::map<int64, Tab*> tabs_by_id;
