@@ -4,6 +4,7 @@
 #include <WebView2.h>
 #include <wrl.h>
 
+#include "../_windows.h"
 #include "../activities.h"
 #include "../assert.h"
 #include "../hash.h"
@@ -46,6 +47,12 @@ Shell::Shell (Window* owner) : window(owner) {
     }).Get()));
 };
 
+wstring css_color (uint32 c) {
+    char16 buf [8];
+    swprintf(buf, 8, L"#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c));
+    return buf;
+}
+
 void Shell::message_from_shell (Value&& message) {
     if (message.type != ARRAY) throw logic_error("Unexpected message JSON type");
     if (message.array->size() < 1) throw logic_error("Empty message received from shell");
@@ -55,6 +62,19 @@ void Shell::message_from_shell (Value&& message) {
 
     switch (x31_hash(command.c_str())) {
     case x31_hash(L"ready"): {
+         // Set system colors
+        auto toolbar_bg = GetSysColor(COLOR_ACTIVECAPTION);
+        auto toolbar_fg = GetSysColor(COLOR_CAPTIONTEXT);
+        auto tab_bg = GetSysColor(COLOR_3DFACE);
+        auto tab_fg = GetSysColor(COLOR_WINDOWTEXT);
+        message_to_shell(Array{
+            L"colors",
+            css_color(toolbar_bg),
+            css_color(toolbar_fg),
+            css_color(tab_bg),
+            css_color(tab_fg)
+        });
+         // Get tabs
         if (window->tab) {
             window->update_tab(window->tab);
         }

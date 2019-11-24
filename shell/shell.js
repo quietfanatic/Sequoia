@@ -81,6 +81,13 @@ let commands = {
             }
         }
     },
+    colors (toolbar_bg, toolbar_fg, tab_bg, tab_fg) {
+        let style = document.documentElement.style;
+        style.setProperty('--toolbar-bg', toolbar_bg);
+        style.setProperty('--toolbar-fg', toolbar_fg);
+        style.setProperty('--tab-bg', tab_bg);
+        style.setProperty('--tab-fg', tab_fg);
+    }
 };
 
 host.addEventListener("message", e=>{
