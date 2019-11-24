@@ -63,16 +63,14 @@ void Shell::message_from_shell (Value&& message) {
     switch (x31_hash(command.c_str())) {
     case x31_hash(L"ready"): {
          // Set system colors
-        auto toolbar_bg = GetSysColor(COLOR_ACTIVECAPTION);
-        auto toolbar_fg = GetSysColor(COLOR_CAPTIONTEXT);
-        auto tab_bg = GetSysColor(COLOR_3DFACE);
-        auto tab_fg = GetSysColor(COLOR_WINDOWTEXT);
         message_to_shell(Array{
             L"colors",
-            css_color(toolbar_bg),
-            css_color(toolbar_fg),
-            css_color(tab_bg),
-            css_color(tab_fg)
+            css_color(GetSysColor(COLOR_ACTIVECAPTION)),
+            css_color(GetSysColor(COLOR_CAPTIONTEXT)),
+            css_color(GetSysColor(COLOR_3DFACE)),
+            css_color(GetSysColor(COLOR_WINDOWTEXT)),
+            css_color(GetSysColor(COLOR_3DHIGHLIGHT)),
+            css_color(GetSysColor(COLOR_3DSHADOW))
         });
          // Get tabs
         if (window->tab) {
@@ -148,8 +146,8 @@ RECT Shell::resize (RECT bounds) {
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
         );
     }
-    bounds.top += 68;
-    bounds.right -= 244;
+    bounds.top += 64;
+    bounds.right -= 240;
     return bounds;
 }
 

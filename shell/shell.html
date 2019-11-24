@@ -5,11 +5,11 @@
 <title>Sequoia Shell</title>
 <script src="domifier.js" charset="utf-8"></script>
 <style>
-:root { --toolbar-bg:#ffffff; --toolbar-fg:#000000; --tab-bg:#ffffff; --tab-fg:#000000; }
-#toolbar { display:flex; align-items:center; position:absolute; left:0; top:0; right:0; height:32px; border-bottom:2px solid; background-color:var(--toolbar-bg); color:var(--toolbar-fg); }
-#toolbar > input { flex-grow:1; height:28px; padding-left:0.4rem; padding-right:0.4rem; border:none; }
-#tree { position:absolute; right:0; top:34px; width:120px; bottom:0; border-left:2px solid; }
-.tab { display:flex; align-items:center; width:100%; border-bottom:1px solid; height:24px; font-size:12px; background-color:var(--tab-bg); color:var(--tab-fg); }
+#toolbar { display:flex; align-items:center; position:absolute; left:0; top:0; right:0; height:32px; background-color:var(--toolbar-bg); color:var(--toolbar-fg); }
+#toolbar > input { flex-grow:1; height:28px; padding-left:0.4rem; padding-right:0.4rem; border:none; background-color:inherit; }
+#toolbar > button { background-color:inherit; border:none; height:28px; width:28px; font-size:18px; }
+#tree { position:absolute; right:0; top:32px; width:120px; bottom:0; background-color:var(--toolbar-bg); }
+.tab { display:flex; align-items:center; width:100%; height:24px; font-size:12px; background-color:var(--tab-bg); color:var(--tab-fg); border-left:1px solid var(--tab-highlight); border-top:1px solid var(--tab-highlight); border-right:1px solid var(--tab-shadow); border-bottom:1px solid var(--tab-shadow); }
 .title { flex-grow:1; white-space:pre; overflow:hidden; }
 .close { display:none; margin:none; border:none; padding:none; background:none; }
 .tab:hover .close { display:block; }
