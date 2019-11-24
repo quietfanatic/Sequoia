@@ -19,7 +19,7 @@ struct Shell {
     void interpret_web_message (const json::Value& message);
 
     void add_tab (Tab* tab);
-    void update ();
+    void update_tab (Tab* tab);
     RECT resize (RECT available);
 
     WebView* active_webview ();

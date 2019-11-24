@@ -35,8 +35,8 @@ function on_close_clicked (event) {
 let commands = {
     add_tab (id, parent, next, prev, child_count, title, url) {
         let tooltip = title;
-        if (url) title += "\n" + url;
-        if (child_count > 1) title += "\n(" + child_count + ")";
+        if (url) tooltip += "\n" + url;
+        if (child_count > 1) tooltip += "\n(" + child_count + ")";
 
         let $title = $("div", {class:"title"}, title);
         let $close = $("button", {class:"close"}, "✗", {click:on_close_clicked})
@@ -56,22 +56,21 @@ let commands = {
         let $next = next == 0 ? null : tabs_by_id[next].$item;
         $parent_list.insertBefore($item, $next);
     },
-    update_tab (id, child_count, title, url) {
+    update_tab (id, child_count, title, url, can_go_back, can_go_forward) {
         let item = items_by_id[id];
         if (item) {
             let tooltip = title;
-            if (url) title += "\n" + url;
-            if (child_count > 1) title += "\n(" + child_count + ")";
+            if (url) tooltip += "\n" + url;
+            if (child_count > 1) tooltip += "\n(" + child_count + ")";
             item.$tab.setAttribute("title", tooltip);
             item.$title.innerText = title;
+
+            $address.value = url;
+            $back.enabled = can_go_back;
+            $forward.enabled = can_go_forward;
         }
     },
     remove_tab (id) {
-    },
-    update (url, back, forward) {
-        $address.value = url;
-        $back.enabled = back;
-        $forward.enabled = forward;
     },
 };
 

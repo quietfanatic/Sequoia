@@ -54,16 +54,8 @@ Activity::Activity (Tab* t) : tab(t) {
         ASSERT_HR(wv->QueryInterface(IID_PPV_ARGS(&webview)));
         ASSERT(webview_hwnd = GetWindow(get_nursery(), GW_CHILD));
 
-        if (window) {
-            ASSERT_HR(webview->put_IsVisible(TRUE));
-            SetParent(webview_hwnd, window->hwnd);
-            window->resize_everything();
-            window->update();
-        }
-        else {
-            SetParent(webview_hwnd, HWND_MESSAGE);
-            ASSERT_HR(webview->put_IsVisible(FALSE));
-        }
+        if (window) window->claim_activity(this);
+        else claimed_by_window(nullptr);
 
         EventRegistrationToken token;
         ASSERT_HR(webview->add_DocumentTitleChanged(
@@ -73,7 +65,6 @@ Activity::Activity (Tab* t) : tab(t) {
             wil::unique_cotaskmem_string title;
             webview->get_DocumentTitle(&title);
             tab->set_title(title.get());
-            if (window) window->update();
             return S_OK;
         }).Get(), &token));
 
@@ -82,10 +73,6 @@ Activity::Activity (Tab* t) : tab(t) {
                 IWebView2WebView* sender,
                 IWebView2DocumentStateChangedEventArgs* args) -> HRESULT
         {
-            wil::unique_cotaskmem_string source;
-            webview->get_Source(&source);
-            tab->set_url(source.get());
-
             BOOL back;
             webview->get_CanGoBack(&back);
             can_go_back = back;
@@ -94,7 +81,10 @@ Activity::Activity (Tab* t) : tab(t) {
             webview->get_CanGoForward(&forward);
             can_go_forward = forward;
 
-            if (window) window->update();
+            wil::unique_cotaskmem_string source;
+            webview->get_Source(&source);
+            tab->set_url(source.get());
+
             return S_OK;
         }).Get(), &token));
 
@@ -106,17 +96,14 @@ Activity::Activity (Tab* t) : tab(t) {
     all_activities.insert(this);
 }
 
-void Activity::set_window (Window* w) {
-    if (w == window) return;
-    auto old_window = window;
+void Activity::claimed_by_window (Window* w) {
+    if (window && window != w) window->claim_activity(nullptr);
     window = w;
-    if (old_window) old_window->set_activity(nullptr);
     if (window) {
         if (webview) {
             ASSERT_HR(webview->put_IsVisible(TRUE));
             SetParent(webview_hwnd, window->hwnd);
         }
-        window->set_activity(this);
     }
     else {
         if (webview) {

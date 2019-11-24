@@ -10,6 +10,8 @@
 
 using namespace std;
 
+std::set<Window*> all_windows;
+
 static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto self = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (self) return self->WndProc(message, w, l);
@@ -47,6 +49,7 @@ static HWND create_hwnd () {
 
 Window::Window () : hwnd(create_hwnd()), shell(this) {
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
+    all_windows.emplace(this);
 }
 
 void Window::focus_tab (Tab* t) {
@@ -56,19 +59,17 @@ void Window::focus_tab (Tab* t) {
         if (!tab->activity) {
             tab->activity = new Activity(tab);
         }
-        set_activity(tab->activity);
+        claim_activity(tab->activity);
     }
 }
 
-void Window::set_activity (Activity* a) {
-    if (a == activity) return;
-    auto old_activity = activity;
+void Window::claim_activity (Activity* a) {
+    if (activity && activity != a) activity->claimed_by_window(nullptr);
     activity = a;
-    if (old_activity) old_activity->set_window(nullptr);
-    if (activity) activity->set_window(this);
+    if (activity) activity->claimed_by_window(this);
 
     resize_everything();
-    update();
+    update_tab(tab);
 }
 
 LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
@@ -77,8 +78,8 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
         resize_everything();
         return 0;
     case WM_DESTROY:
-         // Prevent webview's window from getting destroyed.
-        if (activity) activity->set_window(nullptr);
+         // Prevent activity's hwnd from getting destroyed.
+        claim_activity(nullptr);
     case WM_NCDESTROY:
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);
         delete this;
@@ -88,9 +89,11 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
     return DefWindowProc(hwnd, message, w, l);
 }
 
-void Window::update () {
-    shell.update();
-    ASSERT(SetWindowText(hwnd, tab ? tab->title.c_str() : L"(Sequoia)"));
+void Window::update_tab (Tab* t) {
+    shell.update_tab(t);
+    if (tab == t) {
+        ASSERT(SetWindowText(hwnd, tab ? tab->title.c_str() : L"(Sequoia)"));
+    }
 }
 
 void Window::resize_everything () {
@@ -103,6 +106,7 @@ void Window::resize_everything () {
 }
 
 Window::~Window () {
-    if (activity) activity->set_window(nullptr);
+    all_windows.erase(this);
+    claim_activity(nullptr);
 }
 

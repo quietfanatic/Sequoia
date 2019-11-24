@@ -21,7 +21,7 @@ struct Activity {
 
     Activity(Tab*);
 
-    void set_window (Window*);
+    void claimed_by_window (Window*);
     void resize (RECT available);
 
     ~Activity();

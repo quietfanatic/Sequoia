@@ -1,6 +1,7 @@
 #pragma once
 
 #include "_windows.h"
+#include <set>
 #include <vector>
 
 #include "shell/shell.h"
@@ -20,8 +21,8 @@ struct Window {
     Window ();
 
     void focus_tab (Tab*);
-    void set_activity (Activity*);
-    void update ();
+    void claim_activity (Activity*);
+    void update_tab (Tab* t);
     void resize_everything ();
 
     LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
@@ -29,3 +30,4 @@ struct Window {
     ~Window ();
 };
 
+extern std::set<Window*> all_windows;

@@ -55,8 +55,10 @@ void Shell::interpret_web_message (const Value& message) {
 
     switch (x31_hash(command.c_str())) {
     case x31_hash(L"ready"): {
-        window->update();
-        if (window->tab) add_tab(window->tab);
+        if (window->tab) {
+            add_tab(window->tab);
+            window->update_tab(window->tab);
+        }
         break;
     }
     case x31_hash(L"navigate"): {
@@ -84,13 +86,17 @@ void Shell::add_tab (Tab* tab) {
     webview->PostWebMessageAsJson(stringify(message).c_str());
 }
 
-void Shell::update () {
+void Shell::update_tab (Tab* tab) {
     if (!webview) return;
-    auto tab = window->tab;
-    auto url = tab ? tab->url.c_str() : L"";
-    auto back = tab && tab->activity && tab->activity->can_go_back;
-    auto forward = tab && tab->activity && tab->activity->can_go_forward;
-    Array message {L"update", url, back, forward};
+    Array message {
+        L"update_tab",
+        tab->id,
+        tab->child_count,
+        tab->title,
+        tab->url,
+        tab->activity && tab->activity->can_go_back,
+        tab->activity && tab->activity->can_go_forward
+    };
     webview->PostWebMessageAsJson(stringify(message).c_str());
 };
 

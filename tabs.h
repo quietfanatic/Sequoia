@@ -31,15 +31,8 @@ struct Tab {
         const std::wstring& url,
         const std::wstring& title = L""
     );
-
-    void set_url (const std::wstring& u) {
-        url = u;
-    }
-
-    void set_title (const std::wstring& t) {
-        title = t;
-    }
-
+    void set_url (const std::wstring& u);
+    void set_title (const std::wstring& t);
     void close ();
 
 };

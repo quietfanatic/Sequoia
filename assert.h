@@ -2,7 +2,6 @@
 #include "stuff.h"
 
 #include <cassert>
-#include <exception>
 
 #define ASSERT [](bool res){ assert(res); }
 
