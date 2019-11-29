@@ -65,6 +65,7 @@ Activity::Activity (Tab* t) : tab(t) {
             wil::unique_cotaskmem_string title;
             webview->get_DocumentTitle(&title);
             tab->set_title(title.get());
+            Tab::commit();
             return S_OK;
         }).Get(), &token));
 
@@ -84,6 +85,7 @@ Activity::Activity (Tab* t) : tab(t) {
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
             tab->set_url(source.get());
+            Tab::commit();
 
             return S_OK;
         }).Get(), &token));

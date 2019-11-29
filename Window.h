@@ -22,12 +22,10 @@ struct Window {
 
     void focus_tab (Tab*);
     void claim_activity (Activity*);
-    void update_tab (Tab* t);
+    void set_title (const char16*);
     void resize_everything ();
 
     LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
 
     ~Window ();
 };
-
-extern std::set<Window*> all_windows;

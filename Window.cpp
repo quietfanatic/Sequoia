@@ -10,8 +10,6 @@
 
 using namespace std;
 
-std::set<Window*> all_windows;
-
 static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto self = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (self) return self->WndProc(message, w, l);
@@ -49,7 +47,6 @@ static HWND create_hwnd () {
 
 Window::Window () : hwnd(create_hwnd()), shell(this) {
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
-    all_windows.emplace(this);
 }
 
 void Window::focus_tab (Tab* t) {
@@ -60,6 +57,8 @@ void Window::focus_tab (Tab* t) {
             tab->activity = new Activity(tab);
         }
         claim_activity(tab->activity);
+        tab->update();
+        Tab::commit();
     }
 }
 
@@ -69,7 +68,6 @@ void Window::claim_activity (Activity* a) {
     if (activity) activity->claimed_by_window(this);
 
     resize_everything();
-    update_tab(tab);
 }
 
 LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
@@ -89,13 +87,6 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
     return DefWindowProc(hwnd, message, w, l);
 }
 
-void Window::update_tab (Tab* t) {
-    shell.update_tab(t);
-    if (tab == t) {
-        ASSERT(SetWindowText(hwnd, tab ? tab->title.c_str() : L"(Sequoia)"));
-    }
-}
-
 void Window::resize_everything () {
     RECT outer;
     GetClientRect(hwnd, &outer);
@@ -105,8 +96,11 @@ void Window::resize_everything () {
     };
 }
 
+void Window::set_title (const char16* title) {
+    ASSERT(SetWindowText(hwnd, title));
+}
+
 Window::~Window () {
-    all_windows.erase(this);
     claim_activity(nullptr);
 }
 

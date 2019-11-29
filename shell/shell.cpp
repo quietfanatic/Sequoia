@@ -47,6 +47,79 @@ Shell::Shell (Window* owner) : window(owner) {
     }).Get()));
 };
 
+RECT Shell::resize (RECT bounds) {
+    if (webview) {
+        webview->put_Bounds(bounds);
+         // Put shell behind the page
+        SetWindowPos(
+            webview_hwnd, HWND_BOTTOM,
+            0, 0, 0, 0,
+            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
+        );
+    }
+    bounds.top += 64;
+    bounds.right -= 240;
+    return bounds;
+}
+
+void Shell::TabObserver_on_commit (const vector<Tab*>& updated_tabs) {
+    Array updates;
+    updates.reserve(updated_tabs.size());
+    for (auto t : updated_tabs) {
+        if (t->parent == Tab::DELETING) {
+            Tab* s = t->to_focus_on_close();
+            if (s) {
+                updates.emplace_back(Array{
+                    s->id,
+                    s->parent,
+                    s->next,
+                    s->prev,
+                    s->child_count,
+                    s->title,
+                    s->url,
+                    true,
+                    s->activity && s->activity->can_go_back,
+                    s->activity && s->activity->can_go_forward
+                });
+                window->focus_tab(s);
+            }
+            else {
+                window->focus_tab(nullptr);
+            }
+            updates.emplace_back(Array{
+                t->id,
+                Tab::DELETING
+            });
+        }
+        else if (window->tab == t) {
+            updates.emplace_back(Array{
+                t->id,
+                t->parent,
+                t->next,
+                t->prev,
+                t->child_count,
+                t->title,
+                t->url,
+                true,
+                t->activity && t->activity->can_go_back,
+                t->activity && t->activity->can_go_forward
+            });
+        }
+        else {
+            updates.emplace_back(Array{
+                t->id,
+                t->parent,
+                t->next,
+                t->prev,
+                t->child_count,
+                t->title,
+                t->url
+            });
+        }
+    }
+    message_to_shell(Array{L"update", updates});
+};
+
 wstring css_color (uint32 c) {
     char16 buf [8];
     swprintf(buf, 8, L"#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c));
@@ -72,9 +145,10 @@ void Shell::message_from_shell (Value&& message) {
             css_color(GetSysColor(COLOR_3DHIGHLIGHT)),
             css_color(GetSysColor(COLOR_3DSHADOW))
         });
-         // Get tabs
+         // Trigger an update to get tab info through TabObserver
         if (window->tab) {
-            window->update_tab(window->tab);
+            window->tab->update();
+            Tab::commit();
         }
         break;
     }
@@ -91,6 +165,13 @@ void Shell::message_from_shell (Value&& message) {
         if (auto wv = active_webview()) wv->GoForward();
         break;
     }
+    case x31_hash(L"close"): {
+        auto id = int64(message.array->at(1).as<double>());
+        if (Tab* tab = Tab::by_id(id)) {
+            tab->close();
+        }
+        break;
+    }
     default: {
         throw logic_error("Unknown message name");
     }
@@ -100,55 +181,6 @@ void Shell::message_from_shell (Value&& message) {
 void Shell::message_to_shell (Value&& message) {
     if (!webview) return;
     webview->PostWebMessageAsJson(stringify(message).c_str());
-}
-
-void Shell::update_tabs (Tab** tabs, size_t length) {
-    Array updates;
-    updates.reserve(length);
-    for (size_t i = 0; i < length; i++) {
-        Tab* tab = tabs[i];
-        if (window->tab == tab) {
-            updates.emplace_back(Array{
-                tab->id,
-                tab->parent,
-                tab->next,
-                tab->prev,
-                tab->child_count,
-                tab->title,
-                tab->url,
-                true,
-                tab->activity && tab->activity->can_go_back,
-                tab->activity && tab->activity->can_go_forward
-            });
-        }
-        else {
-            updates.emplace_back(Array{
-                tab->id,
-                tab->parent,
-                tab->next,
-                tab->prev,
-                tab->child_count,
-                tab->title,
-                tab->url
-            });
-        }
-    }
-    message_to_shell(Array{L"update", updates});
-};
-
-RECT Shell::resize (RECT bounds) {
-    if (webview) {
-        webview->put_Bounds(bounds);
-         // Put shell behind the page
-        SetWindowPos(
-            webview_hwnd, HWND_BOTTOM,
-            0, 0, 0, 0,
-            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
-        );
-    }
-    bounds.top += 64;
-    bounds.right -= 240;
-    return bounds;
 }
 
 IWebView2WebView4* Shell::active_webview () {
