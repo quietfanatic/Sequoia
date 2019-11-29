@@ -169,6 +169,10 @@ void Shell::message_from_shell (Value&& message) {
         auto id = int64(message.array->at(1).as<double>());
         if (Tab* tab = Tab::by_id(id)) {
             tab->close();
+            Tab::commit();
+        }
+        else {
+            throw std::logic_error("Can't close non-existent tab?");
         }
         break;
     }

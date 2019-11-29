@@ -31,11 +31,19 @@ $(document.body, {}, [
 
 let tabs_by_id = {};
 
+function get_ancestor ($node, f) {
+    while ($node && !f($node)) {
+        $node = $node.parentNode;
+    }
+    return $node;
+}
+
 function on_close_clicked (event) {
-    let e = event.target;
-    while (e && e.nodeName != '_item') e = e.parentNode;
-    if (e) {
-        host.postMessage(["close", +e.id]);
+    console.log(event);
+    let $item = get_ancestor(event.target, $ => $.nodeName == '_ITEM');
+    console.log("Closing: ", $item);
+    if ($item) {
+        host.postMessage(["close", +$item.id]);
     }
 }
 
