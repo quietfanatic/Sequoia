@@ -9,7 +9,7 @@ let focused_id = null;
 let $back;
 let $forward;
 let $address;
-let $tree;
+let $toplist;
 
 $(document.body, {}, [
     $("nav", {id:"toolbar"}, [
@@ -24,9 +24,13 @@ $(document.body, {}, [
                 host.postMessage(["navigate", $address.value]);
             }
         }}),
-        $("button", {}, "..."),
+        $("button", {}, "⋯", {click: e => {
+            host.postMessage(["main_menu"]);
+        }}),
     ]),
-    $tree = $("nav", {id:"tree", class:"list"}),
+    $("nav", {id:"tree"}, [
+        $toplist = $("_list"),
+    ]),
 ]);
 
 let tabs_by_id = {};
@@ -89,7 +93,7 @@ let commands = {
                         next: +next
                     };
 
-                    let $parent_list = parent == 0 ? $tree : tabs_by_id[parent].$list;
+                    let $parent_list = parent == 0 ? $toplist : tabs_by_id[parent].$list;
                     let $next = next == 0 ? null : tabs_by_id[next].$item;
                     $parent_list.insertBefore($item, $next);
 

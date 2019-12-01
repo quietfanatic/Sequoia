@@ -24,6 +24,7 @@ struct Window {
     void claim_activity (Activity*);
     void set_title (const char16*);
     void resize_everything ();
+    void show_main_menu ();
 
     LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
 

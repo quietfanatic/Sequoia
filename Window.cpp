@@ -10,6 +10,11 @@
 
 using namespace std;
 
+namespace MENU { enum {
+    NEW_TAB = 1,
+    EXIT = 2,
+}; }
+
 static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto self = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (self) return self->WndProc(message, w, l);
@@ -83,6 +88,12 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
         delete this;
         PostQuitMessage(0);
         return 0;
+    case WM_COMMAND:
+        switch (LOWORD(w)) {
+        case MENU::EXIT:
+            PostQuitMessage(0);
+            return 0;
+        }
     }
     return DefWindowProc(hwnd, message, w, l);
 }
@@ -97,10 +108,29 @@ void Window::resize_everything () {
 }
 
 void Window::set_title (const char16* title) {
-    ASSERT(SetWindowText(hwnd, title));
+    AW(SetWindowText(hwnd, title));
 }
 
 Window::~Window () {
     claim_activity(nullptr);
+}
+
+static HMENU main_menu() {
+    static HMENU main_menu = []{
+        HMENU main_menu = CreatePopupMenu();
+        MENUITEMINFOW item = {0};
+        item.cbSize = sizeof(MENUITEMINFO);
+        item.fMask = MIIM_ID | MIIM_STRING;
+        item.wID = MENU::EXIT;
+        item.dwTypeData = (LPWSTR)L"E&xit";
+        AW(InsertMenuItem(main_menu, 1, TRUE, &item));
+        return main_menu;
+    }();
+    return main_menu;
+}
+
+void Window::show_main_menu () {
+    auto m = main_menu();
+    AW(TrackPopupMenuEx(m, TPM_RIGHTALIGN | TPM_TOPALIGN, 64, 64, hwnd, nullptr));
 }
 

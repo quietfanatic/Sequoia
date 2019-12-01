@@ -7,7 +7,7 @@
 //#define NOWINMESSAGES
 //#define NOWINSTYLES
 #define NOSYSMETRICS
-#define NOMENUS
+//#define NOMENUS
 #define NOICONS
 #define NOKEYSTATES
 #define NOSYSCOMMANDS
@@ -23,7 +23,7 @@
 #define NOKERNEL
 //#define NOUSER
 #define NONLS
-#define NOMB
+//#define NOMB
 #define NOMEMMGR
 #define NOMETAFILE
 #define NOMINMAX

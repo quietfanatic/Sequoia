@@ -176,6 +176,10 @@ void Shell::message_from_shell (Value&& message) {
         }
         break;
     }
+    case x31_hash(L"main_menu"): {
+        window->show_main_menu();
+        break;
+    }
     default: {
         throw logic_error("Unknown message name");
     }

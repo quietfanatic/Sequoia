@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="activities.cpp" />
+    <ClCompile Include="assert.cpp" />
     <ClCompile Include="json/json.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shell/shell.cpp" />
