@@ -99,8 +99,11 @@ Activity::Activity (Tab* t) : tab(t) {
 }
 
 void Activity::claimed_by_window (Window* w) {
-    if (window && window != w) window->claim_activity(nullptr);
-    window = w;
+    if (w != window) {
+        auto old_window = window;
+        window = w;
+        if (old_window) old_window->claim_activity(nullptr);
+    }
     if (window) {
         if (webview) {
             ASSERT_HR(webview->put_IsVisible(TRUE));

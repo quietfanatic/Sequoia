@@ -11,8 +11,8 @@
 using namespace std;
 
 namespace MENU { enum {
-    NEW_TAB = 1,
-    EXIT = 2,
+    NEW_TOP_TAB = 100,
+    EXIT,
 }; }
 
 static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
@@ -68,9 +68,12 @@ void Window::focus_tab (Tab* t) {
 }
 
 void Window::claim_activity (Activity* a) {
-    if (activity && activity != a) activity->claimed_by_window(nullptr);
-    activity = a;
-    if (activity) activity->claimed_by_window(this);
+    if (a != activity) {
+        auto old_activity = activity;
+        activity = a;
+        if (old_activity) old_activity->claimed_by_window(nullptr);
+        if (activity) activity->claimed_by_window(this);
+    }
 
     resize_everything();
 }
@@ -83,6 +86,7 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
     case WM_DESTROY:
          // Prevent activity's hwnd from getting destroyed.
         claim_activity(nullptr);
+        return 0;
     case WM_NCDESTROY:
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);
         delete this;
@@ -90,6 +94,11 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
         return 0;
     case WM_COMMAND:
         switch (LOWORD(w)) {
+        case MENU::NEW_TOP_TAB: {
+            Tab* new_tab = Tab::open_webpage(0, L"about:blank");
+            focus_tab(new_tab);
+            return 0;
+        }
         case MENU::EXIT:
             PostQuitMessage(0);
             return 0;
@@ -115,15 +124,27 @@ Window::~Window () {
     claim_activity(nullptr);
 }
 
-static HMENU main_menu() {
+struct MenuItem {
+    UINT id;
+    const char16* text;
+};
+
+MenuItem main_menu_items [] = {
+    {MENU::NEW_TOP_TAB, L"New Toplevel Tab"},
+    {MENU::EXIT, L"E&xit"},
+};
+
+static HMENU main_menu () {
     static HMENU main_menu = []{
         HMENU main_menu = CreatePopupMenu();
-        MENUITEMINFOW item = {0};
-        item.cbSize = sizeof(MENUITEMINFO);
-        item.fMask = MIIM_ID | MIIM_STRING;
-        item.wID = MENU::EXIT;
-        item.dwTypeData = (LPWSTR)L"E&xit";
-        AW(InsertMenuItem(main_menu, 1, TRUE, &item));
+        for (auto item : main_menu_items) {
+            MENUITEMINFOW mii = {0};
+            mii.cbSize = sizeof(MENUITEMINFOW);
+            mii.fMask = MIIM_ID | MIIM_STRING;
+            mii.wID = item.id;
+            mii.dwTypeData = (LPWSTR)item.text;
+            AW(InsertMenuItem(main_menu, 1, TRUE, &mii));
+        }
         return main_menu;
     }();
     return main_menu;
