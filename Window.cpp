@@ -68,12 +68,11 @@ void Window::focus_tab (Tab* t) {
 }
 
 void Window::claim_activity (Activity* a) {
-    if (a != activity) {
-        auto old_activity = activity;
-        activity = a;
-        if (old_activity) old_activity->claimed_by_window(nullptr);
-        if (activity) activity->claimed_by_window(this);
-    }
+    if (a == activity) return;
+
+    if (activity) activity->claimed_by_window(nullptr);
+    activity = a;
+    if (activity) activity->claimed_by_window(this);
 
     resize_everything();
 }

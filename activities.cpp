@@ -54,8 +54,8 @@ Activity::Activity (Tab* t) : tab(t) {
         AH(wv->QueryInterface(IID_PPV_ARGS(&webview)));
         AW(webview_hwnd = GetWindow(get_nursery(), GW_CHILD));
 
-        if (window) window->claim_activity(this);
-        else claimed_by_window(nullptr);
+        claimed_by_window(window);
+        if (window) window->resize_everything();
 
         EventRegistrationToken token;
         AH(webview->add_DocumentTitleChanged(
@@ -99,19 +99,13 @@ Activity::Activity (Tab* t) : tab(t) {
 }
 
 void Activity::claimed_by_window (Window* w) {
-    if (w != window) {
-        auto old_window = window;
-        window = w;
-        if (old_window) old_window->claim_activity(nullptr);
-    }
-    if (window) {
-        if (webview) {
+    window = w;
+    if (webview) {
+        if (window) {
             AH(webview->put_IsVisible(TRUE));
             SetParent(webview_hwnd, window->hwnd);
         }
-    }
-    else {
-        if (webview) {
+        else {
             SetParent(webview_hwnd, HWND_MESSAGE);
             AH(webview->put_IsVisible(FALSE));
         }
@@ -119,7 +113,9 @@ void Activity::claimed_by_window (Window* w) {
 }
 
 void Activity::resize (RECT bounds) {
-    if (webview) webview->put_Bounds(bounds);
+    if (webview) {
+        webview->put_Bounds(bounds);
+    }
 }
 
 Activity::~Activity () {
