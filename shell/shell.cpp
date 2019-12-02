@@ -127,11 +127,7 @@ wstring css_color (uint32 c) {
 }
 
 void Shell::message_from_shell (Value&& message) {
-    if (message.type != ARRAY) throw logic_error("Unexpected message JSON type");
-    if (message.array->size() < 1) throw logic_error("Empty message received from shell");
-
-    if (message[0].type != STRING) throw logic_error("Invalid command JSON type");
-    const auto& command = message[0].as<String>();
+    const String& command = message[0];
 
     switch (x31_hash(command.c_str())) {
     case x31_hash(L"ready"): {
@@ -153,7 +149,7 @@ void Shell::message_from_shell (Value&& message) {
         break;
     }
     case x31_hash(L"navigate"): {
-        const auto& url = message.array->at(1).as<String>();
+        const String& url = message[1];
         if (auto wv = active_webview()) wv->Navigate(url.c_str());
         break;
     }
@@ -166,7 +162,7 @@ void Shell::message_from_shell (Value&& message) {
         break;
     }
     case x31_hash(L"focus"): {
-        auto id = int64(message.array->at(1).as<double>());
+        int64 id = message[1];
         if (Tab* tab = Tab::by_id(id)) {
             window->focus_tab(tab);
         }
@@ -176,7 +172,7 @@ void Shell::message_from_shell (Value&& message) {
         break;
     }
     case x31_hash(L"close"): {
-        auto id = int64(message.array->at(1).as<double>());
+        int64 id = message[1];
         if (Tab* tab = Tab::by_id(id)) {
             tab->close();
             Tab::commit();
@@ -187,7 +183,10 @@ void Shell::message_from_shell (Value&& message) {
         break;
     }
     case x31_hash(L"main_menu"): {
-        window->show_main_menu();
+        int x = message[1];
+        int y = message[2];
+         // TODO: get rasterization scale instead of hardcoding it
+        window->show_main_menu(x * 2, y * 2);
         break;
     }
     default: {

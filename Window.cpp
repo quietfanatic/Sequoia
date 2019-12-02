@@ -149,8 +149,11 @@ static HMENU main_menu () {
     return main_menu;
 }
 
-void Window::show_main_menu () {
+void Window::show_main_menu (int x, int y) {
     auto m = main_menu();
-    AW(TrackPopupMenuEx(m, TPM_RIGHTALIGN | TPM_TOPALIGN, 64, 64, hwnd, nullptr));
+     // TODO: get rasterization scale instead of hardcoding it
+    POINT p {x, y};
+    AW(ClientToScreen(hwnd, &p));
+    AW(TrackPopupMenuEx(m, TPM_RIGHTALIGN | TPM_TOPALIGN, p.x, p.y, hwnd, nullptr));
 }
 

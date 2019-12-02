@@ -25,7 +25,8 @@ $(document.body, {}, [
             }
         }}),
         $("button", {}, "⋯", {click: e => {
-            host.postMessage(["main_menu"]);
+            let area = e.target.getBoundingClientRect();
+            host.postMessage(["main_menu", area.right, area.bottom]);
         }}),
     ]),
     $("nav", {id:"tree"}, [
