@@ -165,6 +165,16 @@ void Shell::message_from_shell (Value&& message) {
         if (auto wv = active_webview()) wv->GoForward();
         break;
     }
+    case x31_hash(L"focus"): {
+        auto id = int64(message.array->at(1).as<double>());
+        if (Tab* tab = Tab::by_id(id)) {
+            window->focus_tab(tab);
+        }
+        else {
+            throw std::logic_error("Can't focus non-existent tab?");
+        }
+        break;
+    }
     case x31_hash(L"close"): {
         auto id = int64(message.array->at(1).as<double>());
         if (Tab* tab = Tab::by_id(id)) {
