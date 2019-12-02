@@ -1,12 +1,12 @@
 #pragma once
 #include "stuff.h"
 
-#include <cassert>
-
 #define ASSERT [](bool res){ assert(res); }
 
-#define ASSERT_HR [](HRESULT hr){ assert(SUCCEEDED(hr)); }
-
+void show_assert_error (const char* file, int line);
+void show_hr_error (const char* file, int line, uint32 hr);
 void show_windows_error (const char* file, int line);
 
+#define A [](bool res){ if (!res){ show_assert_error(__FILE__, __LINE__); } }
+#define AH [](uint32 hr){ if (hr != 0) { show_hr_error(__FILE__, __LINE__, hr); } }
 #define AW [](bool res){ if (!res){ show_windows_error(__FILE__, __LINE__); } }

@@ -28,12 +28,12 @@ int WINAPI wWinMain (
 ) {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-    ASSERT_HR(CreateWebView2EnvironmentWithDetails(
+    AH(CreateWebView2EnvironmentWithDetails(
         nullptr, nullptr, nullptr,
         Callback<IWebView2CreateWebView2EnvironmentCompletedHandler>(
             [](HRESULT hr, IWebView2Environment* environment) -> HRESULT
     {
-        ASSERT_HR(hr);
+        AH(hr);
         webview_environment = environment;
 
         start_browser();

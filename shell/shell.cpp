@@ -18,13 +18,13 @@ using namespace std;
 using namespace json;
 
 Shell::Shell (Window* owner) : window(owner) {
-    ASSERT_HR(webview_environment->CreateWebView(window->hwnd,
+    AH(webview_environment->CreateWebView(window->hwnd,
         Callback<IWebView2CreateWebViewCompletedHandler>(
             [this](HRESULT hr, IWebView2WebView* wv)
     {
-        ASSERT_HR(hr);
-        ASSERT_HR(wv->QueryInterface(IID_PPV_ARGS(&webview)));
-        ASSERT(webview_hwnd = GetWindow(window->hwnd, GW_CHILD));
+        AH(hr);
+        AH(wv->QueryInterface(IID_PPV_ARGS(&webview)));
+        AW(webview_hwnd = GetWindow(window->hwnd, GW_CHILD));
         EventRegistrationToken token;
         webview->add_WebMessageReceived(
             Callback<IWebView2WebMessageReceivedEventHandler>(

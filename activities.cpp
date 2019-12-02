@@ -22,7 +22,7 @@ static HWND get_nursery () {
             c.lpfnWndProc = DefWindowProc;
             c.hInstance = GetModuleHandle(nullptr);
             c.lpszClassName = class_name;
-            ASSERT(RegisterClassEx(&c));
+            AW(RegisterClassEx(&c));
             return true;
         }();
         HWND hwnd = CreateWindow(
@@ -36,29 +36,29 @@ static HWND get_nursery () {
             GetModuleHandle(nullptr),
             nullptr
         );
-        ASSERT(hwnd);
+        AW(hwnd);
         return hwnd;
     }();
     return nursery;
 }
 
 Activity::Activity (Tab* t) : tab(t) {
-    ASSERT(!tab->activity);
+    A(!tab->activity);
     tab->activity = this;
 
-    ASSERT_HR(webview_environment->CreateWebView(get_nursery(),
+    AH(webview_environment->CreateWebView(get_nursery(),
         Callback<IWebView2CreateWebViewCompletedHandler>(
             [this](HRESULT hr, IWebView2WebView* wv) -> HRESULT
     {
-        ASSERT_HR(hr);
-        ASSERT_HR(wv->QueryInterface(IID_PPV_ARGS(&webview)));
-        ASSERT(webview_hwnd = GetWindow(get_nursery(), GW_CHILD));
+        AH(hr);
+        AH(wv->QueryInterface(IID_PPV_ARGS(&webview)));
+        AW(webview_hwnd = GetWindow(get_nursery(), GW_CHILD));
 
         if (window) window->claim_activity(this);
         else claimed_by_window(nullptr);
 
         EventRegistrationToken token;
-        ASSERT_HR(webview->add_DocumentTitleChanged(
+        AH(webview->add_DocumentTitleChanged(
             Callback<IWebView2DocumentTitleChangedEventHandler>(
                 [this](IWebView2WebView* sender, IUnknown* args) -> HRESULT
         {
@@ -69,7 +69,7 @@ Activity::Activity (Tab* t) : tab(t) {
             return S_OK;
         }).Get(), &token));
 
-        ASSERT_HR(webview->add_DocumentStateChanged(
+        AH(webview->add_DocumentStateChanged(
             Callback<IWebView2DocumentStateChangedEventHandler>([this](
                 IWebView2WebView* sender,
                 IWebView2DocumentStateChangedEventArgs* args) -> HRESULT
@@ -106,14 +106,14 @@ void Activity::claimed_by_window (Window* w) {
     }
     if (window) {
         if (webview) {
-            ASSERT_HR(webview->put_IsVisible(TRUE));
+            AH(webview->put_IsVisible(TRUE));
             SetParent(webview_hwnd, window->hwnd);
         }
     }
     else {
         if (webview) {
             SetParent(webview_hwnd, HWND_MESSAGE);
-            ASSERT_HR(webview->put_IsVisible(FALSE));
+            AH(webview->put_IsVisible(FALSE));
         }
     }
 }

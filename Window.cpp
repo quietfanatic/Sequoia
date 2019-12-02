@@ -31,7 +31,7 @@ static HWND create_hwnd () {
         c.hInstance = GetModuleHandle(nullptr);
         c.hCursor = LoadCursor(NULL, IDC_ARROW);
         c.lpszClassName = class_name;
-        ASSERT(RegisterClassEx(&c));
+        AW(RegisterClassEx(&c));
         return true;
     }();
     HWND hwnd = CreateWindow(
@@ -45,7 +45,7 @@ static HWND create_hwnd () {
         GetModuleHandle(nullptr),
         nullptr
     );
-    ASSERT(hwnd);
+    AW(hwnd);
     ShowWindow(hwnd, SW_SHOWDEFAULT);
     return hwnd;
 }
