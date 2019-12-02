@@ -60,6 +60,8 @@ void t (const wstring& s) {
     }, s);
 }
 
+#include <memory>
+
 int main () {
     t(L"null");
     t(L"true");

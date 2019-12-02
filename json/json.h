@@ -44,7 +44,8 @@ struct Value {
     Value (unsigned long v) : type(NUMBER), number(double(v)) { }
     Value (long long v) : type(NUMBER), number(double(v)) { }
     Value (unsigned long long v) : type(NUMBER), number(double(v)) { }
-    Value (double v) : type(NUMBER), number(v) { }
+    Value (float v) : type(NUMBER), number(double(v)) { }
+    Value (double v) : type(NUMBER), number(double(v)) { }
     Value (const Char* v) : type(STRING), string(new String(v)) { }
     Value (const String& v) : type(STRING), string(new String(v)) { }
     Value (String&& v) : type(STRING), string(new String(std::move(v))) { }
@@ -52,6 +53,8 @@ struct Value {
     Value (Array&& v) : type(ARRAY), array(new Array(std::move(v))) { }
     Value (const Object& v) : type(OBJECT), object(new Object(std::move(v))) { }
     Value (Object&& v) : type(OBJECT), object(new Object(std::move(v))) { }
+    Value (const Value& v);
+    Value (Value&& v);
 
     explicit Value (String*&& v) : type(STRING), string(v) { v = nullptr; }
     explicit Value (Array*&& v) : type(ARRAY), array(v) { v = nullptr; }
@@ -60,33 +63,49 @@ struct Value {
     template <class T>
     Value (T* v) { static_assert(false, "Can't convert this pointer to json::Value"); }
 
-    template <class T>
-    const T& as () const {
-        static_assert(false, "Can't call json::Value::as with this type");
-        return *(T*)nullptr;
+    operator const nullptr_t& () const { assert(type == NULL); return nullptr; }
+    operator const bool& () const { assert(type == BOOL); return boolean; }
+    operator signed char () const { assert(type == NUMBER); return signed char(number); }
+    operator unsigned char () const { assert(type == NUMBER); return unsigned char(number); }
+    operator short () const { assert(type == NUMBER); return short(number); }
+    operator unsigned short () const { assert(type == NUMBER); return unsigned short(number); }
+    operator int () const { assert(type == NUMBER); return int(number); }
+    operator unsigned int () const { assert(type == NUMBER); return unsigned int(number); }
+    operator long () const { assert(type == NUMBER); return long(number); }
+    operator unsigned long () const { assert(type == NUMBER); return unsigned long(number); }
+    operator long long () const { assert(type == NUMBER); return long long(number); }
+    operator unsigned long long () const { assert(type == NUMBER); return unsigned long long(number); }
+    operator float () const { assert(type == NUMBER); return float(number); }
+    operator const double& () const { assert(type == NUMBER); return number; }
+    operator const String& () const { assert(type == STRING); return *string; }
+    operator const Array& () const { assert(type == ARRAY); return *array; }
+    operator const Object& () const { assert(type == OBJECT); return *object; }
+
+    template <class T> operator const T& () const {
+        static_assert(false, "Can't convert json::Value to this type.");
     }
 
-    template <> const nullptr_t& as<nullptr_t> () const {
-        assert(type == NULL); return nullptr;
+    Value& operator[] (size_t i) {
+        assert(type == ARRAY && array->size() > i);
+        return (*array)[i];
     }
-    template <> const bool& as<bool> () const {
-        assert(type == BOOL); return boolean;
-    }
-    template <> const double& as<double> () const {
-        assert(type == NUMBER); return number;
-    }
-    template <> const String& as<String> () const {
-        assert(type == STRING); return *string;
-    }
-    template <> const Array& as<Array> () const {
-        assert(type == ARRAY); return *array;
-    }
-    template <> const Object& as<Object> () const {
-        assert(type == OBJECT); return *object;
+    const Value& operator[] (size_t i) const {
+        assert(type == ARRAY && array->size() > i);
+        return (*array)[i];
     }
 
-    Value (const Value& v);
-    Value (Value&& v);
+    Value& operator[] (const String& key) {
+        assert(type == OBJECT);
+        for (auto& p : *object) {
+            if (p.first == key) return p.second;
+        }
+        assert(false);
+        static Value nothing;
+        return nothing;
+    }
+    const Value& operator[] (const String& key) const {
+        return const_cast<const Value&>(const_cast<Value&>(*this)[key]);
+    }
 
     Value& operator= (const Value& v) {
         this->~Value();
@@ -97,24 +116,6 @@ struct Value {
         this->~Value();
         new (this) Value(std::move(v));
         return *this;
-    }
-
-    Value& operator[] (size_t i) { return (*array)[i]; }
-    const Value& operator[] (size_t i) const { return (*array)[i]; }
-
-    Value& operator[] (const String& key) {
-        static Value nothing;
-        for (auto& p : *object) {
-            if (p.first == key) return p.second;
-        }
-        return nothing;
-    }
-    const Value& operator[] (const String& key) const {
-        static Value nothing;
-        for (auto& p : *object) {
-            if (p.first == key) return p.second;
-        }
-        return nothing;
     }
 
     ~Value ();
