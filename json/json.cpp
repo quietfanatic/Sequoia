@@ -85,15 +85,15 @@ struct Parser {
         String s;
         while (Char c = get()) {
             switch (c) {
-            case L'"': return s;  //"
-            case L'\\': {
+            case '"': return s;  //"
+            case '\\': {
                 switch (c = get()) {
                 case 0: throw error();
-                case L'b': s += L'\b'; break;
-                case L'f': s += L'\f'; break;
-                case L'n': s += L'\n'; break;
-                case L'r': s += L'\r'; break;
-                case L't': s += L'\t'; break;
+                case 'b': s += '\b'; break;
+                case 'f': s += '\f'; break;
+                case 'n': s += '\n'; break;
+                case 'r': s += '\r'; break;
+                case 't': s += '\t'; break;
                 default: s += c; break;
                 }
                 break;
@@ -106,73 +106,73 @@ struct Parser {
     Value value () {
         ws();
         switch (get()) {
-        case L'n': {
-            if (get() == L'u' && get() == L'l' && get() == L'l') {
+        case 'n': {
+            if (get() == 'u' && get() == 'l' && get() == 'l') {
                 return nullptr;
             }
             else throw error();
         }
-        case L't': {
-            if (get() == L'r' && get() == L'u' && get() == L'e') {
+        case 't': {
+            if (get() == 'r' && get() == 'u' && get() == 'e') {
                 return true;
             }
             else throw error();
         }
-        case L'f': {
-            if (get() == L'a' && get() == L'l' && get() == L's' && get() == L'e') {
+        case 'f': {
+            if (get() == 'a' && get() == 'l' && get() == 's' && get() == 'e') {
                 return false;
             }
             else throw error();
         }
-        case L'0':
-        case L'1':
-        case L'2':
-        case L'3':
-        case L'4':
-        case L'5':
-        case L'6':
-        case L'7':
-        case L'8':
-        case L'9':
-        case L'-': {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '-': {
             pos -= 1;
-            return wcstod(pos, const_cast<Char**>(&pos));
+            return strtod(pos, const_cast<Char**>(&pos));
         }
-        case L'"': {  //"
+        case '"': {  //"
             return str();
         }
-        case L'[': {
+        case '[': {
             ws();
             Array a;
-            if (*pos == L']') {
+            if (*pos == ']') {
                 get(); return std::move(a);
             }
             while (1) {
                 a.emplace_back(value());
                 ws();
                 switch (get()) {
-                case L']': return std::move(a);
-                case L',': break;
+                case ']': return std::move(a);
+                case ',': break;
                 default: throw error();
                 }
             }
         }
-        case L'{': {
+        case '{': {
             ws();
             Object o;
-            if (*pos == L'}') {
+            if (*pos == '}') {
                 get(); return std::move(o);
             }
             while (1) {
-                if (get() != L'"') throw error();  //"
+                if (get() != '"') throw error();  //"
                 String key = str();
                 ws();
-                if (get() != L':') throw error();
+                if (get() != ':') throw error();
                 o.emplace_back(key, value());
                 ws();
                 switch (get()) {
-                case L'}': return std::move(o);
-                case L',': break;
+                case '}': return std::move(o);
+                case ',': break;
                 default: throw error();
                 }
             }
@@ -200,50 +200,50 @@ Value parse (const Char* s) {
 
 String stringify (const Value& v) {
     switch (v.type) {
-    case NULL: return L"null";
-    case BOOL: return v.boolean ? L"true" : L"false";
+    case NULL: return "null";
+    case BOOL: return v.boolean ? "true" : "false";
     case NUMBER: {
         Char buf [32];
-        swprintf(buf, 32, L"%g", v.number);
+        snprintf(buf, 32, "%g", v.number);
         return buf;
     }
     case STRING: {
          // Not particularly efficient
-        String r = L"\"";
+        String r = "\"";
         for (auto c : *v.string)
         switch (c) {
-        case L'"': r += L"\\\""; break;
-        case L'\\': r += L"\\\\"; break;
-        case L'\b': r += L"\\b"; break;
-        case L'\f': r += L"\\f"; break;
-        case L'\n': r += L"\\n"; break;
-        case L'\r': r += L"\\r"; break;
-        case L'\t': r += L"\\t"; break;
+        case '"': r += "\\\""; break;
+        case '\\': r += "\\\\"; break;
+        case '\b': r += "\\b"; break;
+        case '\f': r += "\\f"; break;
+        case '\n': r += "\\n"; break;
+        case '\r': r += "\\r"; break;
+        case '\t': r += "\\t"; break;
         default: r += c; break;
         }
-        return r + L"\"";
+        return r + "\"";
     }
     case ARRAY: {
-        String r = L"[";
+        String r = "[";
         for (auto& e : *v.array) {
             if (&e != &v.array->front()) {
-                r += L",";
+                r += ",";
             }
             r += stringify(e);
         }
-        return r + L"]";
+        return r + "]";
     }
     case OBJECT: {
-        String r = L"{";
+        String r = "{";
         for (auto& e : *v.object) {
             if (&e != &v.object->front()) {
-                r += L",";
+                r += ",";
             }
             r += stringify(e.first);
-            r += L":";
+            r += ":";
             r += stringify(e.second);
         }
-        return r + L"}";
+        return r + "}";
     }
     default: throw std::logic_error("Invalid json::Value type");
     }

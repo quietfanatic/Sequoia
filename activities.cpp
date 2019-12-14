@@ -10,6 +10,7 @@
 #include "tabs.h"
 #include "main.h"
 #include "Window.h"
+#include "windows_utf8.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -19,7 +20,7 @@ std::set<Activity*> all_activities;
 
 static HWND get_nursery () {
     static HWND nursery = []{
-        static auto class_name = L"Sequoia Nursery";
+        static auto class_name = "Sequoia Nursery";
         static bool init = []{
             WNDCLASSEX c {};
             c.cbSize = sizeof(WNDCLASSEX);
@@ -31,7 +32,7 @@ static HWND get_nursery () {
         }();
         HWND hwnd = CreateWindow(
             class_name,
-            L"Sequoia Nursery",
+            "Sequoia Nursery",
             0,
             0, 0,
             0, 0,
@@ -68,7 +69,7 @@ Activity::Activity (Tab* t) : tab(t) {
         {
             wil::unique_cotaskmem_string title;
             webview->get_DocumentTitle(&title);
-            tab->set_title(title.get());
+            tab->set_title(to_utf8(title.get()));
             Tab::commit();
             return S_OK;
         }).Get(), &token));
@@ -88,7 +89,7 @@ Activity::Activity (Tab* t) : tab(t) {
 
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
-            tab->set_url(source.get());
+            tab->set_url(to_utf8(source.get()));
             Tab::commit();
 
             return S_OK;
@@ -102,7 +103,7 @@ Activity::Activity (Tab* t) : tab(t) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            Tab::open_webpage(tab->id, url.get());
+            Tab::open_webpage(tab->id, to_utf8(url.get()));
             args->put_Handled(TRUE);
 
             return S_OK;
@@ -127,13 +128,13 @@ Activity::Activity (Tab* t) : tab(t) {
                     IWebView2WebMessageReceivedEventArgs* args
                 )
         {
-            char16* raw;
+            wil::unique_cotaskmem_string raw;
             args->get_WebMessageAsJson(&raw);
-            message_from_webview(json::parse(raw));
+            message_from_webview(json::parse(to_utf8(raw.get())));
             return S_OK;
         }).Get(), &token));
 
-        webview->Navigate(tab->url.c_str());
+        webview->Navigate(to_utf16(tab->url).c_str());
 
         return S_OK;
     }).Get()));
@@ -145,7 +146,7 @@ void Activity::message_from_webview(json::Value&& message) {
     const json::String& command = message[0];
 
     switch (x31_hash(command.c_str())) {
-    case x31_hash(L"new_child_tab"): {
+    case x31_hash("new_child_tab"): {
         const json::String& url = message[1];
         Tab::open_webpage(tab->id, url);
         Tab::commit();

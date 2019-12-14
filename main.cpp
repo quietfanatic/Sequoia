@@ -15,15 +15,15 @@ using namespace std;
 wil::com_ptr<IWebView2Environment> webview_environment;
 
 void start_browser () {
-    Tab* test_tab = Tab::open_webpage(0, L"http://duckduckgo.com");
+    Tab* test_tab = Tab::open_webpage(0, "https://duckduckgo.com/");
     Window* window = new Window();
     window->focus_tab(test_tab);
 }
 
-int WINAPI wWinMain (
+int WINAPI WinMain (
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
-    LPWSTR lpCmdLine,
+    LPSTR lpCmdLine,
     int nCmdShow
 ) {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -51,10 +51,10 @@ int WINAPI wWinMain (
     return (int)msg.wParam;
 }
 
-wstring exe_relative (const wstring& filename) {
-    WCHAR exe [MAX_PATH];
+string exe_relative (const string& filename) {
+    char exe [MAX_PATH];
     GetModuleFileName(nullptr, exe, MAX_PATH);
-    wstring path = exe;
+    string path = exe;
     size_t i = path.find_last_of(L'\\');
     path.replace(i+1, path.size(), filename);
     return path;

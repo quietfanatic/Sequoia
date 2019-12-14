@@ -15,8 +15,8 @@ struct Tab {
     uint32 child_count;
     uint8 tab_type;
     uint64 url_hash;
-    std::wstring url;
-    std::wstring title;
+    std::string url;
+    std::string title;
     double created_at;
     double last_loaded_at;
 
@@ -37,12 +37,12 @@ struct Tab {
 
     static Tab* open_webpage (
         int64 parent,
-        const std::wstring& url,
-        const std::wstring& title = L""
+        const std::string& url,
+        const std::string& title = ""
     );
 
-    void set_url (const std::wstring& u);
-    void set_title (const std::wstring& t);
+    void set_url (const std::string& u);
+    void set_title (const std::string& t);
 
     Tab* to_focus_on_close ();
     void close ();

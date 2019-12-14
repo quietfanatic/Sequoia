@@ -5,16 +5,17 @@
 
 #include "logging.h"
 #include "window.h"
-#include "windows_to_utf8.h"
 
-static std::map<int64, Tab*> tabs_by_id;
-static std::vector<Tab*> updating_tabs;
-static std::vector<TabObserver*> all_observers;
+using namespace std;
+using namespace chrono;
+
+static map<int64, Tab*> tabs_by_id;
+static vector<Tab*> updating_tabs;
+static vector<TabObserver*> all_observers;
 static bool committing = false;
 static bool commit_again = false;
 
 double now () {
-    using namespace std::chrono;
     return duration<double>(system_clock::now().time_since_epoch()).count();
 }
 
@@ -26,22 +27,20 @@ double now () {
 }
 
 static int64 next_id = 1;
-/*static*/ Tab* Tab::open_webpage (int64 parent, const std::wstring& url, const std::wstring& title) {
-    auto url8 = utf16_to_utf8(url.c_str());
-    auto title8 = utf16_to_utf8(url.c_str());
-    LOG("open_webpage", parent, url8, title8);
+/*static*/ Tab* Tab::open_webpage (int64 parent, const string& url, const string& title) {
+    LOG("open_webpage", parent, url, title);
     Tab* tab = new Tab{next_id++, parent, 0, 0, 0, WEBPAGE, 0, url, title, now(), 0};
     tabs_by_id.emplace(tab->id, tab);
     tab->update();
     return tab;
 }
 
-void Tab::set_url (const std::wstring& u) {
+void Tab::set_url (const string& u) {
     update();
     url = u;
 }
 
-void Tab::set_title (const std::wstring& t) {
+void Tab::set_title (const string& t) {
     update();
     title = t;
 }
@@ -69,7 +68,7 @@ void Tab::close () {
         return;
     }
     committing = true;
-    auto updating = std::move(updating_tabs);
+    auto updating = move(updating_tabs);
     for (auto o : all_observers) {
         o->TabObserver_on_commit(updating);
     }

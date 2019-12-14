@@ -17,8 +17,8 @@ enum Type {
 
 struct Value;
 
-using Char = wchar_t;
-using String = std::wstring;
+using Char = char;
+using String = std::string;
 using Array = std::vector<Value>;
 using Object = std::vector<std::pair<String, Value>>;
 

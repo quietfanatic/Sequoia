@@ -23,7 +23,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
 }
 
 static HWND create_hwnd () {
-    static auto class_name = L"Sequoia";
+    static auto class_name = "Sequoia";
     static bool init = []{
         WNDCLASSEX c {};
         c.cbSize = sizeof(WNDCLASSEX);
@@ -37,7 +37,7 @@ static HWND create_hwnd () {
     }();
     HWND hwnd = CreateWindow(
         class_name,
-        L"(Sequoia)",
+        "(Sequoia)",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         1280, 960,
@@ -56,7 +56,7 @@ Window::Window () : hwnd(create_hwnd()), shell(this) {
 }
 
 void Window::focus_tab (Tab* t) {
-    LOG("focus_tab", t);
+    LOG("focus_tab", t, t ? t->id : 0);
     if (t == tab) return;
     tab = t;
     if (tab) {
@@ -96,7 +96,7 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
     case WM_COMMAND:
         switch (LOWORD(w)) {
         case MENU::NEW_TOP_TAB: {
-            Tab* new_tab = Tab::open_webpage(0, L"about:blank");
+            Tab* new_tab = Tab::open_webpage(0, "about:blank");
             focus_tab(new_tab);
             return 0;
         }
@@ -117,7 +117,7 @@ void Window::resize_everything () {
     };
 }
 
-void Window::set_title (const char16* title) {
+void Window::set_title (const char* title) {
     AW(SetWindowText(hwnd, title));
 }
 
@@ -127,23 +127,23 @@ Window::~Window () {
 
 struct MenuItem {
     UINT id;
-    const char16* text;
+    const char* text;
 };
 
 MenuItem main_menu_items [] = {
-    {MENU::NEW_TOP_TAB, L"New Toplevel Tab"},
-    {MENU::EXIT, L"E&xit"},
+    {MENU::NEW_TOP_TAB, "New Toplevel Tab"},
+    {MENU::EXIT, "E&xit"},
 };
 
 static HMENU main_menu () {
     static HMENU main_menu = []{
         HMENU main_menu = CreatePopupMenu();
         for (auto item : main_menu_items) {
-            MENUITEMINFOW mii = {0};
+            MENUITEMINFO mii = {0};
             mii.cbSize = sizeof(MENUITEMINFOW);
             mii.fMask = MIIM_ID | MIIM_STRING;
             mii.wID = item.id;
-            mii.dwTypeData = (LPWSTR)item.text;
+            mii.dwTypeData = (LPSTR)item.text;
             AW(InsertMenuItem(main_menu, 1, TRUE, &mii));
         }
         return main_menu;

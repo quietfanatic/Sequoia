@@ -13,6 +13,7 @@
 #include "../main.h"
 #include "../tabs.h"
 #include "../Window.h"
+#include "../windows_utf8.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -34,14 +35,15 @@ Shell::Shell (Window* owner) : window(owner) {
                     IWebView2WebMessageReceivedEventArgs* args
                 )
         {
-            char16* raw;
-            args->get_WebMessageAsJson(&raw);
+            wil::unique_cotaskmem_string raw16;
+            args->get_WebMessageAsJson(&raw16);
+            string raw = to_utf8(raw16.get());
             LOG("message_from_shell", raw);
             message_from_shell(parse(raw));
             return S_OK;
         }).Get(), &token);
 
-        webview->Navigate(exe_relative(L"shell/shell.html").c_str());
+        webview->Navigate(to_utf16(exe_relative("shell/shell.html")).c_str());
 
         window->resize_everything();
 
@@ -119,12 +121,12 @@ void Shell::TabObserver_on_commit (const vector<Tab*>& updated_tabs) {
             });
         }
     }
-    message_to_shell(Array{L"update", updates});
+    message_to_shell(Array{"update", updates});
 };
 
-wstring css_color (uint32 c) {
-    char16 buf [8];
-    swprintf(buf, 8, L"#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c));
+static string css_color (uint32 c) {
+    char buf [8];
+    snprintf(buf, 8, "#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c));
     return buf;
 }
 
@@ -132,10 +134,10 @@ void Shell::message_from_shell (Value&& message) {
     const String& command = message[0];
 
     switch (x31_hash(command.c_str())) {
-    case x31_hash(L"ready"): {
+    case x31_hash("ready"): {
          // Set system colors
         message_to_shell(Array{
-            L"colors",
+            "colors",
             css_color(GetSysColor(COLOR_ACTIVECAPTION)),
             css_color(GetSysColor(COLOR_CAPTIONTEXT)),
             css_color(GetSysColor(COLOR_3DFACE)),
@@ -150,20 +152,20 @@ void Shell::message_from_shell (Value&& message) {
         }
         break;
     }
-    case x31_hash(L"navigate"): {
+    case x31_hash("navigate"): {
         const String& url = message[1];
-        if (auto wv = active_webview()) wv->Navigate(url.c_str());
+        if (auto wv = active_webview()) wv->Navigate(to_utf16(url).c_str());
         break;
     }
-    case x31_hash(L"back"): {
+    case x31_hash("back"): {
         if (auto wv = active_webview()) wv->GoBack();
         break;
     }
-    case x31_hash(L"forward"): {
+    case x31_hash("forward"): {
         if (auto wv = active_webview()) wv->GoForward();
         break;
     }
-    case x31_hash(L"focus"): {
+    case x31_hash("focus"): {
         int64 id = message[1];
         if (Tab* tab = Tab::by_id(id)) {
             window->focus_tab(tab);
@@ -173,7 +175,7 @@ void Shell::message_from_shell (Value&& message) {
         }
         break;
     }
-    case x31_hash(L"close"): {
+    case x31_hash("close"): {
         int64 id = message[1];
         if (Tab* tab = Tab::by_id(id)) {
             tab->close();
@@ -184,7 +186,7 @@ void Shell::message_from_shell (Value&& message) {
         }
         break;
     }
-    case x31_hash(L"main_menu"): {
+    case x31_hash("main_menu"): {
         int x = message[1];
         int y = message[2];
          // TODO: get rasterization scale instead of hardcoding it
@@ -200,8 +202,8 @@ void Shell::message_from_shell (Value&& message) {
 void Shell::message_to_shell (Value&& message) {
     if (!webview) return;
     auto s = stringify(message);
-    LOG("message_to_shell", s.c_str());
-    webview->PostWebMessageAsJson(s.c_str());
+    LOG("message_to_shell", s);
+    webview->PostWebMessageAsJson(to_utf16(s).c_str());
 }
 
 IWebView2WebView4* Shell::active_webview () {

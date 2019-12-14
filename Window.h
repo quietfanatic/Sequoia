@@ -22,7 +22,7 @@ struct Window {
 
     void focus_tab (Tab*);
     void claim_activity (Activity*);
-    void set_title (const char16*);
+    void set_title (const char*);
     void resize_everything ();
     void show_main_menu (int x, int y);
 
