@@ -5,6 +5,7 @@
 
 #include "logging.h"
 #include "window.h"
+#include "windows_to_utf8.h"
 
 static std::map<int64, Tab*> tabs_by_id;
 static std::vector<Tab*> updating_tabs;
@@ -26,7 +27,9 @@ double now () {
 
 static int64 next_id = 1;
 /*static*/ Tab* Tab::open_webpage (int64 parent, const std::wstring& url, const std::wstring& title) {
-    LOG("open_webpage", parent, url, title);
+    auto url8 = utf16_to_utf8(url.c_str());
+    auto title8 = utf16_to_utf8(url.c_str());
+    LOG("open_webpage", parent, url8, title8);
     Tab* tab = new Tab{next_id++, parent, 0, 0, 0, WEBPAGE, 0, url, title, now(), 0};
     tabs_by_id.emplace(tab->id, tab);
     tab->update();

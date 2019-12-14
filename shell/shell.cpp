@@ -200,7 +200,7 @@ void Shell::message_from_shell (Value&& message) {
 void Shell::message_to_shell (Value&& message) {
     if (!webview) return;
     auto s = stringify(message);
-    LOG("message_to_shell", s);
+    LOG("message_to_shell", s.c_str());
     webview->PostWebMessageAsJson(s.c_str());
 }
 

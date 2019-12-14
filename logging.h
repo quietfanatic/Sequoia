@@ -3,26 +3,26 @@
 
 #include <ostream>
 
-std::wostream& logstream ();
+std::ostream& logstream ();
 
 namespace {
 
 template <class... Args>
-std::wostream& log_args (std::wostream& log, Args&&... args);
+std::ostream& log_args (std::ostream& log, Args&&... args);
 
 template <>
-std::wostream& log_args (std::wostream& log) {
+std::ostream& log_args (std::ostream& log) {
     return log;
 }
 
 template <class Arg>
-std::wostream& log_args (std::wostream& log, Arg&& arg) {
+std::ostream& log_args (std::ostream& log, Arg&& arg) {
     log << std::forward<Arg>(arg);
     return log;
 }
 
 template <class Arg1, class Arg2, class... Args>
-std::wostream& log_args (std::wostream& log, Arg1&& arg1, Arg2&& arg2, Args&&... args) {
+std::ostream& log_args (std::ostream& log, Arg1&& arg1, Arg2&& arg2, Args&&... args) {
     log << std::forward<Arg1>(arg1) << ", ";
     log_args(log, std::forward<Arg2>(arg2), std::forward<Args>(args)...);
     return log;

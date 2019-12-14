@@ -135,6 +135,7 @@
     <ClCompile Include="shell/shell.cpp" />
     <ClCompile Include="tabs.cpp" />
     <ClCompile Include="Window.cpp" />
+    <ClCompile Include="windows_to_utf8.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_windows.h" />
@@ -148,6 +149,7 @@
     <ClInclude Include="tabs.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="Window.h" />
+    <ClInclude Include="windows_to_utf8.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

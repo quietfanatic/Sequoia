@@ -6,8 +6,8 @@
 using namespace std;
 using namespace std::chrono;
 
-wostream& logstream () {
-    static wofstream log (L"Sequoia.log");
+ostream& logstream () {
+    static ofstream log ("Sequoia.log");
     double now = duration<double>(steady_clock::now().time_since_epoch()).count();
     log << now << ": ";
     return log;
