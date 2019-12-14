@@ -9,10 +9,11 @@
 #toolbar > input { flex-grow:1; height:28px; padding-left:0.4rem; padding-right:0.4rem; border:none; background-color:inherit; }
 #toolbar > button { background-color:inherit; border:none; height:28px; width:28px; font-size:18px; }
 #tree { position:absolute; right:0; top:32px; width:120px; bottom:0; background-color:var(--toolbar-bg); }
-_tab { display:flex; align-items:center; box-sizing:border-box; width:100%; height:24px; font-size:12px; background-color:var(--tab-bg); color:var(--tab-fg); border-left:1px solid var(--tab-highlight); border-top:1px solid var(--tab-highlight); border-right:1px solid var(--tab-shadow); border-bottom:1px solid var(--tab-shadow); }
-_title { display:block; flex-grow:1; white-space:pre; overflow:hidden; }
-_tab button { display:none; margin:none; border:none; padding:none; background:none; width:24px; height:24px; font-size:12px; }
-_tab:hover button { display:block; }
+.tab { display:flex; align-items:center; box-sizing:border-box; width:100%; height:24px; font-size:12px; background-color:var(--tab-bg); color:var(--tab-fg); border-left:1px solid var(--tab-highlight); border-top:1px solid var(--tab-highlight); border-right:1px solid var(--tab-shadow); border-bottom:1px solid var(--tab-shadow); }
+.title { flex-grow:1; white-space:pre; overflow:hidden; }
+.item > .list { padding-left:4px; }
+.tab button { display:none; margin:none; border:none; padding:none; background:none; width:24px; height:24px; font-size:12px; }
+.tab:hover button { display:block; }
 </style>
 
 </head><body>

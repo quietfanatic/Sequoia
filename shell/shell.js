@@ -30,21 +30,14 @@ $(document.body, {}, [
         }}),
     ]),
     $("nav", {id:"tree"}, [
-        $toplist = $("_list"),
+        $toplist = $("div", {class:"list"}),
     ]),
 ]);
 
 let tabs_by_id = {};
 
-function get_ancestor ($node, f) {
-    while ($node && !f($node)) {
-        $node = $node.parentNode;
-    }
-    return $node;
-}
-
 function on_tab_clicked (event) {
-    let $item = get_ancestor(event.target, $ => $.nodeName == '_ITEM');
+    let $item = event.target.closest('.item');
     if ($item) {
         host.postMessage(["focus", +$item.id]);
     }
@@ -53,7 +46,7 @@ function on_tab_clicked (event) {
 }
 
 function on_close_clicked (event) {
-    let $item = get_ancestor(event.target, $ => $.nodeName == '_ITEM');
+    let $item = event.target.closest('.item');
     if ($item) {
         host.postMessage(["close", +$item.id]);
     }
@@ -79,6 +72,8 @@ let commands = {
                 if (url) tooltip += "\n" + url;
                 if (child_count > 1) tooltip += "\n(" + child_count + ")";
 
+                if (!title) title = url;
+
                 let tab = tabs_by_id[id];
                 if (tab) {  // Update existing tab
                     if (parent != tab.parent || next != tab.next) {
@@ -88,11 +83,15 @@ let commands = {
                     tab.$title.innerText = title;
                 }
                 else {  // Add new tab
-                    let $title = $("_title", {}, title);
+                    let $title = $("div", {class:"title"}, title);
                     let $close = $("button", {}, "✗", {click:on_close_clicked})
-                    let $tab = $("_tab", {title:tooltip}, [$title, $close], {click:on_tab_clicked});
-                    let $list = $("_list", {});
-                    let $item = $("_item", {id:id}, [$tab, $list]);
+                    let $tab = $("div",
+                        {class:"tab",title:tooltip},
+                        [$title, $close],
+                        {click:on_tab_clicked}
+                    );
+                    let $list = $("div", {class:"list"});
+                    let $item = $("div", {class:"item",id:id}, [$tab, $list]);
 
                     tabs_by_id[id] = {
                         $item: $item,
