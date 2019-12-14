@@ -43,11 +43,13 @@ function get_ancestor ($node, f) {
     return $node;
 }
 
-function on_title_clicked (event) {
+function on_tab_clicked (event) {
     let $item = get_ancestor(event.target, $ => $.nodeName == '_ITEM');
     if ($item) {
         host.postMessage(["focus", +$item.id]);
     }
+    event.stopPropagation();
+    event.preventDefault();
 }
 
 function on_close_clicked (event) {
@@ -55,6 +57,8 @@ function on_close_clicked (event) {
     if ($item) {
         host.postMessage(["close", +$item.id]);
     }
+    event.stopPropagation();
+    event.preventDefault();
 }
 
 let commands = {
@@ -84,9 +88,9 @@ let commands = {
                     tab.$title.innerText = title;
                 }
                 else {  // Add new tab
-                    let $title = $("_title", {}, title, {click:on_title_clicked});
+                    let $title = $("_title", {}, title);
                     let $close = $("button", {}, "✗", {click:on_close_clicked})
-                    let $tab = $("_tab", {title:tooltip}, [$title, $close]);
+                    let $tab = $("_tab", {title:tooltip}, [$title, $close], {click:on_tab_clicked});
                     let $list = $("_list", {});
                     let $item = $("_item", {id:id}, [$tab, $list]);
 
