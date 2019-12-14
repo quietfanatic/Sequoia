@@ -76,6 +76,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -87,6 +88,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -100,6 +102,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -115,6 +118,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,6 +130,7 @@
     <ClCompile Include="activities.cpp" />
     <ClCompile Include="assert.cpp" />
     <ClCompile Include="json/json.cpp" />
+    <ClCompile Include="logging.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shell/shell.cpp" />
     <ClCompile Include="tabs.cpp" />
@@ -136,6 +141,7 @@
     <ClInclude Include="activities.h" />
     <ClInclude Include="assert.h" />
     <ClInclude Include="json/json.h" />
+    <ClInclude Include="logging.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="shell/shell.h" />
     <ClInclude Include="stuff.h" />
