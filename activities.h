@@ -9,6 +9,7 @@
 
 struct Tab;
 struct Window;
+namespace json { struct Value; }
 
 struct Activity {
     Tab* tab;
@@ -23,6 +24,8 @@ struct Activity {
 
     void claimed_by_window (Window*);
     void resize (RECT available);
+
+    void message_from_webview (json::Value&& message);
 
     ~Activity();
 };

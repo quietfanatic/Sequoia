@@ -131,6 +131,7 @@ host.addEventListener("message", e=>{
         return;
     }
     let command = e.data.shift();
+    console.log(command);
     if (command in commands) {
         commands[command].apply(undefined, e.data)
     }

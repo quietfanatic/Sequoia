@@ -1,14 +1,18 @@
 #include "activities.h"
 
+#include <stdexcept>
 #include <WebView2.h>
 #include <wrl.h>
 
 #include "assert.h"
+#include "hash.h"
+#include "json/json.h"
 #include "tabs.h"
 #include "main.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;
+using namespace std;
 
 std::set<Activity*> all_activities;
 
@@ -90,12 +94,67 @@ Activity::Activity (Tab* t) : tab(t) {
             return S_OK;
         }).Get(), &token));
 
+         // This doesn't work for middle-clicking links yet
+        AH(webview->add_NewWindowRequested(
+            Callback<IWebView2NewWindowRequestedEventHandler>([this](
+                IWebView2WebView* sender,
+                IWebView2NewWindowRequestedEventArgs* args) -> HRESULT
+        {
+            wil::unique_cotaskmem_string url;
+            args->get_Uri(&url);
+            Tab::open_webpage(tab->id, url.get());
+            args->put_Handled(TRUE);
+
+            return S_OK;
+        }).Get(), &token));
+
+        AH(webview->AddScriptToExecuteOnDocumentCreated(
+            L"window.addEventListener('auxclick', e=>{\n"
+            L"    console.log(e);\n"
+            L"    if (e.button != 1) return;\n"
+            L"    let $a = e.target.closest('[href]');\n"
+            L"    if ($a === null) return;\n"
+            L"    chrome.webview.postMessage(['new_child_tab',$a.href]);\n"
+            L"    e.stopPropagation();\n"
+            L"    e.preventDefault();\n"
+            L"});\n",
+            nullptr
+        ));
+        AH(webview->add_WebMessageReceived(
+            Callback<IWebView2WebMessageReceivedEventHandler>(
+                [this](
+                    IWebView2WebView* sender,
+                    IWebView2WebMessageReceivedEventArgs* args
+                )
+        {
+            char16* raw;
+            args->get_WebMessageAsJson(&raw);
+            message_from_webview(json::parse(raw));
+            return S_OK;
+        }).Get(), &token));
+
         webview->Navigate(tab->url.c_str());
 
         return S_OK;
     }).Get()));
 
     all_activities.insert(this);
+}
+
+void Activity::message_from_webview(json::Value&& message) {
+    const json::String& command = message[0];
+
+    switch (x31_hash(command.c_str())) {
+    case x31_hash(L"new_child_tab"): {
+        const json::String& url = message[1];
+        Tab::open_webpage(tab->id, url);
+        Tab::commit();
+        break;
+    }
+    default: {
+        throw logic_error("Unknown message name");
+    }
+    }
 }
 
 void Activity::claimed_by_window (Window* w) {

@@ -27,6 +27,7 @@ static int64 next_id = 1;
 /*static*/ Tab* Tab::open_webpage (int64 parent, const std::wstring& url, const std::wstring& title) {
     Tab* tab = new Tab{next_id++, parent, 0, 0, 0, WEBPAGE, 0, url, title, now(), 0};
     tabs_by_id.emplace(tab->id, tab);
+    tab->update();
     return tab;
 }
 
