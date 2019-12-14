@@ -8,6 +8,7 @@
 #include "../activities.h"
 #include "../assert.h"
 #include "../hash.h"
+#include "../logging.h"
 #include "../json/json.h"
 #include "../main.h"
 #include "../tabs.h"
@@ -35,6 +36,7 @@ Shell::Shell (Window* owner) : window(owner) {
         {
             char16* raw;
             args->get_WebMessageAsJson(&raw);
+            LOG("message_from_shell", raw);
             message_from_shell(parse(raw));
             return S_OK;
         }).Get(), &token);
@@ -197,7 +199,9 @@ void Shell::message_from_shell (Value&& message) {
 
 void Shell::message_to_shell (Value&& message) {
     if (!webview) return;
-    webview->PostWebMessageAsJson(stringify(message).c_str());
+    auto s = stringify(message);
+    LOG("message_to_shell", s);
+    webview->PostWebMessageAsJson(s.c_str());
 }
 
 IWebView2WebView4* Shell::active_webview () {

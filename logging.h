@@ -30,7 +30,7 @@ std::wostream& log_args (std::wostream& log, Arg1&& arg1, Arg2&& arg2, Args&&...
 
 template <class... Args>
 void LOG (Args&&... args) {
-    log_args(logstream(), std::forward<Args>(args)...) << std::endl;
+    log_args(logstream(), std::forward<Args>(args)...) << std::endl << std::flush;
 }
 
 }

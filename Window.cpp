@@ -5,6 +5,7 @@
 
 #include "activities.h"
 #include "assert.h"
+#include "logging.h"
 #include "main.h"
 #include "tabs.h"
 
@@ -55,6 +56,7 @@ Window::Window () : hwnd(create_hwnd()), shell(this) {
 }
 
 void Window::focus_tab (Tab* t) {
+    LOG("focus_tab", t);
     if (t == tab) return;
     tab = t;
     if (tab) {
