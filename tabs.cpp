@@ -3,6 +3,7 @@
 #include <chrono>
 #include <map>
 
+#include "activities.h"
 #include "logging.h"
 #include "window.h"
 
@@ -27,8 +28,8 @@ double now () {
 }
 
 static int64 next_id = 1;
-/*static*/ Tab* Tab::open_webpage (int64 parent, const string& url, const string& title) {
-    LOG("open_webpage", parent, url, title);
+/*static*/ Tab* Tab::new_webpage_tab (int64 parent, const string& url, const string& title) {
+    LOG("new_webpage_tab", parent, url, title);
     Tab* tab = new Tab{next_id++, parent, 0, 0, 0, WEBPAGE, 0, url, title, now(), 0};
     tabs_by_id.emplace(tab->id, tab);
     tab->update();
@@ -43,6 +44,13 @@ void Tab::set_url (const string& u) {
 void Tab::set_title (const string& t) {
     update();
     title = t;
+}
+
+void Tab::load () {
+    if (!activity) {
+        update();
+        activity = new Activity(this);
+    }
 }
 
 Tab* Tab::to_focus_on_close () {

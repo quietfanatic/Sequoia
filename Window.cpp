@@ -60,11 +60,8 @@ void Window::focus_tab (Tab* t) {
     if (t == tab) return;
     tab = t;
     if (tab) {
-        if (!tab->activity) {
-            tab->activity = new Activity(tab);
-        }
+        tab->load();
         claim_activity(tab->activity);
-        tab->update();
         Tab::commit();
     }
 }
@@ -96,7 +93,7 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
     case WM_COMMAND:
         switch (LOWORD(w)) {
         case MENU::NEW_TOP_TAB: {
-            Tab* new_tab = Tab::open_webpage(0, "about:blank");
+            Tab* new_tab = Tab::new_webpage_tab(0, "about:blank");
             focus_tab(new_tab);
             return 0;
         }

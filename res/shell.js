@@ -58,7 +58,7 @@ let commands = {
     update (updates) {
         for (let [
             id, parent, next, prev, child_count,
-            title, url, focus, can_go_back, can_go_forward
+            title, url, loaded, focus, can_go_back, can_go_forward
         ] of updates) {
             if (parent == -9) {  // Tab::DELETE
                 let tab = tabs_by_id[id];
@@ -81,12 +81,18 @@ let commands = {
                     }
                     tab.$tab.setAttribute("title", tooltip);
                     tab.$title.innerText = title;
+                    if (loaded) {
+                        tab.$tab.classList.add("loaded");
+                    }
+                    else {
+                        tab.$tab.classList.remove("loaded");
+                    }
                 }
                 else {  // Add new tab
                     let $title = $("div", {class:"title"}, title);
                     let $close = $("button", {}, "✗", {click:on_close_clicked})
                     let $tab = $("div",
-                        {class:"tab",title:tooltip},
+                        {class:"tab" + (loaded ? " loaded" : ""), title:tooltip},
                         [$title, $close],
                         {click:on_tab_clicked}
                     );

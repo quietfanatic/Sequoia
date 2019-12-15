@@ -81,6 +81,7 @@ void Shell::TabObserver_on_commit (const vector<Tab*>& updated_tabs) {
                     s->child_count,
                     s->title,
                     s->url,
+                    !!s->activity,
                     true,
                     s->activity && s->activity->can_go_back,
                     s->activity && s->activity->can_go_forward
@@ -104,6 +105,7 @@ void Shell::TabObserver_on_commit (const vector<Tab*>& updated_tabs) {
                 t->child_count,
                 t->title,
                 t->url,
+                !!t->activity,
                 true,
                 t->activity && t->activity->can_go_back,
                 t->activity && t->activity->can_go_forward
@@ -117,7 +119,8 @@ void Shell::TabObserver_on_commit (const vector<Tab*>& updated_tabs) {
                 t->prev,
                 t->child_count,
                 t->title,
-                t->url
+                t->url,
+                !!t->activity
             });
         }
     }

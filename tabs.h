@@ -35,7 +35,7 @@ struct Tab {
 
     static Tab* by_id (int64 id);
 
-    static Tab* open_webpage (
+    static Tab* new_webpage_tab (
         int64 parent,
         const std::string& url,
         const std::string& title = ""
@@ -43,6 +43,8 @@ struct Tab {
 
     void set_url (const std::string& u);
     void set_title (const std::string& t);
+
+    void load ();
 
     Tab* to_focus_on_close ();
     void close ();

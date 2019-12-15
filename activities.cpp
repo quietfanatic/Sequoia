@@ -104,7 +104,7 @@ Activity::Activity (Tab* t) : tab(t) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            Tab::open_webpage(tab->id, to_utf8(url.get()));
+            Tab::new_webpage_tab(tab->id, to_utf8(url.get()));
             args->put_Handled(TRUE);
 
             return S_OK;
@@ -149,7 +149,7 @@ void Activity::message_from_webview(json::Value&& message) {
     case x31_hash("new_child_tab"): {
         const string& url = message[1];
         const string& title = message[2];
-        Tab::open_webpage(tab->id, url, title);
+        Tab::new_webpage_tab(tab->id, url, title);
         Tab::commit();
         break;
     }

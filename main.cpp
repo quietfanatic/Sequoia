@@ -15,7 +15,7 @@ using namespace std;
 wil::com_ptr<IWebView2Environment> webview_environment;
 
 void start_browser () {
-    Tab* test_tab = Tab::open_webpage(0, "https://duckduckgo.com/");
+    Tab* test_tab = Tab::new_webpage_tab(0, "https://duckduckgo.com/");
     Window* window = new Window();
     window->focus_tab(test_tab);
 }
