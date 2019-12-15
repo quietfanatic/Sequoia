@@ -143,12 +143,13 @@ Activity::Activity (Tab* t) : tab(t) {
 }
 
 void Activity::message_from_webview(json::Value&& message) {
-    const json::String& command = message[0];
+    const string& command = message[0];
 
     switch (x31_hash(command.c_str())) {
     case x31_hash("new_child_tab"): {
-        const json::String& url = message[1];
-        Tab::open_webpage(tab->id, url);
+        const string& url = message[1];
+        const string& title = message[2];
+        Tab::open_webpage(tab->id, url, title);
         Tab::commit();
         break;
     }
