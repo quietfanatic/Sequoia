@@ -4,7 +4,7 @@
 #include <set>
 #include <vector>
 
-#include "shell/shell.h"
+#include "shell.h"
 #include "stuff.h"
 
 struct Activity;

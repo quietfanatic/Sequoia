@@ -2,9 +2,9 @@
 
 #include <wil/com.h>
 
-#include "../_windows.h"
-#include "../stuff.h"
-#include "../tabs.h"
+#include "_windows.h"
+#include "stuff.h"
+#include "tabs.h"
 
 namespace json { struct Value; }
 

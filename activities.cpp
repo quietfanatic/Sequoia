@@ -111,7 +111,7 @@ Activity::Activity (Tab* t) : tab(t) {
         }).Get(), &token));
 
         static std::wstring injection = []{
-            wifstream file (exe_relative("injection.js"), ios::ate);
+            wifstream file (exe_relative("res/injection.js"), ios::ate);
             auto len = file.tellg();
             file.seekg(0, ios::beg);
             std::wstring r (len, 0);

@@ -132,7 +132,7 @@
     <ClCompile Include="json/json.cpp" />
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="shell/shell.cpp" />
+    <ClCompile Include="shell.cpp" />
     <ClCompile Include="tabs.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="windows_utf8.cpp" />
@@ -144,7 +144,7 @@
     <ClInclude Include="json/json.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="main.h" />
-    <ClInclude Include="shell/shell.h" />
+    <ClInclude Include="shell.h" />
     <ClInclude Include="stuff.h" />
     <ClInclude Include="tabs.h" />
     <ClInclude Include="util.h" />
@@ -153,25 +153,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <CopyFileToFolders Include="shell/domifier.js">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shell</DestinationFolders>
+    <CopyFileToFolders Include="res/*">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="shell/shell.html">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shell</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="shell/shell.js">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shell</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shell</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="injection.js" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
