@@ -1,5 +1,6 @@
 #include "activities.h"
 
+#include <fstream>
 #include <stdexcept>
 #include <WebView2.h>
 #include <wrl.h>
@@ -109,18 +110,17 @@ Activity::Activity (Tab* t) : tab(t) {
             return S_OK;
         }).Get(), &token));
 
-        AH(webview->AddScriptToExecuteOnDocumentCreated(
-            L"window.addEventListener('auxclick', e=>{\n"
-            L"    console.log(e);\n"
-            L"    if (e.button != 1) return;\n"
-            L"    let $a = e.target.closest('[href]');\n"
-            L"    if ($a === null) return;\n"
-            L"    chrome.webview.postMessage(['new_child_tab',$a.href]);\n"
-            L"    e.stopPropagation();\n"
-            L"    e.preventDefault();\n"
-            L"});\n",
-            nullptr
-        ));
+        static std::wstring injection = []{
+            wifstream file (exe_relative("injection.js"), ios::ate);
+            auto len = file.tellg();
+            file.seekg(0, ios::beg);
+            std::wstring r (len, 0);
+            file.read(const_cast<wchar_t*>(r.data()), len);
+            return r;
+        }();
+
+        AH(webview->AddScriptToExecuteOnDocumentCreated(injection.c_str(), nullptr));
+
         AH(webview->add_WebMessageReceived(
             Callback<IWebView2WebMessageReceivedEventHandler>(
                 [this](
