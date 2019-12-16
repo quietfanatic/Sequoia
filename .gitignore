@@ -5,3 +5,4 @@ x64
 Debug
 Release
 *.user
+/sqlite-amalgamation-3300100

@@ -8,8 +8,9 @@
 #include "assert.h"
 #include "hash.h"
 #include "json/json.h"
-#include "tabs.h"
 #include "main.h"
+#include "tabs.h"
+#include "util.h"
 #include "Window.h"
 #include "windows_utf8.h"
 
@@ -110,14 +111,7 @@ Activity::Activity (Tab* t) : tab(t) {
             return S_OK;
         }).Get(), &token));
 
-        static std::wstring injection = []{
-            wifstream file (exe_relative("res/injection.js"), ios::ate);
-            auto len = file.tellg();
-            file.seekg(0, ios::beg);
-            std::wstring r (len, 0);
-            file.read(const_cast<wchar_t*>(r.data()), len);
-            return r;
-        }();
+        static std::wstring injection = to_utf16(slurp(exe_relative("res/injection.js")));
 
         AH(webview->AddScriptToExecuteOnDocumentCreated(injection.c_str(), nullptr));
 

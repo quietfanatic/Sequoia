@@ -6,7 +6,7 @@
 #include "activities.h"
 #include "assert.h"
 #include "logging.h"
-#include "main.h"
+#include "util.h"
 #include "tabs.h"
 
 using namespace std;

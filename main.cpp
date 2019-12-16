@@ -6,6 +6,7 @@
 #include <wrl.h>
 
 #include "assert.h"
+#include "db.h"
 #include "tabs.h"
 #include "Window.h"
 
@@ -15,6 +16,7 @@ using namespace std;
 wil::com_ptr<IWebView2Environment> webview_environment;
 
 void start_browser () {
+    init_db();
     Tab* test_tab = Tab::new_webpage_tab(0, "https://duckduckgo.com/");
     Window* window = new Window();
     window->focus_tab(test_tab);
@@ -49,13 +51,4 @@ int WINAPI WinMain (
         }
     }
     return (int)msg.wParam;
-}
-
-string exe_relative (const string& filename) {
-    char exe [MAX_PATH];
-    GetModuleFileName(nullptr, exe, MAX_PATH);
-    string path = exe;
-    size_t i = path.find_last_of(L'\\');
-    path.replace(i+1, path.size(), filename);
-    return path;
 }

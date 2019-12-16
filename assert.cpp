@@ -8,7 +8,7 @@
 
 using namespace std;
 
-static void show_assert_message (const char* file, int line, const string& mess) {
+void show_string_error (const char* file, int line, const char* mess) {
     int btn = MessageBoxA(nullptr,
         (string("Failure at ") + file + "(" + to_string(line) + "): " + mess).c_str(),
         "Failure", MB_ABORTRETRYIGNORE | MB_ICONERROR);
@@ -18,17 +18,17 @@ static void show_assert_message (const char* file, int line, const string& mess)
 }
 
 void show_assert_error (const char* file, int line) {
-    show_assert_message(file, line, "Assertion failed");
+    show_string_error(file, line, "Assertion failed");
 }
 
 void show_hr_error (const char* file, int line, uint32 hr) {
     stringstream ss;
     ss << "HR = 0x" << hex << setw(8) << hr;
-    show_assert_message(file, line, ss.str());
+    show_string_error(file, line, ss.str().c_str());
 }
 
 void show_windows_error (const char* file, int line) {
     stringstream ss;
     ss << "GLE = 0x" << hex << setw(8) << GetLastError();
-    show_assert_message(file, line, ss.str());
+    show_string_error(file, line, ss.str().c_str());
 }

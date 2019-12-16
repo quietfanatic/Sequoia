@@ -9,5 +9,3 @@
 struct IWebView2Environment;
 
 extern wil::com_ptr<IWebView2Environment> webview_environment;
-
-std::string exe_relative (const std::string& filename);
