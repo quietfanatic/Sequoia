@@ -133,13 +133,12 @@
   <ItemGroup>
     <ClCompile Include="activities.cpp" />
     <ClCompile Include="assert.cpp" />
-    <ClCompile Include="db.cpp" />
+    <ClCompile Include="data.cpp" />
     <ClCompile Include="json/json.cpp" />
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shell.cpp" />
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
-    <ClCompile Include="tabs.cpp" />
     <ClCompile Include="util.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="windows_utf8.cpp" />
@@ -148,14 +147,13 @@
     <ClInclude Include="_windows.h" />
     <ClInclude Include="activities.h" />
     <ClInclude Include="assert.h" />
-    <ClInclude Include="db.h" />
+    <ClInclude Include="data.h" />
     <ClInclude Include="json/json.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="shell.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="stuff.h" />
-    <ClInclude Include="tabs.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="windows_utf8.h" />

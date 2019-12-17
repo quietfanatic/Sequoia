@@ -6,10 +6,10 @@
 #include <wrl.h>
 
 #include "assert.h"
+#include "data.h"
 #include "hash.h"
 #include "json/json.h"
 #include "main.h"
-#include "tabs.h"
 #include "util.h"
 #include "Window.h"
 #include "windows_utf8.h"
@@ -17,8 +17,7 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-std::set<Activity*> all_activities;
-
+static map<int64, Activity*> activities_by_tab;
 
 static HWND get_nursery () {
     static HWND nursery = []{
@@ -49,9 +48,9 @@ static HWND get_nursery () {
     return nursery;
 }
 
-Activity::Activity (Tab* t) : tab(t) {
-    A(!tab->activity);
-    tab->activity = this;
+Activity::Activity (int64 t) : tab(t) {
+    A(!activities_by_tab.contains(t));
+    activities_by_tab.emplace(t, this);
 
     AH(webview_environment->CreateWebView(get_nursery(),
         Callback<IWebView2CreateWebViewCompletedHandler>(
@@ -71,8 +70,7 @@ Activity::Activity (Tab* t) : tab(t) {
         {
             wil::unique_cotaskmem_string title;
             webview->get_DocumentTitle(&title);
-            tab->set_title(to_utf8(title.get()));
-            Tab::commit();
+            set_tab_title(tab, to_utf8(title.get()));
             return S_OK;
         }).Get(), &token));
 
@@ -91,8 +89,7 @@ Activity::Activity (Tab* t) : tab(t) {
 
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
-            tab->set_url(to_utf8(source.get()));
-            Tab::commit();
+            set_tab_url(tab, to_utf8(source.get()));
 
             return S_OK;
         }).Get(), &token));
@@ -105,9 +102,8 @@ Activity::Activity (Tab* t) : tab(t) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            Tab::new_webpage_tab(tab->id, to_utf8(url.get()));
+            create_webpage_tab(tab, to_utf8(url.get()));
             args->put_Handled(TRUE);
-
             return S_OK;
         }).Get(), &token));
 
@@ -128,12 +124,10 @@ Activity::Activity (Tab* t) : tab(t) {
             return S_OK;
         }).Get(), &token));
 
-        webview->Navigate(to_utf16(tab->url).c_str());
+        webview->Navigate(to_utf16(get_tab_url(tab)).c_str());
 
         return S_OK;
     }).Get()));
-
-    all_activities.insert(this);
 }
 
 void Activity::message_from_webview(json::Value&& message) {
@@ -143,8 +137,7 @@ void Activity::message_from_webview(json::Value&& message) {
     case x31_hash("new_child_tab"): {
         const string& url = message[1];
         const string& title = message[2];
-        Tab::new_webpage_tab(tab->id, url, title);
-        Tab::commit();
+        create_webpage_tab(tab, url, title);
         break;
     }
     default: {
@@ -174,9 +167,21 @@ void Activity::resize (RECT bounds) {
 }
 
 Activity::~Activity () {
-    all_activities.erase(this);
-    tab->activity = nullptr;
+    activities_by_tab.erase(tab);
     if (window) window->activity = nullptr;
     webview->Close();
 }
 
+Activity* activity_for_tab (int64 id) {
+    auto iter = activities_by_tab.find(id);
+    if (iter == activities_by_tab.end()) return nullptr;
+    else return iter->second;
+}
+
+Activity* ensure_activity_for_tab (int64 id) {
+    auto iter = activities_by_tab.find(id);
+    if (iter == activities_by_tab.end()) {
+        iter = activities_by_tab.emplace(id, new Activity(id)).first;
+    }
+    return iter->second;
+}

@@ -1,18 +1,17 @@
 #pragma once
 
 #include "_windows.h"
-#include <set>
+#include <map>
 #include <string>
 #include <wil/com.h>
 
 #include "stuff.h"
 
-struct Tab;
 struct Window;
 namespace json { struct Value; }
 
 struct Activity {
-    Tab* tab;
+    int64 tab;
     Window* window = nullptr;
 
     wil::com_ptr<WebView> webview;
@@ -20,7 +19,7 @@ struct Activity {
     bool can_go_back = false;
     bool can_go_forward = false;
 
-    Activity(Tab*);
+    Activity(int64 tab);
 
     void claimed_by_window (Window*);
     void resize (RECT available);
@@ -30,4 +29,5 @@ struct Activity {
     ~Activity();
 };
 
-extern std::set<Activity*> all_activities;
+Activity* activity_for_tab (int64 id);
+Activity* ensure_activity_for_tab (int64 id);

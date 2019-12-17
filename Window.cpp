@@ -5,9 +5,9 @@
 
 #include "activities.h"
 #include "assert.h"
+#include "data.h"
 #include "logging.h"
 #include "util.h"
-#include "tabs.h"
 
 using namespace std;
 
@@ -55,14 +55,12 @@ Window::Window () : hwnd(create_hwnd()), shell(this) {
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 }
 
-void Window::focus_tab (Tab* t) {
-    LOG("focus_tab", t, t ? t->id : 0);
+void Window::focus_tab (int64 t) {
+    LOG("focus_tab", t);
     if (t == tab) return;
     tab = t;
     if (tab) {
-        tab->load();
-        claim_activity(tab->activity);
-        Tab::commit();
+        claim_activity(activity_for_tab(tab));
     }
 }
 
@@ -93,7 +91,7 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
     case WM_COMMAND:
         switch (LOWORD(w)) {
         case MENU::NEW_TOP_TAB: {
-            Tab* new_tab = Tab::new_webpage_tab(0, "about:blank");
+            int64 new_tab = create_webpage_tab(0, "about:blank");
             focus_tab(new_tab);
             return 0;
         }

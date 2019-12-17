@@ -6,8 +6,7 @@
 #include <wrl.h>
 
 #include "assert.h"
-#include "db.h"
-#include "tabs.h"
+#include "data.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;
@@ -16,8 +15,7 @@ using namespace std;
 wil::com_ptr<IWebView2Environment> webview_environment;
 
 void start_browser () {
-    init_db();
-    Tab* test_tab = Tab::new_webpage_tab(0, "https://duckduckgo.com/");
+    int64 test_tab = create_webpage_tab(0, "https://duckduckgo.com/");
     Window* window = new Window();
     window->focus_tab(test_tab);
 }

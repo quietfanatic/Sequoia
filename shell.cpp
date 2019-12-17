@@ -7,12 +7,12 @@
 #include "_windows.h"
 #include "activities.h"
 #include "assert.h"
+#include "data.h"
 #include "hash.h"
 #include "logging.h"
 #include "main.h"
 #include "json/json.h"
 #include "util.h"
-#include "tabs.h"
 #include "Window.h"
 #include "windows_utf8.h"
 
@@ -67,61 +67,37 @@ RECT Shell::resize (RECT bounds) {
     return bounds;
 }
 
-void Shell::TabObserver_on_commit (const vector<Tab*>& updated_tabs) {
+void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
     Array updates;
     updates.reserve(updated_tabs.size());
-    for (auto t : updated_tabs) {
-        if (t->parent == Tab::DELETING) {
-            Tab* s = t->to_focus_on_close();
-            if (s) {
-                updates.emplace_back(Array{
-                    s->id,
-                    s->parent,
-                    s->next,
-                    s->prev,
-                    s->child_count,
-                    s->title,
-                    s->url,
-                    !!s->activity,
-                    true,
-                    s->activity && s->activity->can_go_back,
-                    s->activity && s->activity->can_go_forward
-                });
-                window->focus_tab(s);
-            }
-            else {
-                window->focus_tab(nullptr);
-            }
+    for (auto tab : updated_tabs) {
+        TabData t = get_tab_data(tab);
+        Activity* activity = activity_for_tab(tab);
+        if (window->tab == tab) {
             updates.emplace_back(Array{
-                t->id,
-                Tab::DELETING
-            });
-        }
-        else if (window->tab == t) {
-            updates.emplace_back(Array{
-                t->id,
-                t->parent,
-                t->next,
-                t->prev,
-                t->child_count,
-                t->title,
-                t->url,
-                !!t->activity,
+                tab,
+                t.parent,
+                t.next,
+                t.prev,
+                t.child_count,
+                t.title,
+                t.url,
+                !!activity,
                 true,
-                t->activity && t->activity->can_go_back,
-                t->activity && t->activity->can_go_forward
+                activity && activity->can_go_back,
+                activity && activity->can_go_forward
             });
         }
         else {
             updates.emplace_back(Array{
-                t->id,
-                t->parent,
-                t->next,
-                t->prev,
-                t->child_count,
-                t->title,
-                t->url,
-                !!t->activity
+                tab,
+                t.parent,
+                t.next,
+                t.prev,
+                t.child_count,
+                t.title,
+                t.url,
+                !!activity
             });
         }
     }
@@ -151,8 +127,7 @@ void Shell::message_from_shell (Value&& message) {
         });
          // Trigger an update to get tab info through TabObserver
         if (window->tab) {
-            window->tab->update();
-            Tab::commit();
+             // How?
         }
         break;
     }
@@ -171,23 +146,18 @@ void Shell::message_from_shell (Value&& message) {
     }
     case x31_hash("focus"): {
         int64 id = message[1];
-        if (Tab* tab = Tab::by_id(id)) {
-            window->focus_tab(tab);
-        }
-        else {
-            throw std::logic_error("Can't focus non-existent tab?");
-        }
+        window->focus_tab(id);
         break;
     }
     case x31_hash("close"): {
         int64 id = message[1];
-        if (Tab* tab = Tab::by_id(id)) {
-            tab->close();
-            Tab::commit();
-        }
-        else {
-            throw std::logic_error("Can't close non-existent tab?");
-        }
+//        if (Tab* tab = Tab::by_id(id)) {
+//            tab->close();
+//            Tab::commit();
+//        }
+//        else {
+//            throw std::logic_error("Can't close non-existent tab?");
+//        }
         break;
     }
     case x31_hash("main_menu"): {
