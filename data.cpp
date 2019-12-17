@@ -114,8 +114,10 @@ VALUES (?1, ?2, ?3, ?4, ?5, ?6)
     int code = sqlite3_step(create);
     if (code != SQLITE_DONE) AS(1);
     AS(sqlite3_clear_bindings(create));
+    AS(sqlite3_reset(create));
     int64 id = sqlite3_last_insert_rowid(db);
     tab_updated(id);
+    LOG("create_webpage_tab", parent, url, title, id);
     commit_transaction();
     return id;
 }
@@ -151,6 +153,8 @@ SELECT parent, next, prev, child_count, tab_type, url, title, created_at, trashe
     code = sqlite3_step(get);
     if (code != SQLITE_DONE) AS(1);
     AS(sqlite3_clear_bindings(get));
+    AS(sqlite3_reset(get));
+    LOG("get_tab_data", id);
     return r;
 }
 
@@ -171,6 +175,8 @@ SELECT url FROM tabs WHERE id = ?
     code = sqlite3_step(get);
     if (code != SQLITE_DONE) AS(1);
     AS(sqlite3_clear_bindings(get));
+    AS(sqlite3_reset(get));
+    LOG("get_tab_url", id, url);
     return url;
 }
 
@@ -188,8 +194,10 @@ UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
     int code = sqlite3_step(set);
     if (code != SQLITE_DONE) AS(1);
     AS(sqlite3_clear_bindings(set));
+    AS(sqlite3_reset(set));
     tab_updated(id);
     commit_transaction();
+    LOG("set_tab_url", id, url);
 }
 
 void set_tab_title (int64 id, const string& title) {
@@ -205,8 +213,10 @@ UPDATE tabs SET title = ? WHERE id = ?
     int code = sqlite3_step(set);
     if (code != SQLITE_DONE) AS(1);
     AS(sqlite3_clear_bindings(set));
+    AS(sqlite3_reset(set));
     tab_updated(id);
     commit_transaction();
+    LOG("set_tab_title", id, title);
 }
 
 Observer::Observer () { all_observers.emplace_back(this); }

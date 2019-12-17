@@ -125,9 +125,8 @@ void Shell::message_from_shell (Value&& message) {
             css_color(GetSysColor(COLOR_3DHIGHLIGHT)),
             css_color(GetSysColor(COLOR_3DSHADOW))
         });
-         // Trigger an update to get tab info through TabObserver
         if (window->tab) {
-             // How?
+            Observer_after_commit(vector{window->tab});
         }
         break;
     }

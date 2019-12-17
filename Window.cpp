@@ -60,7 +60,7 @@ void Window::focus_tab (int64 t) {
     if (t == tab) return;
     tab = t;
     if (tab) {
-        claim_activity(activity_for_tab(tab));
+        claim_activity(ensure_activity_for_tab(tab));
     }
 }
 
