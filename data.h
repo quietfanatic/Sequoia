@@ -55,6 +55,11 @@ void set_tab_url(int64 id, const std::string& url);
 
 void set_tab_title(int64 id, const std::string& title);
 
+struct Transaction {
+    Transaction ();
+    ~Transaction ();
+};
+
 struct Observer {
     virtual void Observer_after_commit (
         const std::vector<int64>& updated_tabs
@@ -63,19 +68,3 @@ struct Observer {
     ~Observer();
 };
 
-void begin_transaction ();
-void commit_transaction ();
-void rollback_transaction ();
-
-template <class F>
-void transaction (F f) {
-    begin_transaction();
-    try {
-        f();
-        commit_transaction();
-    }
-    catch (...) {
-        rollback_transaction();
-        throw;
-    }
-}

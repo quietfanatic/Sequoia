@@ -8,9 +8,9 @@
 
 #include "assert.h"
 
-namespace {
-
 extern sqlite3* db;
+
+namespace {
 
 template <class... Cols>
 struct State {
