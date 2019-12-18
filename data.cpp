@@ -47,6 +47,27 @@ static void tab_updated (int64 id) {
     updated_tabs.push_back(id);
 }
 
+void update_observers () {
+     // All this fuddling is to make sure updates are sequenced,
+     // so Observer_after_commit doesn't have to be reentrant.
+    static bool updating = false;
+    static bool again = false;
+    if (updating) {
+        again = true;
+        return;
+    }
+    updating = true;
+    auto update = move(updated_tabs);
+    for (auto o : all_observers) {
+        o->Observer_after_commit(update);
+    }
+    updating = false;
+    if (again) {
+        again = false;
+        update_observers();
+    }
+}
+
 static size_t transaction_depth = 0;
 
 Transaction::Transaction () {
@@ -68,9 +89,7 @@ Transaction::~Transaction () {
         else {
             static State<>::Ment<> commit {"COMMIT"};
             commit.run_void();
-            for (auto o : all_observers) {
-                o->Observer_after_commit(updated_tabs);
-            }
+            update_observers();
         }
         updated_tabs.clear();
     }
