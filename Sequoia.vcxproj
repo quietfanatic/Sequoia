@@ -148,6 +148,7 @@
     <ClInclude Include="activities.h" />
     <ClInclude Include="assert.h" />
     <ClInclude Include="data.h" />
+    <ClInclude Include="db_support.h" />
     <ClInclude Include="json/json.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="main.h" />

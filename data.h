@@ -16,13 +16,36 @@ struct TabData {
     int64 parent;
     int64 next;
     int64 prev;
-    int64 child_count;
+    uint child_count;
     uint8 tab_type;
     std::string url;
     std::string title;
     double created_at;
     double trashed_at;
     double loaded_at;
+    TabData(
+        int64 parent,
+        int64 next,
+        int64 prev,
+        uint child_count,
+        uint8 tab_type,
+        const std::string& url,
+        const std::string& title,
+        double created_at,
+        double trashed_at,
+        double loaded_at
+    ) :
+        parent(parent),
+        next(next),
+        prev(prev),
+        child_count(child_count),
+        tab_type(tab_type),
+        url(url),
+        title(title),
+        created_at(created_at),
+        trashed_at(trashed_at),
+        loaded_at(loaded_at)
+    { }
 };
 
 TabData get_tab_data (int64);
