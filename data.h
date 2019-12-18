@@ -55,6 +55,8 @@ void set_tab_url(int64 id, const std::string& url);
 
 void set_tab_title(int64 id, const std::string& title);
 
+void trash_tab(int64 id);
+
 struct Transaction {
     Transaction ();
     ~Transaction ();

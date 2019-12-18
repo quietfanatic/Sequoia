@@ -91,12 +91,10 @@ Observer::~Observer () {
 int64 create_webpage_tab (int64 parent, const string& url, const string& title) {
     Transaction tr;
     LOG("create_webpage_tab", parent, url, title);
-    static State<>::Ment<int64, uint8, uint64, string, string, double> create {
-R"(
+    static State<>::Ment<int64, uint8, uint64, string, string, double> create {R"(
 INSERT INTO tabs (parent, tab_type, url_hash, url, title, created_at)
 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-)"
-    };
+    )"};
 
     create.run_void(parent, uint8(WEBPAGE), x31_hash(url.c_str()), url, title, now());
     int64 id = sqlite3_last_insert_rowid(db);
@@ -108,33 +106,27 @@ TabData get_tab_data (int64 id) {
     init_db();
     LOG("get_tab_data", id);
     static State<int64, int64, int64, uint, uint8, string, string, double, double, double>
-        ::Ment<int64> get {
-R"(
+        ::Ment<int64> get {R"(
 SELECT parent, next, prev, child_count, tab_type, url, title, created_at, trashed_at, loaded_at FROM tabs WHERE id = ?
-)"
-    };
+    )"};
     return make_from_tuple<TabData>(get.run_single(id));
 }
 
 string get_tab_url (int64 id) {
     init_db();
     LOG("get_tab_url", id);
-    static State<string>::Ment<int64> get {
-R"(
+    static State<string>::Ment<int64> get {R"(
 SELECT url FROM tabs WHERE id = ?
-)"
-    };
+    )"};
     return std::get<0>(get.run_single(id));
 }
 
 void set_tab_url (int64 id, const string& url) {
     Transaction tr;
     LOG("set_tab_url", id, url);
-    static State<>::Ment<uint64, string, int64> set {
-R"(
+    static State<>::Ment<uint64, string, int64> set {R"(
 UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
-)"
-    };
+    )"};
     set.run_void(x31_hash(url), url, id);
     tab_updated(id);
 }
@@ -142,11 +134,19 @@ UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
 void set_tab_title (int64 id, const string& title) {
     Transaction tr;
     LOG("set_tab_title", id, title);
-    static State<>::Ment<string, int64> set {
-R"(
+    static State<>::Ment<string, int64> set {R"(
 UPDATE tabs SET title = ? WHERE id = ?
-)"
-    };
+    )"};
     set.run_void(title, id);
+    tab_updated(id);
+}
+
+void trash_tab (int64 id) {
+    Transaction tr;
+    LOG("trash_tab", id);
+    static State<>::Ment<double, int64> trash {R"(
+UPDATE tabs SET trashed_at = ? WHERE id = ?
+    )"};
+    trash.run(now(), id);
     tab_updated(id);
 }

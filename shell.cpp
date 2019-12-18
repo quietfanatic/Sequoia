@@ -82,6 +82,7 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
                 t.title,
                 t.url,
                 !!activity,
+                t.trashed_at,
                 true,
                 activity && activity->can_go_back,
                 activity && activity->can_go_forward
@@ -96,7 +97,8 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
                 t.child_count,
                 t.title,
                 t.url,
-                !!activity
+                !!activity,
+                t.trashed_at
             });
         }
     }
@@ -149,13 +151,7 @@ void Shell::message_from_shell (Value&& message) {
     }
     case x31_hash("close"): {
         int64 id = message[1];
-//        if (Tab* tab = Tab::by_id(id)) {
-//            tab->close();
-//            Tab::commit();
-//        }
-//        else {
-//            throw std::logic_error("Can't close non-existent tab?");
-//        }
+        trash_tab(id);
         break;
     }
     case x31_hash("main_menu"): {
