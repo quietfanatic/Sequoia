@@ -101,6 +101,19 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
                 t.trashed_at
             });
         }
+         // If the current tab is closing, find a new tab to focus
+        if (window->tab == tab && t.trashed_at) {
+            Transaction tr;
+            int64 successor;
+            while (t.trashed_at) {
+                successor = t.next ? t.next
+                    : t.parent ? t.parent
+                    : t.prev ? t.prev
+                    : create_webpage_tab(0, "about:blank");
+                t = get_tab_data(successor);
+            }
+            window->focus_tab(successor);
+        }
     }
     message_to_shell(Array{"update", updates});
 };
