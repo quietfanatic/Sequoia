@@ -1,6 +1,5 @@
 #pragma once
 
-#include "_windows.h"
 #include <string>
 #include <wil/com.h>
 

@@ -1,10 +1,10 @@
 #include "assert.h"
 
-#include "_windows.h"
 #include <cstdlib>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <windows.h>
 
 using namespace std;
 

@@ -4,7 +4,6 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "_windows.h"
 #include "activities.h"
 #include "assert.h"
 #include "data.h"
@@ -12,9 +11,9 @@
 #include "logging.h"
 #include "main.h"
 #include "json/json.h"
+#include "utf8.h"
 #include "util.h"
 #include "Window.h"
-#include "windows_utf8.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

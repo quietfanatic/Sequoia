@@ -78,6 +78,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -91,6 +92,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -106,6 +108,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -123,6 +126,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -139,9 +143,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shell.cpp" />
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
+    <ClCompile Include="utf8.cpp" />
     <ClCompile Include="util.cpp" />
     <ClCompile Include="Window.cpp" />
-    <ClCompile Include="windows_utf8.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_windows.h" />
@@ -155,9 +159,9 @@
     <ClInclude Include="shell.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="stuff.h" />
+    <ClInclude Include="utf8.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="Window.h" />
-    <ClInclude Include="windows_utf8.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

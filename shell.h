@@ -1,7 +1,7 @@
 #pragma once
 
-#include "_windows.h"
 #include <wil/com.h>
+#include <windows.h>
 
 #include "data.h"
 #include "stuff.h"

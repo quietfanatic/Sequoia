@@ -10,9 +10,9 @@
 #include "hash.h"
 #include "json/json.h"
 #include "main.h"
+#include "utf8.h"
 #include "util.h"
 #include "Window.h"
-#include "windows_utf8.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

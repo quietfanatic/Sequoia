@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <WebView2.h>
+#include <windows.h>
 #include <wrl.h>
 
 #include "assert.h"

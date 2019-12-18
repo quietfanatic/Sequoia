@@ -1,6 +1,6 @@
-#include "windows_utf8.h"
+#include "utf8.h"
 
-#include "_windows.h"
+#include <windows.h>
 #include "assert.h"
 
 std::string to_utf8 (const wchar_t* in) {
