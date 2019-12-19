@@ -14,37 +14,37 @@ int64 create_webpage_tab (int64 parent, const std::string& url, const std::strin
 
 struct TabData {
     int64 parent;
-    int64 next;
     int64 prev;
+    int64 next;
     uint child_count;
     uint8 tab_type;
     std::string url;
     std::string title;
     double created_at;
+    double visited_at;
     double trashed_at;
-    double loaded_at;
     TabData(
         int64 parent,
-        int64 next,
         int64 prev,
+        int64 next,
         uint child_count,
         uint8 tab_type,
         const std::string& url,
         const std::string& title,
         double created_at,
-        double trashed_at,
-        double loaded_at
+        double visited_at,
+        double trashed_at
     ) :
         parent(parent),
-        next(next),
         prev(prev),
+        next(next),
         child_count(child_count),
         tab_type(tab_type),
         url(url),
         title(title),
         created_at(created_at),
-        trashed_at(trashed_at),
-        loaded_at(loaded_at)
+        visited_at(visited_at),
+        trashed_at(trashed_at)
     { }
 };
 

@@ -143,7 +143,7 @@ TabData get_tab_data (int64 id) {
     LOG("get_tab_data", id);
     static State<int64, int64, int64, uint, uint8, string, string, double, double, double>
         ::Ment<int64> get {R"(
-SELECT parent, next, prev, child_count, tab_type, url, title, created_at, trashed_at, loaded_at FROM tabs WHERE id = ?
+SELECT parent, prev, next, child_count, tab_type, url, title, created_at, visited_at, trashed_at FROM tabs WHERE id = ?
     )"};
     return make_from_tuple<TabData>(get.run_single(id));
 }

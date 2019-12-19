@@ -76,8 +76,8 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
             updates.emplace_back(Array{
                 tab,
                 t.parent,
-                t.next,
                 t.prev,
+                t.next,
                 t.child_count,
                 t.title,
                 t.url,
@@ -92,8 +92,8 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
             updates.emplace_back(Array{
                 tab,
                 t.parent,
-                t.next,
                 t.prev,
+                t.next,
                 t.child_count,
                 t.title,
                 t.url,
