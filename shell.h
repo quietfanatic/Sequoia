@@ -21,6 +21,7 @@ struct Shell : Observer {
 
     void Observer_after_commit (const std::vector<int64>& updated_tabs) override;
 
+    void update (const std::vector<int64>& updated_tabs);
     void message_from_shell (json::Value&& message);
     void message_to_shell (json::Value&& message);
 

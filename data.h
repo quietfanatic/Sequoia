@@ -57,6 +57,9 @@ void set_tab_url(int64 id, const std::string& url);
 void set_tab_title(int64 id, const std::string& title);
 void close_tab(int64 id);
 
+// Temporary until shell handles expanding and collapsing
+std::vector<int64> get_all_tabs ();
+
 ///// WINDOWS
 
 struct WindowData {

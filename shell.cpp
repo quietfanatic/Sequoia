@@ -72,6 +72,10 @@ RECT Shell::resize (RECT bounds) {
 }
 
 void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
+    update(updated_tabs);
+}
+
+void Shell::update (const vector<int64>& updated_tabs) {
     Array updates;
     updates.reserve(updated_tabs.size());
     for (auto tab : updated_tabs) {
@@ -147,7 +151,9 @@ void Shell::message_from_shell (Value&& message) {
             css_color(GetSysColor(COLOR_3DSHADOW))
         });
         if (window->tab) {
-            Observer_after_commit(vector{window->tab});
+             // Temporary until we support expanding and collapsing trees
+            std::vector<int64> required_tabs = get_all_tabs();
+            update(required_tabs);
         }
         break;
     }
