@@ -106,7 +106,7 @@ Observer::~Observer () {
     }
 }
 
-///// API
+///// TABS
 
 int64 create_webpage_tab (int64 parent, const string& url, const string& title) {
     Transaction tr;
@@ -114,7 +114,7 @@ int64 create_webpage_tab (int64 parent, const string& url, const string& title) 
 
     // TODO: detect linked list corruption?
     static State<int64>::Ment<int64> find_prev {R"(
-SELECT id FROM tabs WHERE trashed_at IS NULL AND parent = ? AND next = 0
+SELECT id FROM tabs WHERE closed_at IS NULL AND parent = ? AND next = 0
     )"};
     vector<int64> maybe_prev = find_prev.run(parent);
     int64 prev = maybe_prev.empty() ? 0 : maybe_prev[0];
@@ -143,9 +143,19 @@ TabData get_tab_data (int64 id) {
     LOG("get_tab_data", id);
     static State<int64, int64, int64, uint, uint8, string, string, double, double, double>
         ::Ment<int64> get {R"(
-SELECT parent, prev, next, child_count, tab_type, url, title, created_at, visited_at, trashed_at FROM tabs WHERE id = ?
+SELECT parent, prev, next, child_count, tab_type, url, title, created_at, visited_at, closed_at
+FROM tabs WHERE id = ?
     )"};
     return make_from_tuple<TabData>(get.run_single(id));
+}
+
+std::vector<int64> get_all_children (int64 parent) {
+    init_db();
+    LOG("get_all_children", parent);
+    static State<int64>::Ment<int64> get {R"(
+SELECT id FROM tabs WHERE parent = ? AND closed_at IS NULL
+    )"};
+    return get.run(parent);
 }
 
 string get_tab_url (int64 id) {
@@ -177,28 +187,28 @@ UPDATE tabs SET title = ? WHERE id = ?
     tab_updated(id);
 }
 
-void trash_tab (int64 id) {
+void close_tab (int64 id) {
     Transaction tr;
-    LOG("trash_tab", id);
+    LOG("close_tab", id);
 
     static State<int64, int64, double>::Ment<int64> get_stuff {R"(
-SELECT prev, next, trashed_at FROM tabs WHERE id = ?
+SELECT prev, next, closed_at FROM tabs WHERE id = ?
     )"};
     int64 prev, next;
-    double trashed_at;
-    tie(prev, next, trashed_at) = get_stuff.run_single(id);
+    double closed_at;
+    tie(prev, next, closed_at) = get_stuff.run_single(id);
 
-    if (trashed_at) return;  // Already in the trash
+    if (closed_at) return;  // Already closed
 
-    static State<>::Ment<double, int64> trash {R"(
-UPDATE tabs SET trashed_at = ? WHERE id = ?
+    static State<>::Ment<double, int64> close {R"(
+UPDATE tabs SET closed_at = ? WHERE id = ?
     )"};
-    trash.run_void(now(), id);
+    close.run_void(now(), id);
     tab_updated(id);
 
     if (prev) {
         static State<>::Ment<int64, int64> relink_prev {R"(
-    UPDATE tabs SET next = ? WHERE id = ?
+UPDATE tabs SET next = ? WHERE id = ?
         )"};
         relink_prev.run_void(next, prev);
         tab_updated(prev);
@@ -206,9 +216,47 @@ UPDATE tabs SET trashed_at = ? WHERE id = ?
 
     if (next) {
         static State<>::Ment<int64, int64> relink_next {R"(
-    UPDATE tabs SET prev = ? WHERE id = ?
+UPDATE tabs SET prev = ? WHERE id = ?
         )"};
         relink_next.run_void(prev, next);
         tab_updated(next);
     }
+}
+
+///// WINDOWS
+
+int64 create_window (int64 focused_tab) {
+    Transaction tr;
+    LOG("create_window", focused_tab);
+    static State<>::Ment<int64, double> create {R"(
+INSERT INTO windows (focused_tab, created_at) VALUES (?, ?)
+    )"};
+    create.run_void(focused_tab, now());
+    return sqlite3_last_insert_rowid(db);
+}
+
+vector<WindowData> get_all_unclosed_windows () {
+    init_db();
+    LOG("get_all_unclosed_windows");
+    static State<int64, int64, double, double>::Ment<> get {R"(
+SELECT id, focused_tab, created_at, closed_at FROM windows
+WHERE closed_at IS NULL
+    )"};
+     // Should be a way to avoid this copy but it's not very important
+    auto results = get.run();
+    vector<WindowData> r;
+    r.reserve(results.size());
+    for (auto& res : results) {
+        r.push_back(make_from_tuple<WindowData>(res));
+    }
+    return r;
+}
+
+void set_window_focused_tab (int64 window, int64 tab) {
+    Transaction tr;
+    LOG("set_window_focused_tab", window, tab);
+    static State<>::Ment<int64, int64> set {R"(
+UPDATE windows SET focused_tab = ? WHERE id = ?
+    )"};
+    set.run_void(tab, window);
 }

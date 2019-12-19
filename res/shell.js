@@ -63,9 +63,9 @@ let commands = {
     update (updates) {
         for (let [
             id, parent, next, prev, child_count,
-            title, url, loaded, trashed_at, focus, can_go_back, can_go_forward
+            title, url, loaded, closed_at, focus, can_go_back, can_go_forward
         ] of updates) {
-            if (trashed_at != 0) {
+            if (closed_at != 0) {
                 let tab = tabs_by_id[id];
                 if (tab) {
                     tab.$item.parentNode.removeChild(tab.$item);

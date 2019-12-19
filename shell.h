@@ -16,6 +16,7 @@ struct Shell : Observer {
     HWND webview_hwnd = nullptr;
     Shell (Window*);
 
+    void focus_tab (int64 tab);
     RECT resize (RECT available);
 
     void Observer_after_commit (const std::vector<int64>& updated_tabs) override;

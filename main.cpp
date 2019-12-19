@@ -16,9 +16,21 @@ using namespace std;
 wil::com_ptr<IWebView2Environment> webview_environment;
 
 void start_browser () {
-    int64 test_tab = create_webpage_tab(0, "https://duckduckgo.com/");
-    Window* window = new Window();
-    window->focus_tab(test_tab);
+    vector<WindowData> all_windows = get_all_unclosed_windows();
+    if (all_windows.empty()) {
+        Transaction tr;
+        vector<int64> top_level_tabs = get_all_children(0);
+        int64 first_tab = top_level_tabs.empty()
+            ? create_webpage_tab(0, "https://duckduckgo.com/")
+            : top_level_tabs[0];
+        int64 first_window = create_window(first_tab);
+        new Window(first_window, first_tab);
+    }
+    else {
+        for (auto& w : all_windows) {
+            new Window(w.id, w.focused_tab);
+        }
+    }
 }
 
 int WINAPI WinMain (

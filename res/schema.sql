@@ -15,7 +15,7 @@ CREATE TABLE tabs (
     title TEXT,
     created_at REAL NOT NULL,
     visited_at REAL,
-    trashed_at REAL  -- If NOT NULL, this tab is in the top level of the trash.
+    closed_at REAL  -- If NOT NULL, this tab is in the top level of the trash.
 );
 
 CREATE INDEX tabs_by_parent ON tabs (
@@ -30,8 +30,15 @@ CREATE INDEX unvisited_tabs_by_created_at ON tabs (
     created_at
 ) WHERE visited_at IS NULL;
 
-CREATE INDEX trashed_tabs_by_trashed_at ON tabs (
-    trashed_at
-) WHERE trashed_at IS NOT NULL;
+CREATE INDEX closed_tabs_by_closed_at ON tabs (
+    closed_at
+) WHERE closed_at IS NOT NULL;
+
+CREATE TABLE windows (
+    id INTEGER PRIMARY KEY,  -- AUTOINCREMENT
+    focused_tab INTEGER NOT NULL,
+    created_at REAL NOT NULL,
+    closed_at REAL
+);
 
 COMMIT;

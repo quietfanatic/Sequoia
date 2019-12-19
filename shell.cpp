@@ -51,6 +51,11 @@ Shell::Shell (Window* owner) : window(owner) {
     }).Get()));
 };
 
+void Shell::focus_tab (int64 tab) {
+    window->focus_tab(tab);
+    set_window_focused_tab(window->id, tab);
+}
+
 RECT Shell::resize (RECT bounds) {
     if (webview) {
         webview->put_Bounds(bounds);
@@ -82,7 +87,7 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
                 t.title,
                 t.url,
                 !!activity,
-                t.trashed_at,
+                t.closed_at,
                 true,
                 activity && activity->can_go_back,
                 activity && activity->can_go_forward
@@ -98,15 +103,15 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
                 t.title,
                 t.url,
                 !!activity,
-                t.trashed_at
+                t.closed_at
             });
         }
          // If the current tab is closing, find a new tab to focus
-        if (window->tab == tab && t.trashed_at) {
+        if (window->tab == tab && t.closed_at) {
             LOG("Finding successor", tab);
             Transaction tr;
             int64 successor;
-            while (t.trashed_at) {
+            while (t.closed_at) {
                 successor = t.next ? t.next
                     : t.parent ? t.parent
                     : t.prev ? t.prev
@@ -114,7 +119,7 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
                 A(successor);
                 t = get_tab_data(successor);
             }
-            window->focus_tab(successor);
+            focus_tab(successor);
         }
     }
     message_to_shell(Array{"update", updates});
@@ -166,7 +171,7 @@ void Shell::message_from_shell (Value&& message) {
     }
     case x31_hash("close"): {
         int64 id = message[1];
-        trash_tab(id);
+        close_tab(id);
         break;
     }
     case x31_hash("main_menu"): {
