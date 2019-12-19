@@ -41,6 +41,7 @@ static std::vector<Observer*> all_observers;
 static std::vector<int64> updated_tabs;
 
 static void tab_updated (int64 id) {
+    A(id > 0);
     for (auto t : updated_tabs) {
         if (t == id) return;
     }
@@ -110,14 +111,30 @@ Observer::~Observer () {
 int64 create_webpage_tab (int64 parent, const string& url, const string& title) {
     Transaction tr;
     LOG("create_webpage_tab", parent, url, title);
-    static State<>::Ment<int64, uint8, uint64, string, string, double> create {R"(
-INSERT INTO tabs (parent, tab_type, url_hash, url, title, created_at)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-    )"};
 
-    create.run_void(parent, uint8(WEBPAGE), x31_hash(url.c_str()), url, title, now());
+    // TODO: detect linked list corruption?
+    static State<int64>::Ment<int64> find_prev {R"(
+SELECT id FROM tabs WHERE trashed_at IS NULL AND parent = ? AND next = 0
+    )"};
+    vector<tuple<int64>> maybe_prev = find_prev.run(parent);
+    int64 prev = maybe_prev.empty() ? 0 : std::get<0>(maybe_prev[0]);
+
+    static State<>::Ment<int64, int64, uint8, uint64, string, string, double> create {R"(
+INSERT INTO tabs (parent, prev, tab_type, url_hash, url, title, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+    )"};
+    create.run_void(parent, prev, uint8(WEBPAGE), x31_hash(url.c_str()), url, title, now());
     int64 id = sqlite3_last_insert_rowid(db);
     tab_updated(id);
+
+    if (prev) {
+        static State<>::Ment<int64, int64> update_prev {R"(
+    UPDATE tabs SET next = ? WHERE id = ?
+        )"};
+        update_prev.run_void(id, prev);
+        tab_updated(prev);
+    }
+
     return id;
 }
 
@@ -163,9 +180,35 @@ UPDATE tabs SET title = ? WHERE id = ?
 void trash_tab (int64 id) {
     Transaction tr;
     LOG("trash_tab", id);
+
+    static State<int64, int64, double>::Ment<int64> get_stuff {R"(
+SELECT prev, next, trashed_at FROM tabs WHERE id = ?
+    )"};
+    int64 prev, next;
+    double trashed_at;
+    tie(prev, next, trashed_at) = get_stuff.run_single(id);
+
+    if (trashed_at) return;  // Already in the trash
+
     static State<>::Ment<double, int64> trash {R"(
 UPDATE tabs SET trashed_at = ? WHERE id = ?
     )"};
-    trash.run(now(), id);
+    trash.run_void(now(), id);
     tab_updated(id);
+
+    if (prev) {
+        static State<>::Ment<int64, int64> relink_prev {R"(
+    UPDATE tabs SET next = ? WHERE id = ?
+        )"};
+        relink_prev.run_void(next, prev);
+        tab_updated(prev);
+    }
+
+    if (next) {
+        static State<>::Ment<int64, int64> relink_next {R"(
+    UPDATE tabs SET prev = ? WHERE id = ?
+        )"};
+        relink_next.run_void(prev, next);
+        tab_updated(next);
+    }
 }

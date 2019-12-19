@@ -103,6 +103,7 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
         }
          // If the current tab is closing, find a new tab to focus
         if (window->tab == tab && t.trashed_at) {
+            LOG("Finding successor", tab);
             Transaction tr;
             int64 successor;
             while (t.trashed_at) {
@@ -110,6 +111,7 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
                     : t.parent ? t.parent
                     : t.prev ? t.prev
                     : create_webpage_tab(0, "about:blank");
+                A(successor);
                 t = get_tab_data(successor);
             }
             window->focus_tab(successor);

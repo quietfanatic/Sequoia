@@ -126,6 +126,7 @@ struct Ment {
     std::tuple<Cols...> run_single (const Params&... params) {
         bind(params...);
         step();
+        A(!done());
         A(sqlite3_column_count(handle) == sizeof...(Cols));
         std::tuple<Cols...> r = read();
         step();
