@@ -12,12 +12,24 @@ extern sqlite3* db;
 
 namespace {
 
+template <class... Ts>
+struct ResultType {
+    using type = std::tuple<Ts...>;
+};
+
+template <class T>
+struct ResultType<T> {
+    using type = T;
+};
+
 template <class... Cols>
 struct State {
 template <class... Params>
 struct Ment {
     sqlite3_stmt* handle;
     int result_code = 0;
+
+    using Result = typename ResultType<Cols...>::type;
 
     static constexpr std::index_sequence_for<Cols...> cols_indexes = {};
     static constexpr std::index_sequence_for<Params...> params_indexes = {};
@@ -84,11 +96,11 @@ struct Ment {
     }
 
     template <size_t... indexes>
-    std::tuple<Cols...> read_with_indexes (std::index_sequence<indexes...>) {
-        return std::make_tuple(read_column<Cols>(indexes)...);
+    Result read_with_indexes (std::index_sequence<indexes...>) {
+        return Result{read_column<Cols>(indexes)...};
     }
 
-    std::tuple<Cols...> read () {
+    Result read () {
         return read_with_indexes(cols_indexes);
     }
 
@@ -103,8 +115,8 @@ struct Ment {
     }
 
     // This is probably not efficient for large data sets
-    std::vector<std::tuple<Cols...>> run (const Params&... params) {
-        std::vector<std::tuple<Cols...>> r;
+    std::vector<Result> run (const Params&... params) {
+        std::vector<Result> r;
         bind(params...);
         step();
         A(sqlite3_column_count(handle) == sizeof...(Cols));
@@ -123,12 +135,12 @@ struct Ment {
         finish();
     }
 
-    std::tuple<Cols...> run_single (const Params&... params) {
+    Result run_single (const Params&... params) {
         bind(params...);
         step();
         A(!done());
         A(sqlite3_column_count(handle) == sizeof...(Cols));
-        std::tuple<Cols...> r = read();
+        Result r = read();
         step();
         A(done());
         finish();

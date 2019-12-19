@@ -116,8 +116,8 @@ int64 create_webpage_tab (int64 parent, const string& url, const string& title) 
     static State<int64>::Ment<int64> find_prev {R"(
 SELECT id FROM tabs WHERE trashed_at IS NULL AND parent = ? AND next = 0
     )"};
-    vector<tuple<int64>> maybe_prev = find_prev.run(parent);
-    int64 prev = maybe_prev.empty() ? 0 : std::get<0>(maybe_prev[0]);
+    vector<int64> maybe_prev = find_prev.run(parent);
+    int64 prev = maybe_prev.empty() ? 0 : maybe_prev[0];
 
     static State<>::Ment<int64, int64, uint8, uint64, string, string, double> create {R"(
 INSERT INTO tabs (parent, prev, tab_type, url_hash, url, title, created_at)
@@ -154,7 +154,7 @@ string get_tab_url (int64 id) {
     static State<string>::Ment<int64> get {R"(
 SELECT url FROM tabs WHERE id = ?
     )"};
-    return std::get<0>(get.run_single(id));
+    return get.run_single(id);
 }
 
 void set_tab_url (int64 id, const string& url) {
