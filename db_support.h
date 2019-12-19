@@ -10,7 +10,73 @@
 
 extern sqlite3* db;
 
-namespace {
+struct Statement {
+    sqlite3_stmt* handle;
+    int result_code = 0;
+
+    Statement (sqlite3_stmt* handle) : handle(handle) { }
+    Statement (const char* sql, bool transient = false) {
+        auto flags = transient ? 0 : SQLITE_PREPARE_PERSISTENT;
+        AS(sqlite3_prepare_v3(db, sql, -1, flags, &handle, nullptr));
+    }
+
+    void bind_param (int index, char v) { AS(sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, signed char v) { AS(sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, unsigned char v) { AS(sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, short v) { AS(sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, unsigned short v) { AS(sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, int v) { AS(sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, unsigned int v) { AS(sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, long v) { AS(sqlite3_bind_int64(handle, index, v)); }
+    void bind_param (int index, unsigned long v) { AS(sqlite3_bind_int64(handle, index, v)); }
+    void bind_param (int index, long long v) { AS(sqlite3_bind_int64(handle, index, v)); }
+    void bind_param (int index, unsigned long long v) { AS(sqlite3_bind_int64(handle, index, v)); }
+    void bind_param (int index, float v) { AS(sqlite3_bind_double(handle, index, v)); }
+    void bind_param (int index, double v) { AS(sqlite3_bind_double(handle, index, v)); }
+    void bind_param (int index, const char* v) {
+        AS(sqlite3_bind_text(handle, index, v, -1, SQLITE_TRANSIENT));
+    }
+    void bind_param (int index, const std::string& v) {
+         // STATIC might be better for most use cases
+        AS(sqlite3_bind_text(handle, index, v.c_str(), int(v.size()), SQLITE_TRANSIENT));
+    }
+
+    void step () {
+        A(result_code != SQLITE_DONE);
+        result_code = sqlite3_step(handle);
+        if (result_code != SQLITE_ROW && result_code != SQLITE_DONE) AS(1);
+    }
+
+    // Assume int for all other types
+    template <class T>
+    T read_column (int index) {
+        return T(sqlite3_column_int64(handle, index));
+    }
+    template <>
+    std::string read_column<std::string> (int index) {
+        auto p = reinterpret_cast<const char*>(sqlite3_column_text(handle, index));
+        return p ? p : "";
+    }
+    template <>
+    float read_column<float> (int index) {
+        return float(sqlite3_column_double(handle, index));
+    }
+    template <>
+    double read_column<double> (int index) {
+        return sqlite3_column_double(handle, index);
+    }
+
+    bool done () {
+        return result_code == SQLITE_DONE;
+    }
+
+    void reset () {
+        AS(sqlite3_reset(handle));
+        AS(sqlite3_clear_bindings(handle));
+        result_code = 0;
+    }
+
+};
 
 template <class... Ts>
 struct ResultType {
@@ -25,38 +91,13 @@ struct ResultType<T> {
 template <class... Cols>
 struct State {
 template <class... Params>
-struct Ment {
-    sqlite3_stmt* handle;
-    int result_code = 0;
-
+struct Ment : Statement {
     using Result = typename ResultType<Cols...>::type;
 
     static constexpr std::index_sequence_for<Cols...> cols_indexes = {};
     static constexpr std::index_sequence_for<Params...> params_indexes = {};
 
-    Ment (sqlite3_stmt* handle) : handle(handle) { }
-    Ment (const char* sql, bool transient = false) {
-        auto flags = transient ? 0 : SQLITE_PREPARE_PERSISTENT;
-        AS(sqlite3_prepare_v3(db, sql, -1, flags, &handle, nullptr));
-    }
-
-    void bind_param (int index, float v) {
-        AS(sqlite3_bind_double(handle, index, v));
-    }
-    void bind_param (int index, double v) {
-        AS(sqlite3_bind_double(handle, index, v));
-    }
-    void bind_param (int index, const char* v) {
-        AS(sqlite3_bind_text(handle, index, v, -1, SQLITE_TRANSIENT));
-    }
-    void bind_param (int index, const std::string& v) {
-         // STATIC might be better for most use cases
-        AS(sqlite3_bind_text(handle, index, v.c_str(), int(v.size()), SQLITE_TRANSIENT));
-    }
-    template <class T>
-    void bind_param (int index, T&& v) {
-        AS(sqlite3_bind_int64(handle, index, std::forward<T>(v)));
-    }
+    using Statement::Statement; // inherit constructor
 
     template <size_t... indexes>
     void bind_with_indexes (const Params&... params, std::index_sequence<indexes...>) {
@@ -67,33 +108,6 @@ struct Ment {
         bind_with_indexes(params..., params_indexes);
     }
 
-    void step () {
-        result_code = sqlite3_step(handle);
-        if (result_code != SQLITE_ROW && result_code != SQLITE_DONE) AS(1);
-    }
-
-    template <class T>
-    T read_column (int index) {
-        return T(sqlite3_column_int64(handle, index));
-    }
-    template <>
-    const char* read_column<const char*> (int index) {
-         // This probably isn't safe to use with run_*
-        return reinterpret_cast<const char*>(sqlite3_column_text(handle, index));
-    }
-    template <>
-    std::string read_column<std::string> (int index) {
-        auto p = reinterpret_cast<const char*>(sqlite3_column_text(handle, index));
-        return p ? p : "";
-    }
-    template <>
-    float read_column<float> (int index) {
-        return sqlite3_column_double(handle, index);
-    }
-    template <>
-    double read_column<double> (int index) {
-        return sqlite3_column_double(handle, index);
-    }
 
     template <size_t... indexes>
     Result read_with_indexes (std::index_sequence<indexes...>) {
@@ -104,17 +118,7 @@ struct Ment {
         return read_with_indexes(cols_indexes);
     }
 
-    bool done () {
-        return result_code == SQLITE_DONE;
-    }
-
-    void finish () {
-        AS(sqlite3_reset(handle));
-        AS(sqlite3_clear_bindings(handle));
-        result_code = 0;
-    }
-
-    // This is probably not efficient for large data sets
+    // This is probably not efficient for large rows, due to resizing the vector
     std::vector<Result> run (const Params&... params) {
         std::vector<Result> r;
         bind(params...);
@@ -124,7 +128,7 @@ struct Ment {
             r.emplace_back(read());
             step();
         }
-        finish();
+        reset();
         return r;
     }
 
@@ -132,21 +136,18 @@ struct Ment {
         bind(params...);
         step();
         A(done());
-        finish();
+        reset();
     }
 
     Result run_single (const Params&... params) {
         bind(params...);
         step();
-        A(!done());
         A(sqlite3_column_count(handle) == sizeof...(Cols));
         Result r = read();
         step();
         A(done());
-        finish();
+        reset();
         return r;
     }
 };
 };
-
-}
