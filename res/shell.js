@@ -39,7 +39,12 @@ let tabs_by_id = {};
 function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
     if ($item) {
-        host.postMessage(["focus", +$item.id]);
+        if (event.button == 0) {
+            host.postMessage(["focus", +$item.id]);
+        }
+        else if (event.button == 1) {
+            host.postMessage(["close", +$item.id]);
+        }
     }
     event.stopPropagation();
     event.preventDefault();
@@ -94,7 +99,7 @@ let commands = {
                     let $tab = $("div",
                         {class:"tab" + (loaded ? " loaded" : ""), title:tooltip},
                         [$title, $close],
-                        {click:on_tab_clicked}
+                        {click:on_tab_clicked, auxclick:on_tab_clicked}
                     );
                     let $list = $("div", {class:"list"});
                     let $item = $("div", {class:"item",id:id}, [$tab, $list]);
@@ -111,7 +116,6 @@ let commands = {
                     let $parent_list = parent == 0 ? $toplist : tabs_by_id[parent].$list;
                     let $next = next == 0 ? null : tabs_by_id[next].$item;
                     $parent_list.insertBefore($item, $next);
-
                 }
                 if (focus) {
                     focused_id = id;
