@@ -10,7 +10,7 @@ let $address;
 let $toplist;
 
 $(document.body, {}, [
-    $("nav", {id:"toolbar"}, [
+    $("div", {id:"toolbar"}, [
         $back = $("button", {}, "<", {click: e => {
             host.postMessage(["back"]);
         }}),
@@ -27,7 +27,7 @@ $(document.body, {}, [
             host.postMessage(["main_menu", area.right, area.bottom]);
         }}),
     ]),
-    $("nav", {id:"tree"}, [
+    $("div", {id:"side"}, [
         $toplist = $("div", {class:"list"}),
     ]),
 ]);
