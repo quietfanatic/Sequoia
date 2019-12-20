@@ -68,9 +68,14 @@ Activity::Activity (int64 t) : tab(t) {
             Callback<IWebView2DocumentTitleChangedEventHandler>(
                 [this](IWebView2WebView* sender, IUnknown* args) -> HRESULT
         {
-            wil::unique_cotaskmem_string title;
-            webview->get_DocumentTitle(&title);
-            set_tab_title(tab, to_utf8(title.get()));
+             // See below regarding about:blank
+            wil::unique_cotaskmem_string source;
+            webview->get_Source(&source);
+            if (wcscmp(source.get(), L"about:blank") != 0) {
+                wil::unique_cotaskmem_string title;
+                webview->get_DocumentTitle(&title);
+                set_tab_title(tab, to_utf8(title.get()));
+            }
             return S_OK;
         }).Get(), &token));
 
@@ -87,9 +92,13 @@ Activity::Activity (int64 t) : tab(t) {
             webview->get_CanGoForward(&forward);
             can_go_forward = forward;
 
+             // WebView2 tends to have spurious navigations to about:blank, so don't
+             // save the url in that case.
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
-            set_tab_url(tab, to_utf8(source.get()));
+            if (wcscmp(source.get(), L"about:blank") != 0) {
+                set_tab_url(tab, to_utf8(source.get()));
+            }
 
             return S_OK;
         }).Get(), &token));
