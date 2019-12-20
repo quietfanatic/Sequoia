@@ -1,7 +1,5 @@
 "use strict";
 
-(function(){
-
 let host = window.chrome.webview;
 
 let focused_id = null;
@@ -34,7 +32,7 @@ $(document.body, {}, [
     ]),
 ]);
 
-let tabs_by_id = {};
+var tabs_by_id = {};
 
 function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
@@ -62,13 +60,18 @@ function on_close_clicked (event) {
 let commands = {
     update (updates) {
         for (let [
-            id, parent, next, prev, child_count,
+            id, parent, prev, next, child_count,
             title, url, loaded, closed_at, focus, can_go_back, can_go_forward
         ] of updates) {
-            if (closed_at != 0) {
+            id = +id;
+            parent = +parent;
+            prev = +prev;
+            next = +next;
+            child_count = +child_count;
+            if (closed_at != 0) {  // Remove tab
                 let tab = tabs_by_id[id];
                 if (tab) {
-                    tab.$item.parentNode.removeChild(tab.$item);
+                    tab.$item.remove();
                     delete tabs_by_id[id];
                 }
             }
@@ -81,9 +84,12 @@ let commands = {
 
                 let tab = tabs_by_id[id];
                 if (tab) {  // Update existing tab
-                    if (parent != tab.parent || next != tab.next) {
-                        throw "TODO: move tab";
+                    if (parent != tab.parent || prev != tab.prev || next != tab.next) {
+                        tab.$item.remove();
                     }
+                    tab.parent = parent;
+                    tab.prev = prev;
+                    tab.next = next;
                     tab.$tab.setAttribute("title", tooltip);
                     tab.$title.innerText = title;
                     if (loaded) {
@@ -105,17 +111,16 @@ let commands = {
                     let $item = $("div", {class:"item",id:id}, [$tab, $list]);
 
                     tabs_by_id[id] = {
+                        id: id,
+                        parent: parent,
+                        prev: prev,
+                        next: next,
                         $item: $item,
                         $tab: $tab,
                         $title: $title,
                         $list: $list,
-                        parent: +parent,
-                        next: +next
                     };
 
-                    let $parent_list = parent == 0 ? $toplist : tabs_by_id[parent].$list;
-                    let $next = next == 0 ? null : tabs_by_id[next].$item;
-                    $parent_list.insertBefore($item, $next);
                 }
                 if (focus) {
                     focused_id = id;
@@ -124,6 +129,22 @@ let commands = {
                     $forward.enabled = can_go_forward;
                 }
             }
+        }
+         // Wait until we're done updating to insert moved tabs, so that all new
+         // prev and next ids are reflected.
+        for (let [id] of updates) {
+            id = +id;
+            function insertIfNeeded (tab) {
+                if (!tab) return;
+                if (tab.$item.isConnected) return;
+                let next = tab.next == 0 ? null : tabs_by_id[tab.next];
+                if (next && !next.$item.isConnected) return;
+                let $parent_list = tab.parent == 0 ? $toplist : tabs_by_id[tab.parent].$list;
+                console.log(tab, next);
+                $parent_list.insertBefore(tab.$item, next ? next.$item : null);
+                insertIfNeeded(tabs_by_id[tab.prev]);
+            }
+            insertIfNeeded(tabs_by_id[id]);
         }
     },
     colors (toolbar_bg, toolbar_fg, tab_bg, tab_fg, tab_highlight, tab_shadow) {
@@ -154,5 +175,3 @@ host.addEventListener("message", e=>{
 });
 
 host.postMessage(["ready"]);
-
-})();

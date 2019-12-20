@@ -223,14 +223,6 @@ UPDATE tabs SET prev = ? WHERE id = ?
     }
 }
 
-vector<int64> get_all_tabs () {
-    LOG("get_all_tabs");
-    static State<int64>::Ment<> get {R"(
-SELECT id FROM tabs WHERE closed_at IS NULL
-    )"};
-    return get.run();
-}
-
 ///// WINDOWS
 
 int64 create_window (int64 focused_tab) {

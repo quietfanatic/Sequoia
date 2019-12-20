@@ -151,8 +151,16 @@ void Shell::message_from_shell (Value&& message) {
             css_color(GetSysColor(COLOR_3DSHADOW))
         });
         if (window->tab) {
-             // Temporary until we support expanding and collapsing trees
-            std::vector<int64> required_tabs = get_all_tabs();
+             // Temporary algorithm until we support expanding and collapsing trees
+             // Select all tabs recursively from the root, so that we don't pick up
+             // children of closed tabs
+            vector<int64> required_tabs = get_all_children(0);
+            for (size_t i = 0; i < required_tabs.size(); i++) {
+                vector<int64> children = get_all_children(required_tabs[i]);
+                for (auto c : children) {
+                    required_tabs.push_back(c);
+                }
+            }
             update(required_tabs);
         }
         break;
