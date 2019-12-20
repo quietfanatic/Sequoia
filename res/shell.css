@@ -1,20 +1,24 @@
 html {
     width:100%;
     height:100%;
-    overflow:clip;
+    overflow:hidden;
+    --toolbar-height:28px;
+    --sidebar-width:240px;
+    --tab-height:24px;
+    --tab-font-size:12px;
 }
 body {
     width:100%;
     height:100%;
     margin:0;
-    overflow:clip;
+    overflow:hidden;
 }
 #toolbar {
     position:absolute;
     left:0;
     top:0;
     right:0;
-    height:32px;
+    height:var(--toolbar-height);
     display:flex;
     align-items:center;
     background-color:var(--toolbar-bg);
@@ -22,40 +26,42 @@ body {
 }
 #toolbar > input {
     flex-grow:1;
-    height:28px;
+    height:var(--toolbar-height);
     border:none;
     padding-left:0.4rem;
     padding-right:0.4rem;
     background-color:inherit;
 }
 #toolbar > button {
-    height:28px;
-    width:28px;
+    height:var(--toolbar-height);
+    width:var(--toolbar-height);
     border:none;
     background-color:inherit;
-    font-size:18px;
+    font-size:18px;  /* TODO relate to toolbar-height */
 }
-#side {
+#sidebar {
     position:absolute;
     right:0;
-    top:32px;
+    top:var(--toolbar-height);
     bottom:0;
-    width:120px;
+    width:var(--sidebar-width);
     box-sizing:border-box;
     overflow:scroll;
     background-color:var(--toolbar-bg);
+    cursor:ew-resize;
 }
 .tab {
     box-sizing:border-box;
     width:100%;
-    height:24px;
-    font-size:12px;
+    height:var(--tab-height);
+    font-size:var(--tab-font-size);
     border-left:1px solid var(--tab-highlight);
     border-top:1px solid var(--tab-highlight);
     border-right:1px solid var(--tab-shadow);
     border-bottom:1px solid var(--tab-shadow);
     background-color:var(--tab-bg);
     color:var(--tab-fg);
+    cursor:auto;
     display:flex;
     align-items:center;
 }
@@ -70,13 +76,13 @@ body {
 }
 .tab button {
     display:none;
-    width:24px;
-    height:24px;
+    width:var(--tab-height);
+    height:var(--tab-height);
     margin:none;
     border:none;
     padding:none;
     background:none;
-    font-size:12px;
+    font-size:var(--tab-font-size);
 }
 .tab:hover button {
     display:block;

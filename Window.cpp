@@ -40,7 +40,7 @@ static HWND create_hwnd () {
         "(Sequoia)",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
-        1280, 960,
+        1920, 1200,
         nullptr,
         nullptr,
         GetModuleHandle(nullptr),

@@ -66,8 +66,8 @@ RECT Shell::resize (RECT bounds) {
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
         );
     }
-    bounds.top += 64;
-    bounds.right -= 240;
+    bounds.top += toolbar_height;
+    bounds.right -= sidebar_width;
     return bounds;
 }
 
@@ -163,6 +163,13 @@ void Shell::message_from_shell (Value&& message) {
             }
             update(required_tabs);
         }
+        break;
+    }
+    case x31_hash("resize"): {
+         // TODO: get rasterization scale instead of hardcoding 2 for my laptop
+        sidebar_width = uint(message[1]) * 2;
+        toolbar_height = uint(message[2]) * 2;
+        window->resize_everything();
         break;
     }
     case x31_hash("navigate"): {

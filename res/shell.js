@@ -4,13 +4,16 @@ let host = window.chrome.webview;
 
 let focused_id = null;
 
+let $html = document.documentElement;
+let $toolbar;
 let $back;
 let $forward;
 let $address;
+let $sidebar;
 let $toplist;
 
 $(document.body, {}, [
-    $("div", {id:"toolbar"}, [
+    $toolbar = $("div", {id:"toolbar"}, [
         $back = $("button", {}, "<", {click: e => {
             host.postMessage(["back"]);
         }}),
@@ -27,12 +30,44 @@ $(document.body, {}, [
             host.postMessage(["main_menu", area.right, area.bottom]);
         }}),
     ]),
-    $("div", {id:"side"}, [
-        $toplist = $("div", {class:"list"}),
+    $sidebar = $("div", {id:"sidebar"}, [
+        $toplist = $("div", {class:"list"})
     ]),
 ]);
 
-var tabs_by_id = {};
+let resizing_sidebar = false;
+let sidebar_resize_origin = 0;
+let sidebar_original_width = 0;
+
+document.addEventListener("mousedown", event => {
+     // Start resize if we're clicking the sidebar but not a tab
+    let $tab = event.target.closest('.tab');
+    if ($tab) return;
+    let $sidebar = event.target.closest('#sidebar');
+    if (!$sidebar) return;
+    resizing_sidebar = true;
+    sidebar_resize_origin = event.clientX;
+    sidebar_original_width = $sidebar.offsetWidth;
+    event.stopPropagation();
+    event.preventDefault();
+});
+document.addEventListener("mousemove", event => {
+    if (!resizing_sidebar) return;
+    let new_width = sidebar_original_width - (event.clientX - sidebar_resize_origin);
+    $html.style.setProperty('--sidebar-width', new_width + "px");
+    send_resize();
+    event.stopPropagation();
+    event.preventDefault();
+});
+document.addEventListener("mouseup", event => {
+    if (!resizing_sidebar) return;
+    resizing_sidebar = false;
+    event.stopPropagation();
+    event.preventDefault();
+});
+
+
+let tabs_by_id = {};
 
 function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
@@ -55,6 +90,10 @@ function on_close_clicked (event) {
     }
     event.stopPropagation();
     event.preventDefault();
+}
+
+function send_resize () {
+    host.postMessage(["resize", $sidebar.offsetWidth, $toolbar.offsetHeight]);
 }
 
 let commands = {
@@ -175,3 +214,4 @@ host.addEventListener("message", e=>{
 });
 
 host.postMessage(["ready"]);
+send_resize();

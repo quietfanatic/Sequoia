@@ -16,6 +16,10 @@ struct Shell : Observer {
     HWND webview_hwnd = nullptr;
     Shell (Window*);
 
+     // These are in device pixels, not dips
+    uint sidebar_width = 480;
+    uint toolbar_height = 56;
+
     void focus_tab (int64 tab);
     RECT resize (RECT available);
 
