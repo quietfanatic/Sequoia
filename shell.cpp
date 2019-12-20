@@ -180,7 +180,7 @@ void Shell::message_from_shell (Value&& message) {
     }
     case x31_hash("focus"): {
         int64 id = message[1];
-        window->focus_tab(id);
+        focus_tab(id);
         break;
     }
     case x31_hash("close"): {
