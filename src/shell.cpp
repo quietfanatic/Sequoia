@@ -202,6 +202,11 @@ void Shell::message_from_shell (Value&& message) {
         window->show_main_menu(x * 2, y * 2);
         break;
     }
+    case x31_hash("new_toplevel_tab"): {
+        Transaction tr;
+        focus_tab(create_webpage_tab(0, "about:blank"));
+        break;
+    }
     default: {
         throw logic_error("Unknown message name");
     }
