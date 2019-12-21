@@ -1,7 +1,5 @@
-Licenses
-=====
+This MIT License applies to everything in this repo except for the SQLite source, which is under Public Domain
 
-This applies to everything in this repo except for the SQLite source, which is under Public Domain
 -----
 
 Copyright 2019 Lewis Wall (quietfanatic)
