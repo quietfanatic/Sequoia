@@ -1,8 +1,9 @@
 *.log
-/.vs
+.vs
 packages
 x64
 Debug
 Release
 *.user
-/sqlite-amalgamation-3300100
+*.sqlite
+sqlite-amalgamation-3300100
