@@ -60,7 +60,8 @@ button:disabled {
     bottom:0;
     width:var(--sidebar-width);
     box-sizing:border-box;
-    overflow:scroll;
+    overflow-y:scroll;
+    overflow-x:hidden;
     background-color:var(--toolbar-bg);
     cursor:ew-resize;
 }
@@ -91,7 +92,7 @@ button:disabled {
 .expand, .close {
     display:none;
     flex-shrink:0;
-    width:18px;
+    width:16px;
     height:var(--tab-height);
     margin:0;
     border:none;
@@ -104,6 +105,7 @@ button:disabled {
     display:block;
 }
 .expand::before {
+    display:block;
     content:"▶︎";
 }
 .item.expanded > .tab > .expand::before {
