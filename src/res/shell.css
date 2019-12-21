@@ -8,6 +8,8 @@ html {
     --sidebar-width:240px;
     --tab-height:24px;
     --tab-font-size:12px;
+    --sidebar-bottom-height:18px;
+    --sidebar-bottom-font-size:12px;
 }
 body {
     width:100%;
@@ -44,13 +46,13 @@ body {
 button:disabled {
     opacity:0.5;
 }
-.back::before {
+#back::before {
     content:"◀";
 }
-.forward::before {
+#forward::before {
     content:"▶";
 }
-.main-menu::before {
+#main-menu::before {
     content:"⋯";
 }
 #sidebar {
@@ -60,11 +62,53 @@ button:disabled {
     bottom:0;
     width:var(--sidebar-width);
     box-sizing:border-box;
+    background-color:var(--toolbar-bg);
+    display:flex;
+    flex-direction:column;
+}
+#sidebar > .list {
+    flex-grow:1;
     overflow-y:scroll;
     overflow-x:hidden;
-    background-color:var(--toolbar-bg);
+}
+#sidebar-bottom {
+    flex-shrink:0;
+    height:var(--sidebar-bottom-height);
+    font-size:var(--sidebar-bottom-font-size);
+    font-weight:bold;
+    line-height:var(--sidebar-bottom-height);
+    display:flex;
+}
+#resize {
+    flex-shrink:0;
+    box-sizing:border-box;
+    width:var(--sidebar-bottom-height);
+    border-left:1px solid var(--tab-highlight);
+    border-top:1px solid var(--tab-highlight);
+    border-right:1px solid var(--tab-shadow);
+    border-bottom:1px solid var(--tab-shadow);
+    background-color:var(--tab-bg);
+    color:var(--tab-fg);
     cursor:ew-resize;
 }
+#resize::before {
+    content:"↔";
+}
+#new-tab {
+    flex-grow:1;
+    box-sizing:border-box;
+    border-left:1px solid var(--tab-highlight);
+    border-top:1px solid var(--tab-highlight);
+    border-right:1px solid var(--tab-shadow);
+    border-bottom:1px solid var(--tab-shadow);
+    background-color:var(--tab-bg);
+    color:var(--tab-fg);
+    text-align:center;
+}
+#new-tab::before {
+    content:"+";
+}
+
 .tab {
     box-sizing:border-box;
     width:100%;
@@ -76,7 +120,6 @@ button:disabled {
     border-bottom:1px solid var(--tab-shadow);
     background-color:var(--tab-bg);
     color:var(--tab-fg);
-    cursor:auto;
     display:flex;
     align-items:center;
 }

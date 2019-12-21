@@ -9,10 +9,10 @@ let $toolbar, $back, $forward, $address, $sidebar, $toplist;
 
 $(document.body, {}, [
     $toolbar = $("div", {id:"toolbar"}, [
-        $back = $("button", {class:"back"}, [], {click: e => {
+        $back = $("button", {id:"back"}, [], {click: e => {
             host.postMessage(["back"]);
         }}),
-        $forward = $("button", {class:"forward"}, [], {click: e => {
+        $forward = $("button", {id:"forward"}, [], {click: e => {
             host.postMessage(["forward"]);
         }}),
         $address = $("input", {}, [], {keydown: e => {
@@ -20,13 +20,17 @@ $(document.body, {}, [
                 host.postMessage(["navigate", $address.value]);
             }
         }}),
-        $("button", {class:"main-menu"}, [], {click: e => {
+        $("button", {id:"main-menu"}, [], {click: e => {
             let area = e.target.getBoundingClientRect();
             host.postMessage(["main_menu", area.right, area.bottom]);
         }}),
     ]),
     $sidebar = $("div", {id:"sidebar"}, [
-        $toplist = $("div", {class:"list"})
+        $toplist = $("div", {class:"list"}),
+        $("div", {id:"sidebar-bottom"}, [
+            $("div", {id:"resize"}, [], {mousedown:on_resize_mousedown}),
+            $("div", {id:"new-tab"}, [], {click:on_new_tab_clicked}),
+        ]),
     ]),
 ]);
 
@@ -34,18 +38,18 @@ let resizing_sidebar = false;
 let sidebar_resize_origin = 0;
 let sidebar_original_width = 0;
 
-document.addEventListener("mousedown", event => {
+function on_resize_mousedown(event) {
      // Start resize if we're clicking the sidebar but not a tab
     let $tab = event.target.closest('.tab');
     if ($tab) return;
-    let $sidebar = event.target.closest('#sidebar');
-    if (!$sidebar) return;
+    let $resize = event.target.closest('#resize');
+    if (!$resize) return;
     resizing_sidebar = true;
     sidebar_resize_origin = event.clientX;
     sidebar_original_width = $sidebar.offsetWidth;
     event.stopPropagation();
     event.preventDefault();
-});
+}
 document.addEventListener("mousemove", event => {
     if (!resizing_sidebar) return;
     let new_width = sidebar_original_width - (event.clientX - sidebar_resize_origin);
@@ -60,6 +64,16 @@ document.addEventListener("mouseup", event => {
     event.stopPropagation();
     event.preventDefault();
 });
+
+function send_resize () {
+    host.postMessage(["resize", $sidebar.offsetWidth, $toolbar.offsetHeight]);
+}
+
+function on_new_tab_clicked (event) {
+    host.postMessage(["new_toplevel_tab"]);
+    event.stopPropagation();
+    event.preventDefault();
+}
 
 
 let tabs_by_id = {};
@@ -108,10 +122,6 @@ function on_expand_clicked (event) {
     }
     event.stopPropagation();
     event.preventDefault();
-}
-
-function send_resize () {
-    host.postMessage(["resize", $sidebar.offsetWidth, $toolbar.offsetHeight]);
 }
 
 let commands = {
