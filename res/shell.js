@@ -2,22 +2,17 @@
 
 let host = window.chrome.webview;
 
-let focused_id = null;
+let focused_tab = null;
 
 let $html = document.documentElement;
-let $toolbar;
-let $back;
-let $forward;
-let $address;
-let $sidebar;
-let $toplist;
+let $toolbar, $back, $forward, $address, $sidebar, $toplist;
 
 $(document.body, {}, [
     $toolbar = $("div", {id:"toolbar"}, [
-        $back = $("button", {}, "<", {click: e => {
+        $back = $("button", {class:"back"}, [], {click: e => {
             host.postMessage(["back"]);
         }}),
-        $forward = $("button", {}, ">", {click: e => {
+        $forward = $("button", {class:"forward"}, [], {click: e => {
             host.postMessage(["forward"]);
         }}),
         $address = $("input", {}, [], {keydown: e => {
@@ -25,7 +20,7 @@ $(document.body, {}, [
                 host.postMessage(["navigate", $address.value]);
             }
         }}),
-        $("button", {}, "⋯", {click: e => {
+        $("button", {class:"main-menu"}, [], {click: e => {
             let area = e.target.getBoundingClientRect();
             host.postMessage(["main_menu", area.right, area.bottom]);
         }}),
@@ -92,6 +87,29 @@ function on_close_clicked (event) {
     event.preventDefault();
 }
 
+function expand_tab (tab) {
+    tab.$item.classList.add("expanded");
+    tab.expanded = true;
+}
+function contract_tab (tab) {
+    tab.$item.classList.remove("expanded");
+    tab.expanded = false;
+}
+function on_expand_clicked (event) {
+    let $item = event.target.closest('.item');
+    if ($item) {
+        let tab = tabs_by_id[+$item.id];
+        if (tab.expanded) {
+            contract_tab(tab);
+        }
+        else {
+            expand_tab(tab);
+        }
+    }
+    event.stopPropagation();
+    event.preventDefault();
+}
+
 function send_resize () {
     host.postMessage(["resize", $sidebar.offsetWidth, $toolbar.offsetHeight]);
 }
@@ -122,7 +140,32 @@ let commands = {
                 if (!title) title = url;
 
                 let tab = tabs_by_id[id];
-                if (tab) {  // Update existing tab
+                if (!tab) {  // Create new tab
+                    let $item, $tab, $title, $list;
+                    $item = $("div", {id:id,class:"item"}, [
+                        $tab = $("div",
+                            {class:"tab", title:tooltip}, [
+                                $("button", {class:"expand"}, [], {click:on_expand_clicked}),
+                                $title = $("div", {class:"title"}, title),
+                                $("button", {class:"close"}, [], {click:on_close_clicked}),
+                            ], {click:on_tab_clicked, auxclick:on_tab_clicked}
+                        ),
+                        $list = $("div", {class:"list"}),
+                    ]);
+
+                    tab = tabs_by_id[id] = {
+                        id: id,
+                        parent: parent,
+                        prev: prev,
+                        next: next,
+                        expanded: false,
+                        $item: $item,
+                        $tab: $tab,
+                        $title: $title,
+                        $list: $list,
+                    };
+                }
+                else {  // Update existing tab
                     if (parent != tab.parent || prev != tab.prev || next != tab.next) {
                         tab.$item.remove();
                     }
@@ -131,38 +174,25 @@ let commands = {
                     tab.next = next;
                     tab.$tab.setAttribute("title", tooltip);
                     tab.$title.innerText = title;
-                    if (loaded) {
-                        tab.$tab.classList.add("loaded");
-                    }
-                    else {
-                        tab.$tab.classList.remove("loaded");
-                    }
                 }
-                else {  // Add new tab
-                    let $title = $("div", {class:"title"}, title);
-                    let $close = $("button", {}, "✗", {click:on_close_clicked})
-                    let $tab = $("div",
-                        {class:"tab" + (loaded ? " loaded" : ""), title:tooltip},
-                        [$title, $close],
-                        {click:on_tab_clicked, auxclick:on_tab_clicked}
-                    );
-                    let $list = $("div", {class:"list"});
-                    let $item = $("div", {class:"item",id:id}, [$tab, $list]);
 
-                    tabs_by_id[id] = {
-                        id: id,
-                        parent: parent,
-                        prev: prev,
-                        next: next,
-                        $item: $item,
-                        $tab: $tab,
-                        $title: $title,
-                        $list: $list,
-                    };
-
+                // TODO: implement child_count
+                //if (child_count) {
+                if (true) {
+                    tab.$item.classList.add("parent");
                 }
+                else {
+                    tab.$item.classList.remove("parent");
+                }
+                if (loaded) {
+                    tab.$tab.classList.add("loaded");
+                }
+                else {
+                    tab.$tab.classList.remove("loaded");
+                }
+
                 if (focus) {
-                    focused_id = id;
+                    focused_tab = tab;
                     $address.value = url;
                     $back.enabled = can_go_back;
                     $forward.enabled = can_go_forward;
@@ -184,6 +214,13 @@ let commands = {
                 insertIfNeeded(tabs_by_id[tab.prev]);
             }
             insertIfNeeded(tabs_by_id[id]);
+        }
+         // Expand everything above the focused tab
+        expandUp(tabs_by_id[focused_tab.parent])
+        function expandUp (tab) {
+            if (!tab) return;
+            expand_tab(tab);
+            expandUp(tabs_by_id[tab.parent]);
         }
     },
     colors (toolbar_bg, toolbar_fg, tab_bg, tab_fg, tab_highlight, tab_shadow) {
