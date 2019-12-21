@@ -51,7 +51,7 @@ static HWND create_hwnd () {
     return hwnd;
 }
 
-Window::Window (int64 id, int64 tab) : id(id), hwnd(create_hwnd()), shell(this) {
+Window::Window (int64 id, int64 tab) : id(id), hwnd(create_hwnd()) {
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
     focus_tab(tab);
 }

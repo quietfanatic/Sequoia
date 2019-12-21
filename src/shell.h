@@ -11,10 +11,10 @@ namespace json { struct Value; }
 struct Window;
 
 struct Shell : Observer {
-    Window* window;
+    Window* window ();
     wil::com_ptr<WebView> webview;
     HWND webview_hwnd = nullptr;
-    Shell (Window*);
+    Shell ();
 
      // These are in device pixels, not dips
     uint sidebar_width = 480;

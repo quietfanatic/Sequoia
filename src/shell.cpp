@@ -19,14 +19,16 @@ using namespace Microsoft::WRL;
 using namespace std;
 using namespace json;
 
-Shell::Shell (Window* owner) : window(owner) {
-    AH(webview_environment->CreateWebView(window->hwnd,
+Window* Shell::window () { return (Window*)((char*)this - offsetof(Window, shell)); }
+
+Shell::Shell () {
+    AH(webview_environment->CreateWebView(window()->hwnd,
         Callback<IWebView2CreateWebViewCompletedHandler>(
             [this](HRESULT hr, IWebView2WebView* wv)
     {
         AH(hr);
         AH(wv->QueryInterface(IID_PPV_ARGS(&webview)));
-        AW(webview_hwnd = GetWindow(window->hwnd, GW_CHILD));
+        AW(webview_hwnd = GetWindow(window()->hwnd, GW_CHILD));
         EventRegistrationToken token;
         webview->add_WebMessageReceived(
             Callback<IWebView2WebMessageReceivedEventHandler>(
@@ -45,15 +47,15 @@ Shell::Shell (Window* owner) : window(owner) {
 
         webview->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
 
-        window->resize_everything();
+        window()->resize_everything();
 
         return S_OK;
     }).Get()));
 };
 
 void Shell::focus_tab (int64 tab) {
-    window->focus_tab(tab);
-    set_window_focused_tab(window->id, tab);
+    window()->focus_tab(tab);
+    set_window_focused_tab(window()->id, tab);
 }
 
 RECT Shell::resize (RECT bounds) {
@@ -81,7 +83,7 @@ void Shell::update (const vector<int64>& updated_tabs) {
     for (auto tab : updated_tabs) {
         TabData t = get_tab_data(tab);
         Activity* activity = activity_for_tab(tab);
-        if (window->tab == tab) {
+        if (window()->tab == tab) {
             updates.emplace_back(Array{
                 tab,
                 t.parent,
@@ -111,7 +113,7 @@ void Shell::update (const vector<int64>& updated_tabs) {
             });
         }
          // If the current tab is closing, find a new tab to focus
-        if (window->tab == tab && t.closed_at) {
+        if (window()->tab == tab && t.closed_at) {
             LOG("Finding successor", tab);
             Transaction tr;
             int64 successor;
@@ -150,7 +152,7 @@ void Shell::message_from_shell (Value&& message) {
             css_color(GetSysColor(COLOR_3DHIGHLIGHT)),
             css_color(GetSysColor(COLOR_3DSHADOW))
         });
-        if (window->tab) {
+        if (window()->tab) {
              // Temporary algorithm until we support expanding and collapsing trees
              // Select all tabs recursively from the root, so that we don't pick up
              // children of closed tabs
@@ -169,7 +171,7 @@ void Shell::message_from_shell (Value&& message) {
          // TODO: get rasterization scale instead of hardcoding 2 for my laptop
         sidebar_width = uint(message[1]) * 2;
         toolbar_height = uint(message[2]) * 2;
-        window->resize_everything();
+        window()->resize_everything();
         break;
     }
     case x31_hash("navigate"): {
@@ -199,7 +201,7 @@ void Shell::message_from_shell (Value&& message) {
         int x = message[1];
         int y = message[2];
          // TODO: get rasterization scale instead of hardcoding it
-        window->show_main_menu(x * 2, y * 2);
+        window()->show_main_menu(x * 2, y * 2);
         break;
     }
     case x31_hash("new_toplevel_tab"): {
@@ -221,6 +223,6 @@ void Shell::message_to_shell (Value&& message) {
 }
 
 IWebView2WebView4* Shell::active_webview () {
-    if (window->activity && window->activity->webview) return window->activity->webview.get();
+    if (window()->activity && window()->activity->webview) return window()->activity->webview.get();
     else return nullptr;
 }
