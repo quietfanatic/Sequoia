@@ -36,6 +36,9 @@ CREATE INDEX closed_tabs_by_closed_at ON tabs (
 
  -- I'm not an expert at this, but I think this will do a graph walk
  -- up the tree without being too inefficient.
+ -- UPDATE: after an EXPLAIN I'm not too sure...
+ -- UPDATE 2: after reading the documentation, nope, it just calculates the
+ --  whole thing ahead of time.  TODO: get rid of this.
 CREATE VIEW ancestors (child, ancestor) AS
 WITH RECURSIVE ancs (child, ancestor) AS (
     SELECT id, parent FROM tabs
