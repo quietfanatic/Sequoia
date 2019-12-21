@@ -141,12 +141,13 @@ let commands = {
 
                 let tab = tabs_by_id[id];
                 if (!tab) {  // Create new tab
-                    let $item, $tab, $title, $list;
+                    let $item, $tab, $title, $child_count, $list;
                     $item = $("div", {id:id,class:"item"}, [
                         $tab = $("div",
                             {class:"tab", title:tooltip}, [
                                 $("button", {class:"expand"}, [], {click:on_expand_clicked}),
                                 $title = $("div", {class:"title"}, title),
+                                $child_count = $("div", {class:"child-count"}),
                                 $("button", {class:"close"}, [], {click:on_close_clicked}),
                             ], {click:on_tab_clicked, auxclick:on_tab_clicked}
                         ),
@@ -162,6 +163,7 @@ let commands = {
                         $item: $item,
                         $tab: $tab,
                         $title: $title,
+                        $child_count: $child_count,
                         $list: $list,
                     };
                 }
@@ -177,9 +179,11 @@ let commands = {
                 }
 
                 if (child_count) {
+                    tab.$child_count.innerText = "+" + child_count;
                     tab.$item.classList.add("parent");
                 }
                 else {
+                    tab.$child_count.innerText = "";
                     tab.$item.classList.remove("parent");
                 }
                 if (loaded) {
@@ -192,8 +196,8 @@ let commands = {
                 if (focus) {
                     focused_tab = tab;
                     $address.value = url;
-                    $back.enabled = can_go_back;
-                    $forward.enabled = can_go_forward;
+                    $back.disabled = !can_go_back;
+                    $forward.disabled = !can_go_forward;
                 }
             }
         }
