@@ -94,7 +94,8 @@ button:disabled {
 }
 .expand, .close {
     display:none;
-    width:var(--tab-height);
+    flex-shrink:0;
+    width:18px;
     height:var(--tab-height);
     margin:0;
     border:none;
