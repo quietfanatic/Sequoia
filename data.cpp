@@ -223,6 +223,23 @@ UPDATE tabs SET prev = ? WHERE id = ?
     }
 }
 
+void fix_child_counts () {
+    LOG("fix_child_counts");
+    Transaction tr;
+    static State<>::Ment<> fix {R"(
+WITH RECURSIVE descendants(ancestor, child) AS (
+    SELECT parent, id FROM tabs
+    UNION ALL
+    SELECT ancestor, id FROM descendants, tabs
+        WHERE parent = child
+)
+UPDATE tabs SET child_count = (
+    SELECT count(*) from descendants where ancestor = id
+)
+    )"};
+    fix.run_void();
+}
+
 ///// WINDOWS
 
 int64 create_window (int64 focused_tab) {

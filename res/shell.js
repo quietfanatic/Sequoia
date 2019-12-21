@@ -176,9 +176,7 @@ let commands = {
                     tab.$title.innerText = title;
                 }
 
-                // TODO: implement child_count
-                //if (child_count) {
-                if (true) {
+                if (child_count) {
                     tab.$item.classList.add("parent");
                 }
                 else {

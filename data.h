@@ -81,6 +81,8 @@ int64 create_window (int64 focused_tab);
 std::vector<WindowData> get_all_unclosed_windows ();
 void set_window_focused_tab (int64 window, int64 tab);
 
+void fix_child_counts ();
+
 ///// TRANSACTIONS
 
 struct Transaction {
