@@ -213,8 +213,8 @@ let commands = {
             }
             insertIfNeeded(tabs_by_id[id]);
         }
-         // Expand everything above the focused tab
-        expandUp(tabs_by_id[focused_tab.parent])
+         // Expand everything above and including the focused tab
+        expandUp(focused_tab)
         function expandUp (tab) {
             if (!tab) return;
             expand_tab(tab);

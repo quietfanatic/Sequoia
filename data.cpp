@@ -106,6 +106,18 @@ Observer::~Observer () {
     }
 }
 
+///// TAB HELPER STATMENTS
+
+void change_child_count (int64 parent, int64 diff) {
+    if (parent != 0) {
+        static State<>::Ment<int64, int64> update_child_count {R"(
+    UPDATE tabs SET child_count = child_count + ? WHERE id = ?
+        )"};
+        update_child_count.run_void(diff, parent);
+        tab_updated(parent);
+    }
+}
+
 ///// TABS
 
 int64 create_webpage_tab (int64 parent, const string& url, const string& title) {
@@ -129,11 +141,13 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
 
     if (prev) {
         static State<>::Ment<int64, int64> update_prev {R"(
-    UPDATE tabs SET next = ? WHERE id = ?
+UPDATE tabs SET next = ? WHERE id = ?
         )"};
         update_prev.run_void(id, prev);
         tab_updated(prev);
     }
+
+    change_child_count(parent, +1);
 
     return id;
 }
@@ -191,12 +205,12 @@ void close_tab (int64 id) {
     Transaction tr;
     LOG("close_tab", id);
 
-    static State<int64, int64, double>::Ment<int64> get_stuff {R"(
-SELECT prev, next, closed_at FROM tabs WHERE id = ?
+    static State<int64, int64, int64, double>::Ment<int64> get_stuff {R"(
+SELECT parent, prev, next, closed_at FROM tabs WHERE id = ?
     )"};
-    int64 prev, next;
+    int64 parent, prev, next;
     double closed_at;
-    tie(prev, next, closed_at) = get_stuff.run_single(id);
+    tie(parent, prev, next, closed_at) = get_stuff.run_single(id);
 
     if (closed_at) return;  // Already closed
 
@@ -221,20 +235,16 @@ UPDATE tabs SET prev = ? WHERE id = ?
         relink_next.run_void(prev, next);
         tab_updated(next);
     }
+
+    change_child_count(parent, -1);
 }
 
 void fix_child_counts () {
     LOG("fix_child_counts");
     Transaction tr;
     static State<>::Ment<> fix {R"(
-WITH RECURSIVE descendants(ancestor, child) AS (
-    SELECT parent, id FROM tabs
-    UNION ALL
-    SELECT ancestor, id FROM descendants, tabs
-        WHERE parent = child
-)
 UPDATE tabs SET child_count = (
-    SELECT count(*) from descendants where ancestor = id
+    SELECT count(*) from ancestors where ancestor = id
 )
     )"};
     fix.run_void();
