@@ -63,7 +63,6 @@ Activity::Activity (int64 t) : tab(t) {
         claimed_by_window(window);
         if (window) window->resize_everything();
 
-        EventRegistrationToken token;
         AH(webview->add_DocumentTitleChanged(
             Callback<IWebView2DocumentTitleChangedEventHandler>(
                 [this](IWebView2WebView* sender, IUnknown* args) -> HRESULT
@@ -77,7 +76,7 @@ Activity::Activity (int64 t) : tab(t) {
                 set_tab_title(tab, to_utf8(title.get()));
             }
             return S_OK;
-        }).Get(), &token));
+        }).Get(), nullptr));
 
         AH(webview->add_DocumentStateChanged(
             Callback<IWebView2DocumentStateChangedEventHandler>([this](
@@ -101,7 +100,7 @@ Activity::Activity (int64 t) : tab(t) {
             }
 
             return S_OK;
-        }).Get(), &token));
+        }).Get(), nullptr));
 
          // This doesn't work for middle-clicking links yet
         AH(webview->add_NewWindowRequested(
@@ -114,7 +113,7 @@ Activity::Activity (int64 t) : tab(t) {
             create_webpage_tab(tab, to_utf8(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
-        }).Get(), &token));
+        }).Get(), nullptr));
 
         static std::wstring injection = to_utf16(slurp(exe_relative("res/injection.js")));
 
@@ -131,7 +130,7 @@ Activity::Activity (int64 t) : tab(t) {
             args->get_WebMessageAsJson(&raw);
             message_from_webview(json::parse(to_utf8(raw.get())));
             return S_OK;
-        }).Get(), &token));
+        }).Get(), nullptr));
 
         AH(webview->add_ContainsFullScreenElementChanged(
             Callback<IWebView2ContainsFullScreenElementChangedEventHandler>(

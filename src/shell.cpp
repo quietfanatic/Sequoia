@@ -29,7 +29,6 @@ Shell::Shell () {
         AH(hr);
         AH(wv->QueryInterface(IID_PPV_ARGS(&webview)));
         AW(webview_hwnd = GetWindow(window()->hwnd, GW_CHILD));
-        EventRegistrationToken token;
         webview->add_WebMessageReceived(
             Callback<IWebView2WebMessageReceivedEventHandler>(
                 [this](
@@ -43,7 +42,7 @@ Shell::Shell () {
             LOG("message_from_shell", raw);
             message_from_shell(parse(raw));
             return S_OK;
-        }).Get(), &token);
+        }).Get(), nullptr);
 
         webview->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
 
