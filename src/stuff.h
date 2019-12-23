@@ -11,6 +11,6 @@ using uint32 = uint32_t;
 using uint64 = uint64_t;
 using uint = unsigned int;
 
-struct IWebView2WebView4;
-using WebView = IWebView2WebView4;
+struct IWebView2WebView5;
+using WebView = IWebView2WebView5;
 

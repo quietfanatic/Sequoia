@@ -18,6 +18,9 @@ struct Window {
     int64 tab = 0;
     Activity* activity = nullptr;
 
+    bool fullscreen = false;
+    WINDOWPLACEMENT placement_before_fullscreen;
+
     Window (int64 id, int64 tab);
 
     void focus_tab (int64);
@@ -25,6 +28,7 @@ struct Window {
     void set_title (const char*);
     void resize_everything ();
     void show_main_menu (int x, int y);
+    void set_fullscreen (bool);
 
     LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
 

@@ -68,8 +68,10 @@ RECT Shell::resize (RECT bounds) {
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
         );
     }
-    bounds.top += toolbar_height;
-    bounds.right -= sidebar_width;
+    if (!window()->fullscreen) {
+        bounds.top += toolbar_height;
+        bounds.right -= sidebar_width;
+    }
     return bounds;
 }
 
@@ -222,7 +224,7 @@ void Shell::message_to_shell (Value&& message) {
     webview->PostWebMessageAsJson(to_utf16(s).c_str());
 }
 
-IWebView2WebView4* Shell::active_webview () {
+WebView* Shell::active_webview () {
     if (window()->activity && window()->activity->webview) return window()->activity->webview.get();
     else return nullptr;
 }

@@ -133,6 +133,16 @@ Activity::Activity (int64 t) : tab(t) {
             return S_OK;
         }).Get(), &token));
 
+        AH(webview->add_ContainsFullScreenElementChanged(
+            Callback<IWebView2ContainsFullScreenElementChangedEventHandler>(
+                [this](IWebView2WebView5* sender, IUnknown* args) -> HRESULT
+        {
+            BOOL fs;
+            AH(webview->get_ContainsFullScreenElement(&fs));
+            window->set_fullscreen(fs);
+            return S_OK;
+        }).Get(), nullptr));
+
         webview->Navigate(to_utf16(get_tab_url(tab)).c_str());
 
         return S_OK;

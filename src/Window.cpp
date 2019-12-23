@@ -154,3 +154,29 @@ void Window::show_main_menu (int x, int y) {
     AW(TrackPopupMenuEx(m, TPM_RIGHTALIGN | TPM_TOPALIGN, p.x, p.y, hwnd, nullptr));
 }
 
+void Window::set_fullscreen (bool fs) {
+    if (fs == fullscreen) return;
+    fullscreen = fs;
+    if (fullscreen) {
+        MONITORINFO monitor = {sizeof(MONITORINFO)};
+        AW(GetWindowPlacement(hwnd, &placement_before_fullscreen));
+        AW(GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor));
+        DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+        SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+        SetWindowPos(hwnd, HWND_TOP,
+            monitor.rcMonitor.left, monitor.rcMonitor.top,
+            monitor.rcMonitor.right - monitor.rcMonitor.left,
+            monitor.rcMonitor.bottom - monitor.rcMonitor.top,
+            SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+        );
+    }
+    else {
+        DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+        SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(hwnd, &placement_before_fullscreen);
+        SetWindowPos(
+            hwnd, nullptr, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+        );
+    }
+}
