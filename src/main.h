@@ -8,3 +8,5 @@
 struct IWebView2Environment;
 
 extern wil::com_ptr<IWebView2Environment> webview_environment;
+
+void quit ();

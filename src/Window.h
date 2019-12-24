@@ -29,6 +29,7 @@ struct Window {
     void resize_everything ();
     void show_main_menu (int x, int y);
     void set_fullscreen (bool);
+    void close ();  // Will delete this
 
     LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
 

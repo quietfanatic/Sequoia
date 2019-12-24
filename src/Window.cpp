@@ -11,11 +11,6 @@
 
 using namespace std;
 
-namespace MENU { enum {
-    NEW_TOP_TAB = 100,
-    EXIT,
-}; }
-
 static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto self = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (self) return self->WndProc(message, w, l);
@@ -89,17 +84,6 @@ LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
         delete this;
         PostQuitMessage(0);
         return 0;
-    case WM_COMMAND:
-        switch (LOWORD(w)) {
-        case MENU::NEW_TOP_TAB: {
-            int64 new_tab = create_webpage_tab(0, "about:blank");
-            focus_tab(new_tab);
-            return 0;
-        }
-        case MENU::EXIT:
-            PostQuitMessage(0);
-            return 0;
-        }
     }
     return DefWindowProc(hwnd, message, w, l);
 }
@@ -119,39 +103,6 @@ void Window::set_title (const char* title) {
 
 Window::~Window () {
     claim_activity(nullptr);
-}
-
-struct MenuItem {
-    UINT id;
-    const char* text;
-};
-
-MenuItem main_menu_items [] = {
-    {MENU::NEW_TOP_TAB, "New Toplevel Tab"},
-    {MENU::EXIT, "E&xit"},
-};
-
-static HMENU main_menu () {
-    static HMENU main_menu = []{
-        HMENU main_menu = CreatePopupMenu();
-        for (auto item : main_menu_items) {
-            MENUITEMINFO mii = {0};
-            mii.cbSize = sizeof(MENUITEMINFOW);
-            mii.fMask = MIIM_ID | MIIM_STRING;
-            mii.wID = item.id;
-            mii.dwTypeData = (LPSTR)item.text;
-            AW(InsertMenuItem(main_menu, 1, TRUE, &mii));
-        }
-        return main_menu;
-    }();
-    return main_menu;
-}
-
-void Window::show_main_menu (int x, int y) {
-    auto m = main_menu();
-    POINT p {x, y};
-    AW(ClientToScreen(hwnd, &p));
-    AW(TrackPopupMenuEx(m, TPM_RIGHTALIGN | TPM_TOPALIGN, p.x, p.y, hwnd, nullptr));
 }
 
 void Window::set_fullscreen (bool fs) {

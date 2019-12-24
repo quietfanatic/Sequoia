@@ -6,6 +6,7 @@ html {
     overflow:hidden;
     --toolbar-height:28px;
     --sidebar-width:240px;
+    --main-menu-width:240px;
     --tab-height:24px;
     --tab-font-size:12px;
     --sidebar-bottom-height:18px;
@@ -58,7 +59,7 @@ button:disabled {
 html.hide-sidebar #toggle-sidebar::before {
     content:"⭰";
 }
-#main-menu::before {
+#show-main-menu::before {
     content:"⋯";
 }
 #sidebar {
@@ -180,4 +181,19 @@ html.hide-sidebar #sidebar {
 }
 .item.expanded > .list {
     display:block;
+}
+#main-menu {
+    position:absolute;
+    right:0;
+    top:var(--toolbar-height);
+    bottom:0;
+    width:var(--main-menu-width);
+    box-sizing:border-box;
+    background-color:var(--toolbar-bg);
+    display:flex;
+    flex-direction:column;
+    visibility:hidden;
+}
+html.show-main-menu #main-menu {
+    visibility:visible;
 }

@@ -19,6 +19,7 @@ struct Shell : Observer {
      // These are in device pixels, not dips
     uint sidebar_width = 480;
     uint toolbar_height = 56;
+    uint main_menu_width = 0;
 
     void focus_tab (int64 tab);
     RECT resize (RECT available);

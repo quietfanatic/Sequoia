@@ -4,28 +4,31 @@ let host = window.chrome.webview;
 
 let focused_tab = null;
 let showing_sidebar = true;
+let showing_main_menu = false;
 
 let $html = document.documentElement;
-let $toolbar, $back, $forward, $address, $sidebar, $toplist;
+let $toolbar, $back, $forward, $address, $sidebar, $toplist, $main_menu;
+
+function handled (event) {
+    event.stopPropagation();
+    event.preventDefault();
+}
 
 $(document.body, {}, [
     $toolbar = $("div", {id:"toolbar"}, [
         $back = $("button", {id:"back"}, [], {click: e => {
             host.postMessage(["back"]);
-            event.stopPropagation();
-            event.preventDefault();
+            handled(e);
         }}),
         $forward = $("button", {id:"forward"}, [], {click: e => {
             host.postMessage(["forward"]);
-            event.stopPropagation();
-            event.preventDefault();
+            handled(e);
         }}),
         $address = $("input", {}, [], {keydown: e => {
             if (e.key == "Enter") {
                 host.postMessage(["navigate", $address.value]);
+                handled(e);
             }
-            event.stopPropagation();
-            event.preventDefault();
         }}),
         $("button", {id:"toggle-sidebar"}, [], {click: e => {
             showing_sidebar = !showing_sidebar;
@@ -36,14 +39,11 @@ $(document.body, {}, [
                 $html.classList.add("hide-sidebar");
             }
             send_resize();
-            event.stopPropagation();
-            event.preventDefault();
+            handled(e);
         }}),
-        $("button", {id:"main-menu"}, [], {click: e => {
-            let area = e.target.getBoundingClientRect();
-            host.postMessage(["main_menu", area.right, area.bottom]);
-            event.stopPropagation();
-            event.preventDefault();
+        $("button", {id:"show-main-menu"}, [], {click: e => {
+            open_main_menu();
+            handled(e);
         }}),
     ]),
     $sidebar = $("div", {id:"sidebar"}, [
@@ -53,7 +53,42 @@ $(document.body, {}, [
             $("div", {id:"new-tab"}, [], {click:on_new_tab_clicked}),
         ]),
     ]),
+    $main_menu = $("nav", {id:"main-menu"}, [
+        $("button", {id:"new-toplevel-tab"}, "New Toplevel Tab", {
+            click: menu_item("new_toplevel_tab"),
+        }),
+        $("button", {id:"quit"}, "Quit", {
+            click: menu_item("quit"),
+        }),
+    ]),
 ]);
+function menu_item(message) {
+    return event => {
+        host.postMessage([message]);
+        close_main_menu();
+        handled(event);
+    };
+}
+
+document.addEventListener("click", e => {
+    close_main_menu();
+}, {capture:true});
+window.addEventListener("blur", e => {
+    close_main_menu();
+    handled(e);
+});
+
+function open_main_menu () {
+    showing_main_menu = true;
+    $html.classList.add("show-main-menu");
+    host.postMessage(["show_main_menu", $main_menu.offsetWidth]);
+}
+
+function close_main_menu () {
+    showing_main_menu = false;
+    $html.classList.remove("show-main-menu");
+    host.postMessage(["hide_main_menu"]);
+}
 
 let resizing_sidebar = false;
 let sidebar_resize_origin = 0;
@@ -68,22 +103,19 @@ function on_resize_mousedown(event) {
     resizing_sidebar = true;
     sidebar_resize_origin = event.clientX;
     sidebar_original_width = $sidebar.offsetWidth;
-    event.stopPropagation();
-    event.preventDefault();
+    handled(event);
 }
 document.addEventListener("mousemove", event => {
     if (!resizing_sidebar) return;
     let new_width = sidebar_original_width - (event.clientX - sidebar_resize_origin);
     $html.style.setProperty('--sidebar-width', new_width + "px");
     send_resize();
-    event.stopPropagation();
-    event.preventDefault();
+    handled(event);
 });
 document.addEventListener("mouseup", event => {
     if (!resizing_sidebar) return;
     resizing_sidebar = false;
-    event.stopPropagation();
-    event.preventDefault();
+    handled(event);
 });
 
 function send_resize () {
@@ -94,8 +126,7 @@ function send_resize () {
 
 function on_new_tab_clicked (event) {
     host.postMessage(["new_toplevel_tab"]);
-    event.stopPropagation();
-    event.preventDefault();
+    handled(event);
 }
 
 
@@ -111,8 +142,7 @@ function on_tab_clicked (event) {
             host.postMessage(["close", +$item.id]);
         }
     }
-    event.stopPropagation();
-    event.preventDefault();
+    handled(event);
 }
 
 function on_close_clicked (event) {
@@ -120,8 +150,7 @@ function on_close_clicked (event) {
     if ($item) {
         host.postMessage(["close", +$item.id]);
     }
-    event.stopPropagation();
-    event.preventDefault();
+    handled(event);
 }
 
 function expand_tab (tab) {
@@ -143,8 +172,7 @@ function on_expand_clicked (event) {
             expand_tab(tab);
         }
     }
-    event.stopPropagation();
-    event.preventDefault();
+    handled(event);
 }
 
 let commands = {
@@ -244,7 +272,6 @@ let commands = {
                 let next = tab.next == 0 ? null : tabs_by_id[tab.next];
                 if (next && !next.$item.isConnected) return;
                 let $parent_list = tab.parent == 0 ? $toplist : tabs_by_id[tab.parent].$list;
-                console.log(tab, next);
                 $parent_list.insertBefore(tab.$item, next ? next.$item : null);
                 insertIfNeeded(tabs_by_id[tab.prev]);
             }

@@ -63,3 +63,7 @@ int WINAPI WinMain (
     }
     return (int)msg.wParam;
 }
+
+void quit () {
+    PostQuitMessage(0);
+}

@@ -69,7 +69,7 @@ RECT Shell::resize (RECT bounds) {
     }
     if (!window()->fullscreen) {
         bounds.top += toolbar_height;
-        bounds.right -= sidebar_width;
+        bounds.right -= sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
     }
     return bounds;
 }
@@ -198,16 +198,23 @@ void Shell::message_from_shell (Value&& message) {
         close_tab(id);
         break;
     }
-    case x31_hash("main_menu"): {
-        int x = message[1];
-        int y = message[2];
-         // TODO: get rasterization scale instead of hardcoding it
-        window()->show_main_menu(x * 2, y * 2);
+    case x31_hash("show_main_menu"): {
+        main_menu_width = uint(message[1]) * 2;
+        window()->resize_everything();
+        break;
+    }
+    case x31_hash("hide_main_menu"): {
+        main_menu_width = 0;
+        window()->resize_everything();
         break;
     }
     case x31_hash("new_toplevel_tab"): {
         Transaction tr;
         focus_tab(create_webpage_tab(0, "about:blank"));
+        break;
+    }
+    case x31_hash("quit"): {
+        quit();
         break;
     }
     default: {
