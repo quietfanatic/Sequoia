@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <WebView2.h>
@@ -8,10 +9,15 @@
 
 #include "assert.h"
 #include "data.h"
+#include "logging.h"
+#include "util.h"
+#include "utf8.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
+
+std::string profile_folder;
 
 wil::com_ptr<IWebView2Environment> webview_environment;
 
@@ -41,8 +47,25 @@ int WINAPI WinMain (
 ) {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
+     // This is so dumb
+    char** argv = __argv;
+    int argc = __argc;
+    for (int i = 0; i < argc; i++) {
+        LOG("arg", i, argv[i]);
+        std::string arg = argv[i];
+        if (arg.starts_with("--profile-folder=")) {
+            profile_folder = arg.substr(strlen("--profile-folder="));
+        }
+    }
+    if (profile_folder.empty()) {
+        profile_folder = exe_relative("default-profile");
+    }
+    profile_folder = to_utf8(filesystem::absolute(profile_folder));
+    LOG("Using profile folder:", profile_folder);
+    filesystem::create_directory(profile_folder);
+
     AH(CreateWebView2EnvironmentWithDetails(
-        nullptr, nullptr, nullptr,
+        nullptr, to_utf16(profile_folder + "/edge-user-data").c_str(), nullptr,
         Callback<IWebView2CreateWebView2EnvironmentCompletedHandler>(
             [](HRESULT hr, IWebView2Environment* environment) -> HRESULT
     {

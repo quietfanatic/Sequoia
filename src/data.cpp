@@ -8,6 +8,7 @@
 #include "db_support.h"
 #include "hash.h"
 #include "logging.h"
+#include "main.h"
 #include "util.h"
 
 using namespace std;
@@ -19,8 +20,8 @@ sqlite3* db = nullptr;
 
 void init_db () {
     if (db) return;
-    LOG("init_db");
-    string db_file = exe_relative("db.sqlite");
+    string db_file = profile_folder + "/sequoia-state.sqlite";
+    LOG("init_db", db_file);
     bool exists = filesystem::exists(db_file) && filesystem::file_size(db_file) > 0;
     AS(sqlite3_open(db_file.c_str(), &db));
     if (!exists) {

@@ -7,6 +7,8 @@
 
 struct IWebView2Environment;
 
+extern std::string profile_folder;
+
 extern wil::com_ptr<IWebView2Environment> webview_environment;
 
 void quit ();
