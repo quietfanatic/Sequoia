@@ -52,6 +52,12 @@ button:disabled {
 #forward::before {
     content:"▶";
 }
+#toggle-sidebar::before {
+    content:"⭲";
+}
+html.hide-sidebar #toggle-sidebar::before {
+    content:"⭰";
+}
 #main-menu::before {
     content:"⋯";
 }
@@ -65,6 +71,9 @@ button:disabled {
     background-color:var(--toolbar-bg);
     display:flex;
     flex-direction:column;
+}
+html.hide-sidebar #sidebar {
+    display:none;
 }
 #sidebar > .list {
     flex-grow:1;

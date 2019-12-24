@@ -3,6 +3,7 @@
 let host = window.chrome.webview;
 
 let focused_tab = null;
+let showing_sidebar = true;
 
 let $html = document.documentElement;
 let $toolbar, $back, $forward, $address, $sidebar, $toplist;
@@ -11,18 +12,38 @@ $(document.body, {}, [
     $toolbar = $("div", {id:"toolbar"}, [
         $back = $("button", {id:"back"}, [], {click: e => {
             host.postMessage(["back"]);
+            event.stopPropagation();
+            event.preventDefault();
         }}),
         $forward = $("button", {id:"forward"}, [], {click: e => {
             host.postMessage(["forward"]);
+            event.stopPropagation();
+            event.preventDefault();
         }}),
         $address = $("input", {}, [], {keydown: e => {
             if (e.key == "Enter") {
                 host.postMessage(["navigate", $address.value]);
             }
+            event.stopPropagation();
+            event.preventDefault();
+        }}),
+        $("button", {id:"toggle-sidebar"}, [], {click: e => {
+            showing_sidebar = !showing_sidebar;
+            if (showing_sidebar) {
+                $html.classList.remove("hide-sidebar");
+            }
+            else {
+                $html.classList.add("hide-sidebar");
+            }
+            send_resize();
+            event.stopPropagation();
+            event.preventDefault();
         }}),
         $("button", {id:"main-menu"}, [], {click: e => {
             let area = e.target.getBoundingClientRect();
             host.postMessage(["main_menu", area.right, area.bottom]);
+            event.stopPropagation();
+            event.preventDefault();
         }}),
     ]),
     $sidebar = $("div", {id:"sidebar"}, [
@@ -66,7 +87,9 @@ document.addEventListener("mouseup", event => {
 });
 
 function send_resize () {
-    host.postMessage(["resize", $sidebar.offsetWidth, $toolbar.offsetHeight]);
+    let x = showing_sidebar ? $sidebar.offsetWidth : 0;
+    let y = $toolbar.offsetHeight;
+    host.postMessage(["resize", x, $toolbar.offsetHeight]);
 }
 
 function on_new_tab_clicked (event) {
