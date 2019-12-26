@@ -10,6 +10,7 @@
 #include "hash.h"
 #include "logging.h"
 #include "main.h"
+#include "nursery.h"
 #include "json/json.h"
 #include "utf8.h"
 #include "util.h"
@@ -22,13 +23,12 @@ using namespace json;
 Window* Shell::window () { return (Window*)((char*)this - offsetof(Window, shell)); }
 
 Shell::Shell () {
-    AH(webview_environment->CreateWebView(window()->hwnd,
-        Callback<IWebView2CreateWebViewCompletedHandler>(
-            [this](HRESULT hr, IWebView2WebView* wv)
-    {
-        AH(hr);
-        AH(wv->QueryInterface(IID_PPV_ARGS(&webview)));
-        AW(webview_hwnd = GetWindow(window()->hwnd, GW_CHILD));
+    new_webview([this](WebView* wv, HWND hwnd){
+        webview = wv;
+        webview_hwnd = hwnd;
+        SetParent(webview_hwnd, window()->hwnd);
+        webview->put_IsVisible(TRUE);
+
         webview->add_WebMessageReceived(
             Callback<IWebView2WebMessageReceivedEventHandler>(
                 [this](
@@ -47,9 +47,7 @@ Shell::Shell () {
         webview->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
 
         window()->resize_everything();
-
-        return S_OK;
-    }).Get()));
+    });
 };
 
 void Shell::focus_tab (int64 tab) {

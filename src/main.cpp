@@ -3,13 +3,13 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
-#include <WebView2.h>
 #include <windows.h>
 #include <wrl.h>
 
 #include "assert.h"
 #include "data.h"
 #include "logging.h"
+#include "nursery.h"
 #include "util.h"
 #include "utf8.h"
 #include "Window.h"
@@ -18,8 +18,6 @@ using namespace Microsoft::WRL;
 using namespace std;
 
 std::string profile_folder;
-
-wil::com_ptr<IWebView2Environment> webview_environment;
 
 void start_browser () {
     vector<WindowData> all_windows = get_all_unclosed_windows();
@@ -50,6 +48,7 @@ int WINAPI WinMain (
      // This is so dumb
     char** argv = __argv;
     int argc = __argc;
+     // Parse arguments
     for (int i = 0; i < argc; i++) {
         LOG("arg", i, argv[i]);
         std::string arg = argv[i];
@@ -57,26 +56,17 @@ int WINAPI WinMain (
             profile_folder = arg.substr(strlen("--profile-folder="));
         }
     }
+     // Figure out profile folder
     if (profile_folder.empty()) {
         profile_folder = exe_relative("default-profile");
     }
     profile_folder = to_utf8(filesystem::absolute(profile_folder));
     LOG("Using profile folder:", profile_folder);
     filesystem::create_directory(profile_folder);
-
-    AH(CreateWebView2EnvironmentWithDetails(
-        nullptr, to_utf16(profile_folder + "/edge-user-data").c_str(), nullptr,
-        Callback<IWebView2CreateWebView2EnvironmentCompletedHandler>(
-            [](HRESULT hr, IWebView2Environment* environment) -> HRESULT
-    {
-        AH(hr);
-        webview_environment = environment;
-
-        start_browser();
-
-        return S_OK;
-    }).Get()));
-
+     // Start
+    init_nursery(profile_folder + "/edge-user-data");
+    start_browser();
+     // Run message loop
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {
         if (!IsDialogMessage(GetAncestor(msg.hwnd, GA_ROOT), &msg)) {

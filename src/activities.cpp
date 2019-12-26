@@ -11,7 +11,7 @@
 #include "data.h"
 #include "hash.h"
 #include "json/json.h"
-#include "main.h"
+#include "nursery.h"
 #include "utf8.h"
 #include "util.h"
 #include "Window.h"
@@ -21,46 +21,13 @@ using namespace std;
 
 static map<int64, Activity*> activities_by_tab;
 
-static HWND get_nursery () {
-    static HWND nursery = []{
-        static auto class_name = "Sequoia Nursery";
-        static bool init = []{
-            WNDCLASSEX c {};
-            c.cbSize = sizeof(WNDCLASSEX);
-            c.lpfnWndProc = DefWindowProc;
-            c.hInstance = GetModuleHandle(nullptr);
-            c.lpszClassName = class_name;
-            AW(RegisterClassEx(&c));
-            return true;
-        }();
-        HWND hwnd = CreateWindow(
-            class_name,
-            "Sequoia Nursery",
-            0,
-            0, 0,
-            0, 0,
-            HWND_MESSAGE,
-            nullptr,
-            GetModuleHandle(nullptr),
-            nullptr
-        );
-        AW(hwnd);
-        return hwnd;
-    }();
-    return nursery;
-}
-
 Activity::Activity (int64 t) : tab(t) {
     A(!activities_by_tab.contains(t));
     activities_by_tab.emplace(t, this);
 
-    AH(webview_environment->CreateWebView(get_nursery(),
-        Callback<IWebView2CreateWebViewCompletedHandler>(
-            [this](HRESULT hr, IWebView2WebView* wv) -> HRESULT
-    {
-        AH(hr);
-        AH(wv->QueryInterface(IID_PPV_ARGS(&webview)));
-        AW(webview_hwnd = GetWindow(get_nursery(), GW_CHILD));
+    new_webview([this](WebView* wv, HWND hwnd){
+        webview = wv;
+        webview_hwnd = hwnd;
 
         claimed_by_window(window);
         if (window) window->resize_everything();
@@ -145,9 +112,7 @@ Activity::Activity (int64 t) : tab(t) {
         }).Get(), nullptr));
 
         navigate_url_or_search(get_tab_url(tab));
-
-        return S_OK;
-    }).Get()));
+    });
 }
 
 void Activity::message_from_webview(json::Value&& message) {
