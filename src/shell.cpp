@@ -198,6 +198,9 @@ void Shell::message_from_shell (Value&& message) {
     case x31_hash("close"): {
         int64 id = message[1];
         close_tab(id);
+        if (auto activity = activity_for_tab(id)) {
+            delete activity;
+        }
         break;
     }
     case x31_hash("show_main_menu"): {
