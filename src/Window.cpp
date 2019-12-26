@@ -57,6 +57,7 @@ void Window::focus_tab (int64 t) {
     tab = t;
     if (tab) {
         claim_activity(ensure_activity_for_tab(tab));
+        shell.update({tab});
     }
 }
 
