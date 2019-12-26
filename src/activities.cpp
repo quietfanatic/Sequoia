@@ -1,6 +1,8 @@
 #include "activities.h"
 
 #include <fstream>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <WebView2.h>
 #include <wrl.h>
@@ -142,7 +144,7 @@ Activity::Activity (int64 t) : tab(t) {
             return S_OK;
         }).Get(), nullptr));
 
-        webview->Navigate(to_utf16(get_tab_url(tab)).c_str());
+        navigate_url_or_search(get_tab_url(tab));
 
         return S_OK;
     }).Get()));
@@ -181,6 +183,55 @@ void Activity::claimed_by_window (Window* w) {
 void Activity::resize (RECT bounds) {
     if (webview) {
         webview->put_Bounds(bounds);
+    }
+}
+
+bool Activity::navigate_url (const string& address) {
+    auto hr = webview->Navigate(to_utf16(address).c_str());
+    if (SUCCEEDED(hr)) return true;
+    if (hr != E_INVALIDARG) AH(hr);
+    return false;
+}
+void Activity::navigate_search (const string& search) {
+     // Escape URL characters
+    string url = "https://duckduckgo.com/?q=";
+    for (auto c : search) {
+        switch (c) {
+        case ' ': url += '+'; break;
+        case '+':
+        case '&':
+        case ';':
+        case '=':
+        case '?':
+        case '#': {
+            stringstream ss;
+            ss << hex << setw(2) << uint(c);
+            url += ss.str();
+            break;
+        }
+        default: url += c; break;
+        }
+    }
+     // If the search URL is invalid, treat it as a bug
+    A(navigate_url(url));
+}
+
+void Activity::navigate_url_or_search (const string& address) {
+    if (webview) {
+        if (navigate_url(address)) return;
+        if (address.find(' ') != string::npos
+            || address.find('.') == string::npos
+        ) {
+            navigate_search(address);
+        }
+        else {
+            string url = "http://" + address;
+            if (navigate_url(url)) return;
+            navigate_search(address);
+        }
+    }
+    else {
+        set_tab_url(tab, address);
     }
 }
 

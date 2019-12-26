@@ -21,9 +21,12 @@ struct Activity {
 
     Activity(int64 tab);
 
-    void claimed_by_window (Window*);
     void resize (RECT available);
+    bool navigate_url (const std::string& url);
+    void navigate_search (const std::string& search);
+    void navigate_url_or_search (const std::string& address);
 
+    void claimed_by_window (Window*);
     void message_from_webview (json::Value&& message);
 
     ~Activity();

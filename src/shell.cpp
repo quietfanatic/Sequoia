@@ -176,8 +176,10 @@ void Shell::message_from_shell (Value&& message) {
         break;
     }
     case x31_hash("navigate"): {
-        const String& url = message[1];
-        if (auto wv = active_webview()) wv->Navigate(to_utf16(url).c_str());
+        const String& address = message[1];
+        if (window()->activity) {
+            window()->activity->navigate_url_or_search(address);
+        }
         break;
     }
     case x31_hash("back"): {
