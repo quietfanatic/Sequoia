@@ -142,6 +142,7 @@
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nursery.cpp" />
+    <ClCompile Include="settings.cpp" />
     <ClCompile Include="shell.cpp" />
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="utf8.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="logging.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="nursery.h" />
+    <ClInclude Include="settings.h" />
     <ClInclude Include="shell.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="stuff.h" />

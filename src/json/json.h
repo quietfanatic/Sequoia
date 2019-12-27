@@ -63,8 +63,7 @@ struct Value {
     template <class T>
     Value (T* v) { static_assert(false, "Can't convert this pointer to json::Value"); }
 
-    operator const nullptr_t& () const { assert(type == NULL); return nullptr; }
-    operator const bool& () const { assert(type == BOOL); return boolean; }
+    operator bool () const { assert(type == BOOL); return boolean; }
     operator signed char () const { assert(type == NUMBER); return signed char(number); }
     operator unsigned char () const { assert(type == NUMBER); return unsigned char(number); }
     operator short () const { assert(type == NUMBER); return short(number); }
@@ -76,10 +75,13 @@ struct Value {
     operator long long () const { assert(type == NUMBER); return long long(number); }
     operator unsigned long long () const { assert(type == NUMBER); return unsigned long long(number); }
     operator float () const { assert(type == NUMBER); return float(number); }
-    operator const double& () const { assert(type == NUMBER); return number; }
+    operator double () const { assert(type == NUMBER); return number; }
     operator const String& () const { assert(type == STRING); return *string; }
+    operator String&& () && { assert(type == STRING); return std::move(*string); }
     operator const Array& () const { assert(type == ARRAY); return *array; }
+    operator Array&& () && { assert(type == ARRAY); return std::move(*array); }
     operator const Object& () const { assert(type == OBJECT); return *object; }
+    operator Object&& () && { assert(type == OBJECT); return std::move(*object); }
 
     template <class T> operator const T& () const {
         static_assert(false, "Can't convert json::Value to this type.");

@@ -10,6 +10,7 @@
 #include "data.h"
 #include "logging.h"
 #include "nursery.h"
+#include "settings.h"
 #include "util.h"
 #include "utf8.h"
 #include "Window.h"
@@ -64,6 +65,7 @@ int WINAPI WinMain (
     LOG("Using profile folder:", profile_folder);
     filesystem::create_directory(profile_folder);
      // Start
+    load_settings();
     init_nursery(profile_folder + "/edge-user-data");
     start_browser();
      // Run message loop

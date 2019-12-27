@@ -12,6 +12,7 @@
 #include "main.h"
 #include "nursery.h"
 #include "json/json.h"
+#include "settings.h"
 #include "utf8.h"
 #include "util.h"
 #include "Window.h"
@@ -144,7 +145,7 @@ void Shell::message_from_shell (Value&& message) {
          // Set system colors
         message_to_shell(Array{
             "colors",
-            css_color(GetSysColor(COLOR_ACTIVECAPTION)),
+            css_color(toolbar_color),
             css_color(GetSysColor(COLOR_CAPTIONTEXT)),
             css_color(GetSysColor(COLOR_3DFACE)),
             css_color(GetSysColor(COLOR_WINDOWTEXT)),

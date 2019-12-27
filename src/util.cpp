@@ -15,7 +15,7 @@ string exe_relative (const string& filename) {
 }
 
 string slurp (const string& filename) {
-    ifstream file (filename, ios::ate);
+    ifstream file (filename, ios::ate | ios::binary);
     size_t len = file.tellg();
     file.seekg(0, ios::beg);
     string r (len, 0);
