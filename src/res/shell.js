@@ -42,7 +42,12 @@ $(document.body, {}, [
             handled(e);
         }}),
         $("button", {id:"show-main-menu"}, [], {click: e => {
-            open_main_menu();
+            if (showing_main_menu) {
+                close_main_menu();
+            }
+            else {
+                open_main_menu();
+            }
             handled(e);
         }}),
     ]),
@@ -71,6 +76,8 @@ function menu_item(message) {
 }
 
 document.addEventListener("click", e => {
+    let $show_main_menu = event.target.closest("#show-main-menu");
+    if ($show_main_menu) return;
     close_main_menu();
 }, {capture:true});
 window.addEventListener("blur", e => {
