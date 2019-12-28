@@ -5,9 +5,10 @@ let host = window.chrome.webview;
 let focused_id = 0;
 let showing_sidebar = true;
 let showing_main_menu = false;
+let currently_loading = false;
 
 let $html = document.documentElement;
-let $toolbar, $back, $forward, $address, $sidebar, $toplist, $main_menu;
+let $toolbar, $back, $forward, $reload, $address, $sidebar, $toplist, $main_menu;
 
 function handled (event) {
     event.stopPropagation();
@@ -24,6 +25,7 @@ $(document.body, {}, [
             host.postMessage(["forward"]);
             handled(e);
         }}),
+        $reload = $("div", {id:"reload"}, [], {click:reload_or_stop}),
         $address = $("input", {}, [], {keydown: e => {
             if (e.key == "Enter") {
                 host.postMessage(["navigate", $address.value]);
@@ -68,6 +70,16 @@ function menu_item(message) {
         close_main_menu();
         handled(event);
     };
+}
+
+function reload_or_stop (event) {
+    if (currently_loading) {
+        host.postMessage(["stop"]);
+    }
+    else {
+        host.postMessage(["reload"]);
+    }
+    handled(event);
 }
 
 document.addEventListener("click", e => {
@@ -213,9 +225,11 @@ let commands = {
             }
         }
     },
-    activity (can_go_back, can_go_forward) {
+    activity (can_go_back, can_go_forward, loading) {
         $back.classList.toggle("disabled", !can_go_back);
         $forward.classList.toggle("disabled", !can_go_forward);
+        currently_loading = loading;
+        $reload.classList.toggle("loading", loading);
     },
     tabs (updates) {
         for (let [

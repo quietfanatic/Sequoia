@@ -39,6 +39,16 @@ Activity::Activity (int64 t) : tab(t) {
         AH(webview->get_Settings(&settings));
         AH(settings->put_IsStatusBarEnabled(FALSE));
 
+        AH(webview->add_NavigationStarting(
+            Callback<IWebView2NavigationStartingEventHandler>([this](
+                IWebView2WebView* sender,
+                IWebView2NavigationStartingEventArgs* args) -> HRESULT
+        {
+            currently_loading = true;
+            if (window) window->send_activity();
+            return S_OK;
+        }).Get(), nullptr));
+
         AH(webview->add_DocumentTitleChanged(
             Callback<IWebView2DocumentTitleChangedEventHandler>(
                 [this](IWebView2WebView* sender, IUnknown* args) -> HRESULT
@@ -75,6 +85,16 @@ Activity::Activity (int64 t) : tab(t) {
                 set_tab_url(tab, to_utf8(source.get()));
             }
 
+            return S_OK;
+        }).Get(), nullptr));
+
+        AH(webview->add_NavigationCompleted(
+            Callback<IWebView2NavigationCompletedEventHandler>([this](
+                IWebView2WebView* sender,
+                IWebView2NavigationCompletedEventArgs* args) -> HRESULT
+        {
+            currently_loading = false;
+            if (window) window->send_activity();
             return S_OK;
         }).Get(), nullptr));
 

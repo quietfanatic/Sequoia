@@ -155,7 +155,8 @@ void Window::send_activity () {
     message_to_shell(json::array(
         "activity",
         activity->can_go_back,
-        activity->can_go_forward
+        activity->can_go_forward,
+        activity->currently_loading
     ));
 }
 
@@ -201,20 +202,32 @@ void Window::message_from_shell (json::Value&& message) {
     }
     case x31_hash("navigate"): {
         const string& address = message[1];
-        if (auto activity = activity_for_tab(focused_tab)) {
+        if (activity) {
             activity->navigate_url_or_search(address);
         }
         break;
     }
     case x31_hash("back"): {
-        if (auto activity = activity_for_tab(focused_tab)) {
-            if (activity->webview) activity->webview->GoBack();
+        if (activity && activity->webview) {
+            activity->webview->GoBack();
         }
         break;
     }
     case x31_hash("forward"): {
-        if (auto activity = activity_for_tab(focused_tab)) {
-            if (activity->webview) activity->webview->GoForward();
+        if (activity && activity->webview) {
+            activity->webview->GoForward();
+        }
+        break;
+    }
+    case x31_hash("reload"): {
+        if (activity && activity->webview) {
+            activity->webview->Reload();
+        }
+        break;
+    }
+    case x31_hash("stop"): {
+        if (activity && activity->webview) {
+            activity->webview->Stop();
         }
         break;
     }
@@ -225,9 +238,9 @@ void Window::message_from_shell (json::Value&& message) {
     }
     case x31_hash("load"): {
         int64 tab = message[1];
-        ensure_activity_for_tab(tab);
+        Activity* a = ensure_activity_for_tab(tab);
         if (tab == focused_tab) {
-            claim_activity(ensure_activity_for_tab(tab));
+            claim_activity(a);
             send_activity();
         }
         break;

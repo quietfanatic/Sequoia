@@ -17,6 +17,7 @@ struct Activity {
     HWND webview_hwnd = nullptr;
     bool can_go_back = false;
     bool can_go_forward = false;
+    bool currently_loading = false;
 
     Activity(int64 tab);
 
