@@ -58,7 +58,6 @@ void Window::focus_tab (int64 t) {
     tab = t;
     if (tab) {
         claim_activity(ensure_activity_for_tab(tab));
-        shell.update({tab});
          // When moving down tab list, preload next tab
         if (old_tab) {
             TabData data = get_tab_data(tab);
@@ -66,6 +65,7 @@ void Window::focus_tab (int64 t) {
                 if (data.next) ensure_activity_for_tab(data.next);
             }
         }
+        shell.focus_tab(tab);
     }
 }
 

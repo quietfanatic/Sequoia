@@ -50,11 +50,6 @@ Shell::Shell () {
     });
 };
 
-void Shell::focus_tab (int64 tab) {
-    window()->focus_tab(tab);
-    set_window_focused_tab(window()->id, tab);
-}
-
 RECT Shell::resize (RECT bounds) {
     if (webview) {
         webview->put_Bounds(bounds);
@@ -72,62 +67,85 @@ RECT Shell::resize (RECT bounds) {
     return bounds;
 }
 
-void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
-    update(updated_tabs);
+void Shell::Observer_after_commit (
+    const vector<int64>& updated_tabs,
+    const vector<int64>& updated_windows
+) {
+    send_tabs(updated_tabs);
+
+    for (auto id : updated_windows) {
+        if (id == window()->id) {
+            int64 focused_tab = get_window_focused_tab(id);
+            if (focused_tab != window()->tab) {
+                window()->focus_tab(focused_tab);
+            }
+            break;
+        }
+    }
 }
 
-void Shell::update (const vector<int64>& updated_tabs) {
+void Shell::focus_tab (int64 focused_tab) {
+    LOG("Shell::focus_tab", focused_tab);
+    message_to_shell(json::array("focus", focused_tab));
+    if (window()->activity) {
+        message_to_shell(json::array(
+            "activity",
+            window()->activity->can_go_back,
+            window()->activity->can_go_forward
+        ));
+    }
+}
+
+void Shell::send_tabs (const vector<int64>& updated_tabs) {
     json::Array updates;
     updates.reserve(updated_tabs.size());
+    bool send_activity = false;
     for (auto tab : updated_tabs) {
         TabData t = get_tab_data(tab);
         Activity* activity = activity_for_tab(tab);
         if (window()->tab == tab) {
-            updates.emplace_back(json::array(
-                tab,
-                t.parent,
-                t.prev,
-                t.next,
-                t.child_count,
-                t.title,
-                t.url,
-                !!activity,
-                t.closed_at,
-                true,
-                activity && activity->can_go_back,
-                activity && activity->can_go_forward
-            ));
+            send_activity = true;
         }
-        else {
-            updates.emplace_back(json::array(
-                tab,
-                t.parent,
-                t.prev,
-                t.next,
-                t.child_count,
-                t.title,
-                t.url,
-                !!activity,
-                t.closed_at
-            ));
-        }
-         // If the current tab is closing, find a new tab to focus
-        if (window()->tab == tab && t.closed_at) {
-            LOG("Finding successor", tab);
-            Transaction tr;
-            int64 successor;
-            while (t.closed_at) {
-                successor = t.next ? t.next
-                    : t.parent ? t.parent
-                    : t.prev ? t.prev
-                    : create_webpage_tab(0, "about:blank");
-                A(successor);
-                t = get_tab_data(successor);
+        updates.emplace_back(json::array(
+            tab,
+            t.parent,
+            t.prev,
+            t.next,
+            t.child_count,
+            t.title,
+            t.url,
+            !!activity,
+            t.closed_at
+        ));
+        if (window()->tab == tab) {
+            if (t.closed_at) {
+                 // If the current tab is closing, find a new tab to focus
+                LOG("Finding successor", tab);
+                Transaction tr;
+                int64 successor;
+                while (t.closed_at) {
+                    successor = t.next ? t.next
+                        : t.parent ? t.parent
+                        : t.prev ? t.prev
+                        : create_webpage_tab(0, "about:blank");
+                    A(successor);
+                    t = get_tab_data(successor);
+                }
+                set_window_focused_tab(window()->id, successor);
             }
-            focus_tab(successor);
+            else {
+                send_activity = true;
+            }
         }
     }
-    message_to_shell(json::array("update", updates));
+    message_to_shell(json::array("tabs", updates));
+    if (send_activity && window()->activity) {
+        message_to_shell(json::array(
+            "activity",
+            window()->activity->can_go_back,
+            window()->activity->can_go_forward
+        ));
+    }
 };
 
 static string css_color (uint32 c) {
@@ -158,7 +176,7 @@ void Shell::message_from_shell (json::Value&& message) {
                     required_tabs.push_back(c);
                 }
             }
-            update(required_tabs);
+            send_tabs(required_tabs);
         }
         break;
     }
@@ -186,7 +204,7 @@ void Shell::message_from_shell (json::Value&& message) {
     }
     case x31_hash("focus"): {
         int64 id = message[1];
-        focus_tab(id);
+        set_window_focused_tab(window()->id, id);
         break;
     }
     case x31_hash("close"): {
@@ -209,7 +227,8 @@ void Shell::message_from_shell (json::Value&& message) {
     }
     case x31_hash("new_toplevel_tab"): {
         Transaction tr;
-        focus_tab(create_webpage_tab(0, "about:blank"));
+        int64 id = create_webpage_tab(0, "about:blank");
+        set_window_focused_tab(window()->id, id);
         break;
     }
     case x31_hash("quit"): {

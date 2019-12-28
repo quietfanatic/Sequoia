@@ -21,12 +21,16 @@ struct Shell : Observer {
     uint toolbar_height = 56;
     uint main_menu_width = 0;
 
-    void focus_tab (int64 tab);
     RECT resize (RECT available);
 
-    void Observer_after_commit (const std::vector<int64>& updated_tabs) override;
+    void Observer_after_commit (
+        const std::vector<int64>& updated_tabs,
+        const std::vector<int64>& updated_windows
+    ) override;
 
-    void update (const std::vector<int64>& updated_tabs);
+    void focus_tab (int64 focused_tab);
+    void send_tabs (const std::vector<int64>& updated_tabs);
+
     void message_from_shell (json::Value&& message);
     void message_to_shell (json::Value&& message);
 

@@ -80,6 +80,7 @@ struct WindowData {
 int64 create_window (int64 focused_tab);
 std::vector<WindowData> get_all_unclosed_windows ();
 void set_window_focused_tab (int64 window, int64 tab);
+int64 get_window_focused_tab (int64 window);
 
 void fix_child_counts ();
 
@@ -92,7 +93,8 @@ struct Transaction {
 
 struct Observer {
     virtual void Observer_after_commit (
-        const std::vector<int64>& updated_tabs
+        const std::vector<int64>& updated_tabs,
+        const std::vector<int64>& updated_windows
     ) = 0;
     Observer();
     ~Observer();

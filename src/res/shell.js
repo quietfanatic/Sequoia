@@ -2,7 +2,7 @@
 
 let host = window.chrome.webview;
 
-let focused_tab = null;
+let focused_id = 0;
 let showing_sidebar = true;
 let showing_main_menu = false;
 
@@ -142,11 +142,14 @@ let tabs_by_id = {};
 function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
     if ($item) {
+        let id = +$item.id;
         if (event.button == 0) {
-            host.postMessage(["focus", +$item.id]);
+            if (focused_id != id) {
+                host.postMessage(["focus", id]);
+            }
         }
         else if (event.button == 1) {
-            host.postMessage(["close", +$item.id]);
+            host.postMessage(["close", id]);
         }
     }
     handled(event);
@@ -188,10 +191,32 @@ function on_expand_clicked (event) {
 }
 
 let commands = {
-    update (updates) {
+    focus (id) {
+        let old_tab = tabs_by_id[focused_id];
+        if (old_tab) {
+            old_tab.$tab.classList.remove("focused");
+        }
+        focused_id = id;
+        let tab = tabs_by_id[id];
+        if (tab) {
+            tab.$tab.classList.add("focused");
+            $address.value = tab.url;
+             // Expand everything above and including the focused tab
+            expandUp(tab)
+            function expandUp (tab) {
+                if (!tab) return;
+                expand_tab(tab);
+                expandUp(tabs_by_id[tab.parent]);
+            }
+        }
+    },
+    activity (can_go_back, can_go_forward) {
+        $back.classList.toggle("disabled", !can_go_back);
+        $forward.classList.toggle("disabled", !can_go_forward);
+    },
+    tabs (updates) {
         for (let [
-            id, parent, prev, next, child_count,
-            title, url, loaded, closed_at, focus, can_go_back, can_go_forward
+            id, parent, prev, next, child_count, title, url, loaded, closed_at
         ] of updates) {
             id = +id;
             parent = +parent;
@@ -232,6 +257,7 @@ let commands = {
                         parent: parent,
                         prev: prev,
                         next: next,
+                        url: url,
                         expanded: false,
                         $item: $item,
                         $tab: $tab,
@@ -249,6 +275,9 @@ let commands = {
                     tab.next = next;
                     tab.$tab.setAttribute("title", tooltip);
                     tab.$title.innerText = title;
+                    if (focused_id == id) {
+                        $address.value = tab.url;
+                    }
                 }
 
                 if (child_count) {
@@ -261,16 +290,6 @@ let commands = {
                 }
                 tab.$tab.classList.toggle("loaded", loaded);
 
-                if (focus) {
-                    if (focused_tab) {
-                        focused_tab.$tab.classList.remove("focused");
-                    }
-                    focused_tab = tab;
-                    tab.$tab.classList.add("focused");
-                    $address.value = url;
-                    $back.classList.toggle("disabled", !can_go_back);
-                    $forward.classList.toggle("disabled", !can_go_forward);
-                }
             }
         }
          // Wait until we're done updating to insert moved tabs, so that all new
@@ -287,13 +306,6 @@ let commands = {
                 insertIfNeeded(tabs_by_id[tab.prev]);
             }
             insertIfNeeded(tabs_by_id[id]);
-        }
-         // Expand everything above and including the focused tab
-        expandUp(focused_tab)
-        function expandUp (tab) {
-            if (!tab) return;
-            expand_tab(tab);
-            expandUp(tabs_by_id[tab.parent]);
         }
     },
     settings (settings) {

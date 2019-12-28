@@ -40,6 +40,7 @@ static double now () {
 
 static std::vector<Observer*> all_observers;
 static std::vector<int64> updated_tabs;
+static std::vector<int64> updated_windows;
 
 static void tab_updated (int64 id) {
     A(id > 0);
@@ -47,6 +48,13 @@ static void tab_updated (int64 id) {
         if (t == id) return;
     }
     updated_tabs.push_back(id);
+}
+static void window_updated (int64 id) {
+    A(id > 0);
+    for (auto w : updated_windows) {
+        if (w == id) return;
+    }
+    updated_windows.push_back(id);
 }
 
 void update_observers () {
@@ -59,9 +67,10 @@ void update_observers () {
         return;
     }
     updating = true;
-    auto update = move(updated_tabs);
+    auto tabs = move(updated_tabs);
+    auto windows = move(updated_windows);
     for (auto o : all_observers) {
-        o->Observer_after_commit(update);
+        o->Observer_after_commit(tabs, windows);
     }
     updating = false;
     if (again) {
@@ -87,13 +96,14 @@ Transaction::~Transaction () {
         if (uncaught_exceptions()) {
             static State<>::Ment<> rollback {"ROLLBACK"};
             rollback.run_void();
+            updated_tabs.clear();
+            updated_windows.clear();
         }
         else {
             static State<>::Ment<> commit {"COMMIT"};
             commit.run_void();
             update_observers();
         }
-        updated_tabs.clear();
     }
 }
 
@@ -260,7 +270,9 @@ int64 create_window (int64 focused_tab) {
 INSERT INTO windows (focused_tab, created_at) VALUES (?, ?)
     )"};
     create.run_void(focused_tab, now());
-    return sqlite3_last_insert_rowid(db);
+    int64 id = sqlite3_last_insert_rowid(db);
+    window_updated(id);
+    return id;
 }
 
 vector<WindowData> get_all_unclosed_windows () {
@@ -287,4 +299,14 @@ void set_window_focused_tab (int64 window, int64 tab) {
 UPDATE windows SET focused_tab = ? WHERE id = ?
     )"};
     set.run_void(tab, window);
+    window_updated(window);
+}
+
+int64 get_window_focused_tab (int64 window) {
+    init_db();
+    LOG("get_window_focused_tab", window);
+    static State<int64>::Ment<int64> get {R"(
+SELECT focused_tab FROM windows WHERE id = ?
+    )"};
+    return get.run_single(window);
 }
