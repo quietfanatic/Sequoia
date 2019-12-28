@@ -14,10 +14,11 @@ html {
 
     --toolbar-bg:#333333;
     --toolbar-fg:#ffffff;
-    --toolbar-border:#999999;
+    --toolbar-border:#666666;
     --tab-bg:#333333;
     --tab-fg:#ffffff;
-    --tab-border:#999999;
+    --tab-top:#666666;
+    --tab-bottom:#000000;
     --tree-bg:#777777;
     --tree-bg-alt:#888888;
 }
@@ -101,7 +102,6 @@ html.hide-sidebar #sidebar {
 #sidebar-bottom {
     flex-shrink:0;
     height:var(--sidebar-bottom-height);
-    border-top:1px solid var(--toolbar-border);
     background-color:var(--toolbar-bg);
     color:var(--toolbar-fg);
     font-size:var(--sidebar-bottom-font-size);
@@ -113,6 +113,7 @@ html.hide-sidebar #sidebar {
     flex-shrink:0;
     box-sizing:border-box;
     width:var(--sidebar-bottom-height);
+    text-align:center;
     border-right:1px solid var(--toolbar-border);
     cursor:ew-resize;
 }
@@ -133,7 +134,9 @@ html.hide-sidebar #sidebar {
     width:100%;
     height:var(--tab-height);
     font-size:var(--tab-font-size);
-    border-top:1px solid var(--tab-border);
+    border-top:1px solid var(--tab-top);
+    border-left:1px solid var(--tab-top);
+    border-bottom:1px solid var(--tab-bottom);
     background-color:var(--tab-bg);
     color:var(--tab-fg);
     display:flex;
