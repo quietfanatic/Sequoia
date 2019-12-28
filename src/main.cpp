@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <wrl.h>
 
+#include "activities.h"
 #include "assert.h"
 #include "data.h"
 #include "logging.h"
@@ -28,7 +29,8 @@ void start_browser () {
             ? create_webpage_tab(0, "https://duckduckgo.com/")
             : top_level_tabs[0];
         int64 first_window = create_window(first_tab);
-        new Window(first_window, first_tab);
+        auto window = new Window(first_window, first_tab);
+        window->claim_activity(ensure_activity_for_tab(first_tab));
     }
     else {
         for (auto& w : all_windows) {
