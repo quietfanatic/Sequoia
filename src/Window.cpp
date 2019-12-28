@@ -189,8 +189,6 @@ void Window::message_from_shell (json::Value&& message) {
             }
             send_tabs(required_tabs);
             send_focus();
-            claim_activity(ensure_activity_for_tab(focused_tab));
-            send_activity();
         }
         break;
     }
@@ -223,6 +221,15 @@ void Window::message_from_shell (json::Value&& message) {
     case x31_hash("focus"): {
         int64 tab = message[1];
         set_window_focused_tab(id, tab);
+        break;
+    }
+    case x31_hash("load"): {
+        int64 tab = message[1];
+        ensure_activity_for_tab(tab);
+        if (tab == focused_tab) {
+            claim_activity(ensure_activity_for_tab(tab));
+            send_activity();
+        }
         break;
     }
     case x31_hash("close"): {

@@ -14,4 +14,4 @@
 [ ] Improve error handling
 [ ] security for messages from webpage
 [ ] new tab buttons
-[ ] Reorganize window/shell relationships
+[✓] Reorganize window/shell relationships (OSWindow/Window)

@@ -147,6 +147,9 @@ function on_tab_clicked (event) {
             if (focused_id != id) {
                 host.postMessage(["focus", id]);
             }
+            else if (!tabs_by_id[id].loaded) {
+                host.postMessage(["load", id]);
+            }
         }
         else if (event.button == 1) {
             host.postMessage(["close", id]);
