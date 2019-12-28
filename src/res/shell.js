@@ -257,7 +257,11 @@ let commands = {
                 tab.$tab.classList.toggle("loaded", loaded);
 
                 if (focus) {
+                    if (focused_tab) {
+                        focused_tab.$tab.classList.remove("focused");
+                    }
                     focused_tab = tab;
+                    tab.$tab.classList.add("focused");
                     $address.value = url;
                     $back.classList.toggle("disabled", !can_go_back);
                     $forward.classList.toggle("disabled", !can_go_forward);

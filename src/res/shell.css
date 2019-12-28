@@ -19,6 +19,7 @@ html {
     --tab-fg:#ffffff;
     --tab-top:#666666;
     --tab-bottom:#000000;
+    --focused-tab-bg:#555555;
     --tree-bg:#777777;
     --tree-bg-alt:#888888;
 }
@@ -141,6 +142,9 @@ html.hide-sidebar #sidebar {
     color:var(--tab-fg);
     display:flex;
     align-items:center;
+}
+.tab.focused {
+    background-color:var(--focused-tab-bg);
 }
 .title {
     flex-grow:1;
