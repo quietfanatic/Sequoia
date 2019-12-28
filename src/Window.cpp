@@ -2,71 +2,268 @@
 
 #include <stdexcept>
 #include <WebView2.h>
+#include <wrl.h>
 
 #include "activities.h"
 #include "assert.h"
 #include "data.h"
+#include "hash.h"
 #include "logging.h"
+#include "main.h"
+#include "nursery.h"
+#include "json/json.h"
+#include "settings.h"
+#include "utf8.h"
 #include "util.h"
 
+using namespace Microsoft::WRL;
 using namespace std;
 
-static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
-    auto self = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    if (self) return self->WndProc(message, w, l);
-    return DefWindowProc(hwnd, message, w, l);
+Window::Window (int64 id, int64 tab) :
+    id(id), focused_tab(tab), os_window(this)
+{
+    new_webview([this](WebView* wv, HWND hwnd){
+        webview = wv;
+        webview_hwnd = hwnd;
+        SetParent(webview_hwnd, os_window.hwnd);
+        webview->put_IsVisible(TRUE);
+
+        webview->add_WebMessageReceived(
+            Callback<IWebView2WebMessageReceivedEventHandler>(
+                [this](
+                    IWebView2WebView* sender,
+                    IWebView2WebMessageReceivedEventArgs* args
+                )
+        {
+            wil::unique_cotaskmem_string raw16;
+            args->get_WebMessageAsJson(&raw16);
+            string raw = to_utf8(raw16.get());
+            LOG("message_from_shell", raw);
+            message_from_shell(json::parse(raw));
+            return S_OK;
+        }).Get(), nullptr);
+
+        webview->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
+
+        resize();
+    });
+};
+
+void Window::resize () {
+    RECT bounds;
+    GetClientRect(os_window.hwnd, &bounds);
+    if (webview) {
+        webview->put_Bounds(bounds);
+         // Put shell behind the page
+        SetWindowPos(
+            webview_hwnd, HWND_BOTTOM,
+            0, 0, 0, 0,
+            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
+        );
+    }
+    if (!os_window.fullscreen) {
+        bounds.top += toolbar_height;
+        bounds.right -= sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
+    }
+    if (activity) {
+        activity->resize(bounds);
+    }
 }
 
-static HWND create_hwnd () {
-    static auto class_name = "Sequoia";
-    static bool init = []{
-        WNDCLASSEX c {};
-        c.cbSize = sizeof(WNDCLASSEX);
-        c.style = CS_HREDRAW | CS_VREDRAW;
-        c.lpfnWndProc = WndProcStatic;
-        c.hInstance = GetModuleHandle(nullptr);
-        c.hCursor = LoadCursor(NULL, IDC_ARROW);
-        c.lpszClassName = class_name;
-        AW(RegisterClassEx(&c));
-        return true;
-    }();
-    HWND hwnd = CreateWindow(
-        class_name,
-        "(Sequoia)",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        1920, 1200,
-        nullptr,
-        nullptr,
-        GetModuleHandle(nullptr),
-        nullptr
-    );
-    AW(hwnd);
-    ShowWindow(hwnd, SW_SHOWDEFAULT);
-    return hwnd;
+void Window::Observer_after_commit (
+    const vector<int64>& updated_tabs,
+    const vector<int64>& updated_windows
+) {
+    send_tabs(updated_tabs);
+
+    for (auto updated_id : updated_windows) {
+        if (updated_id == id) {
+            int64 new_focus = get_window_focused_tab(id);
+            if (new_focus != focused_tab) {
+                LOG("focus_tab", new_focus);
+                int64 old_focus = focused_tab;
+                focused_tab = new_focus;
+                if (focused_tab) {
+                    send_focus();
+                    claim_activity(ensure_activity_for_tab(new_focus));
+                    if (old_focus) {
+                        TabData data = get_tab_data(new_focus);
+                        if (data.prev == old_focus) {
+                            if (data.next) ensure_activity_for_tab(data.next);
+                        }
+                    }
+                    send_activity();
+                }
+                else {
+                    claim_activity(nullptr);
+                }
+            }
+            break;
+        }
+    }
 }
 
-Window::Window (int64 id, int64 tab) : id(id), hwnd(create_hwnd()) {
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
-    focus_tab(tab);
-}
-
-void Window::focus_tab (int64 t) {
-    LOG("focus_tab", t);
-    if (t == tab) return;
-    int64 old_tab = tab;
-    tab = t;
-    if (tab) {
-        claim_activity(ensure_activity_for_tab(tab));
-         // When moving down tab list, preload next tab
-        if (old_tab) {
-            TabData data = get_tab_data(tab);
-            if (data.prev == old_tab) {
-                if (data.next) ensure_activity_for_tab(data.next);
+void Window::send_tabs (const vector<int64>& updated_tabs) {
+    json::Array updates;
+    updates.reserve(updated_tabs.size());
+    bool do_send_activity = false;
+    for (auto tab : updated_tabs) {
+        TabData t = get_tab_data(tab);
+        Activity* activity = activity_for_tab(tab);
+        updates.emplace_back(json::array(
+            tab,
+            t.parent,
+            t.prev,
+            t.next,
+            t.child_count,
+            t.title,
+            t.url,
+            !!activity,
+            t.closed_at
+        ));
+        if (focused_tab == tab) {
+            if (t.closed_at) {
+                 // If the current tab is closing, find a new tab to focus
+                LOG("Finding successor", tab);
+                Transaction tr;
+                int64 successor;
+                while (t.closed_at) {
+                    successor = t.next ? t.next
+                        : t.parent ? t.parent
+                        : t.prev ? t.prev
+                        : create_webpage_tab(0, "about:blank");
+                    A(successor);
+                    t = get_tab_data(successor);
+                }
+                set_window_focused_tab(id, successor);
+            }
+            else {
+                do_send_activity = true;
             }
         }
-        shell.focus_tab(tab);
     }
+    message_to_shell(json::array("tabs", updates));
+    if (do_send_activity) send_activity();
+};
+
+void Window::send_focus () {
+    message_to_shell(json::array("focus", focused_tab));
+}
+
+void Window::send_activity () {
+    if (!activity) return;
+    message_to_shell(json::array(
+        "activity",
+        activity->can_go_back,
+        activity->can_go_forward
+    ));
+}
+
+static string css_color (uint32 c) {
+    char buf [8];
+    snprintf(buf, 8, "#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c));
+    return buf;
+}
+
+void Window::message_from_shell (json::Value&& message) {
+    const string& command = message[0];
+
+    switch (x31_hash(command.c_str())) {
+    case x31_hash("ready"): {
+        message_to_shell(json::array(
+            "settings",
+            json::Object{
+                std::pair{"theme", settings::theme}
+            }
+        ));
+        if (focused_tab) {
+             // Temporary algorithm until we support expanding and collapsing trees
+             // Select all tabs recursively from the root, so that we don't pick up
+             // children of closed tabs
+            vector<int64> required_tabs = get_all_children(0);
+            for (size_t i = 0; i < required_tabs.size(); i++) {
+                vector<int64> children = get_all_children(required_tabs[i]);
+                for (auto c : children) {
+                    required_tabs.push_back(c);
+                }
+            }
+            send_tabs(required_tabs);
+            send_focus();
+            claim_activity(ensure_activity_for_tab(focused_tab));
+            send_activity();
+        }
+        break;
+    }
+    case x31_hash("resize"): {
+         // TODO: get rasterization scale instead of hardcoding 2 for my laptop
+        sidebar_width = uint(message[1]) * 2;
+        toolbar_height = uint(message[2]) * 2;
+        resize();
+        break;
+    }
+    case x31_hash("navigate"): {
+        const string& address = message[1];
+        if (auto activity = activity_for_tab(focused_tab)) {
+            activity->navigate_url_or_search(address);
+        }
+        break;
+    }
+    case x31_hash("back"): {
+        if (auto activity = activity_for_tab(focused_tab)) {
+            if (activity->webview) activity->webview->GoBack();
+        }
+        break;
+    }
+    case x31_hash("forward"): {
+        if (auto activity = activity_for_tab(focused_tab)) {
+            if (activity->webview) activity->webview->GoForward();
+        }
+        break;
+    }
+    case x31_hash("focus"): {
+        int64 tab = message[1];
+        set_window_focused_tab(id, tab);
+        break;
+    }
+    case x31_hash("close"): {
+        int64 tab = message[1];
+        close_tab(tab);
+        if (auto activity = activity_for_tab(tab)) {
+            delete activity;
+        }
+        break;
+    }
+    case x31_hash("show_main_menu"): {
+        main_menu_width = uint(message[1]) * 2;
+        resize();
+        break;
+    }
+    case x31_hash("hide_main_menu"): {
+        main_menu_width = 0;
+        resize();
+        break;
+    }
+    case x31_hash("new_toplevel_tab"): {
+        Transaction tr;
+        int64 new_tab = create_webpage_tab(0, "about:blank");
+        set_window_focused_tab(id, new_tab);
+        break;
+    }
+    case x31_hash("quit"): {
+        quit();
+        break;
+    }
+    default: {
+        throw logic_error("Unknown message name");
+    }
+    }
+}
+
+void Window::message_to_shell (json::Value&& message) {
+    if (!webview) return;
+    auto s = json::stringify(message);
+    LOG("message_to_shell", s);
+    webview->PostWebMessageAsJson(to_utf16(s).c_str());
 }
 
 void Window::claim_activity (Activity* a) {
@@ -76,67 +273,9 @@ void Window::claim_activity (Activity* a) {
     activity = a;
     if (activity) activity->claimed_by_window(this);
 
-    resize_everything();
-}
-
-LRESULT Window::WndProc (UINT message, WPARAM w, LPARAM l) {
-    switch (message) {
-    case WM_SIZE:
-        resize_everything();
-        return 0;
-    case WM_DESTROY:
-         // Prevent activity's hwnd from getting destroyed.
-        claim_activity(nullptr);
-        return 0;
-    case WM_NCDESTROY:
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);
-        delete this;
-        PostQuitMessage(0);
-        return 0;
-    }
-    return DefWindowProc(hwnd, message, w, l);
-}
-
-void Window::resize_everything () {
-    RECT outer;
-    GetClientRect(hwnd, &outer);
-    RECT inner = shell.resize(outer);
-    if (activity) {
-        activity->resize(inner);
-    };
-}
-
-void Window::set_title (const char* title) {
-    AW(SetWindowText(hwnd, title));
+    resize();
 }
 
 Window::~Window () {
-    claim_activity(nullptr);
-}
-
-void Window::set_fullscreen (bool fs) {
-    if (fs == fullscreen) return;
-    fullscreen = fs;
-    if (fullscreen) {
-        MONITORINFO monitor = {sizeof(MONITORINFO)};
-        AW(GetWindowPlacement(hwnd, &placement_before_fullscreen));
-        AW(GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor));
-        DWORD style = GetWindowLong(hwnd, GWL_STYLE);
-        SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
-        SetWindowPos(hwnd, HWND_TOP,
-            monitor.rcMonitor.left, monitor.rcMonitor.top,
-            monitor.rcMonitor.right - monitor.rcMonitor.left,
-            monitor.rcMonitor.bottom - monitor.rcMonitor.top,
-            SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-        );
-    }
-    else {
-        DWORD style = GetWindowLong(hwnd, GWL_STYLE);
-        SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(hwnd, &placement_before_fullscreen);
-        SetWindowPos(
-            hwnd, nullptr, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-        );
-    }
+    if (activity) activity->claimed_by_window(nullptr);
 }

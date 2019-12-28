@@ -1,37 +1,48 @@
 #pragma once
 
-#include <set>
 #include <vector>
+#include <wil/com.h>
 #include <windows.h>
 
-#include "shell.h"
+#include "data.h"
 #include "stuff.h"
+#include "OSWindow.h"
 
-struct Activity;
+namespace json { struct Value; }
 
-// Represents one application window on the desktop.
-// This will delete itself when the window is closed.
-struct Window {
+struct OSWindow;
+
+struct Window : Observer {
     int64 id;
-    HWND hwnd;
-    Shell shell;
-    int64 tab = 0;
+    int64 focused_tab;
+    wil::com_ptr<WebView> webview;
+    HWND webview_hwnd = nullptr;
+
     Activity* activity = nullptr;
 
-    bool fullscreen = false;
-    WINDOWPLACEMENT placement_before_fullscreen;
+    OSWindow os_window;
+    Window (int64 id, int64 focused_tab);
 
-    Window (int64 id, int64 tab);
+     // These are in device pixels, not dips
+    uint sidebar_width = 480;
+    uint toolbar_height = 56;
+    uint main_menu_width = 0;
 
-    void focus_tab (int64);
+    void resize ();
+
+    void Observer_after_commit (
+        const std::vector<int64>& updated_tabs,
+        const std::vector<int64>& updated_windows
+    ) override;
+
+    void send_tabs (const std::vector<int64>& updated_tabs);
+    void send_focus ();
+    void send_activity ();
+
+    void message_from_shell (json::Value&& message);
+    void message_to_shell (json::Value&& message);
+
     void claim_activity (Activity*);
-    void set_title (const char*);
-    void resize_everything ();
-    void show_main_menu (int x, int y);
-    void set_fullscreen (bool);
-    void close ();  // Will delete this
 
-    LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
-
-    ~Window ();
+    ~Window();
 };

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <string>
 #include <wil/com.h>
 #include <windows.h>

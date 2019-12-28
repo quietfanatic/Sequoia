@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <WebView2.h>
@@ -32,7 +33,7 @@ Activity::Activity (int64 t) : tab(t) {
         webview_hwnd = hwnd;
 
         claimed_by_window(window);
-        if (window) window->resize_everything();
+        if (window) window->resize();
 
         IWebView2Settings* settings;
         AH(webview->get_Settings(&settings));
@@ -113,7 +114,7 @@ Activity::Activity (int64 t) : tab(t) {
         {
             BOOL fs;
             AH(webview->get_ContainsFullScreenElement(&fs));
-            window->set_fullscreen(fs);
+            window->os_window.set_fullscreen(fs);
             return S_OK;
         }).Get(), nullptr));
 
@@ -142,7 +143,7 @@ void Activity::claimed_by_window (Window* w) {
     if (webview) {
         if (window) {
             AH(webview->put_IsVisible(TRUE));
-            SetParent(webview_hwnd, window->hwnd);
+            SetParent(webview_hwnd, window->os_window.hwnd);
         }
         else {
             AH(webview->put_IsVisible(FALSE));
