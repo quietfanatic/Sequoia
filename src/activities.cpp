@@ -176,7 +176,7 @@ void Activity::navigate_search (const string& search) {
         case '?':
         case '#': {
             stringstream ss;
-            ss << hex << setw(2) << uint(c);
+            ss << "%" << hex << setw(2) << uint(c);
             url += ss.str();
             break;
         }
