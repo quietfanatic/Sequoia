@@ -19,8 +19,6 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-std::string profile_folder;
-
 void start_browser () {
     vector<WindowData> all_windows = get_all_unclosed_windows();
     if (all_windows.empty()) {
@@ -48,28 +46,10 @@ int WINAPI WinMain (
     try {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-         // This is so dumb
-        char** argv = __argv;
-        int argc = __argc;
-         // Parse arguments
-        for (int i = 0; i < argc; i++) {
-            LOG("arg", i, argv[i]);
-            std::string arg = argv[i];
-            if (arg.starts_with("--profile-folder=")) {
-                profile_folder = arg.substr(strlen("--profile-folder="));
-            }
-        }
-         // Figure out profile folder
-        if (profile_folder.empty()) {
-            profile_folder = exe_relative("default-profile");
-        }
-        profile_folder = to_utf8(filesystem::absolute(profile_folder));
-        LOG("Using profile folder:", profile_folder);
-        filesystem::create_directory(profile_folder);
-         // Start
-        load_settings();
+        load_settings(__argv, __argc);
         init_nursery(profile_folder + "/edge-user-data");
         start_browser();
+
          // Run message loop
         MSG msg;
         while (GetMessage(&msg, nullptr, 0, 0)) {

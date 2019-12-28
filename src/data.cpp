@@ -8,7 +8,7 @@
 #include "db_support.h"
 #include "hash.h"
 #include "logging.h"
-#include "main.h"
+#include "settings.h"
 #include "util.h"
 
 using namespace std;
