@@ -131,6 +131,11 @@ function on_new_tab_clicked (event) {
     handled(event);
 }
 
+document.addEventListener("mousedown", event => {
+    if (event.button == 1) {
+        handled(event);
+    }
+});
 
 let tabs_by_id = {};
 
