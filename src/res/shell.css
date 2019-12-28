@@ -152,6 +152,7 @@ html.hide-sidebar #sidebar {
     white-space:pre;
     cursor:default;
     padding-left:4px;
+    font-family:sans-serif;
 }
 .item.parent > .tab > .title {
     padding-left:0;
@@ -179,6 +180,7 @@ html.hide-sidebar #sidebar {
 }
 .expand::before {
     display:block;
+    font-size:80%;
     content:"▶︎";
 }
 .item.expanded > .tab > .expand::before {
