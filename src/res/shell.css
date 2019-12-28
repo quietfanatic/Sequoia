@@ -48,15 +48,15 @@ body {
     background-color:inherit;
     color:inherit;
 }
-#toolbar > button {
+#back, #forward, #toggle-sidebar, #show-main-menu {
     height:var(--toolbar-height);
+    line-height:var(--toolbar-height);
     width:var(--toolbar-height);
-    border:none;
-    background-color:inherit;
-    color:inherit;
+    cursor:default;
+    text-align:center;
     font-size:18px;  /* TODO relate to toolbar-height */
 }
-button:disabled {
+.disabled {
     opacity:0.5;
 }
 #back::before {
@@ -147,6 +147,10 @@ html.hide-sidebar #sidebar {
     overflow:hidden;
     white-space:pre;
     cursor:default;
+    padding-left:4px;
+}
+.item.parent > .tab > .title {
+    padding-left:0;
 }
 .tab:not(.loaded) > .title {
     opacity:0.5;
@@ -156,11 +160,14 @@ html.hide-sidebar #sidebar {
     flex-shrink:0;
     width:16px;
     height:var(--tab-height);
+    line-height:var(--tab-height);
+    text-align:center;
     margin:0;
     border:none;
     padding:0;
     background:none;
     font-size:var(--tab-font-size);
+    font-family:sans-serif;
 }
 .item.parent > .tab > .expand,
 .tab:hover > .close {
@@ -181,7 +188,8 @@ html.hide-sidebar #sidebar {
     padding-right:0.2em;
 }
 .child-count:empty,
-.item.expanded > .tab > .child-count {
+.item.expanded > .tab > .child-count,
+.tab:hover > .child-count {
     display:none;
 }
 .item > .list {
@@ -199,9 +207,18 @@ html.hide-sidebar #sidebar {
     width:var(--main-menu-width);
     box-sizing:border-box;
     background-color:var(--toolbar-bg);
+    color:var(--toolbar-fg);
     display:flex;
     flex-direction:column;
     visibility:hidden;
+}
+#main-menu > div {
+    box-sizing:border-box;
+    margin-left:12px;
+    padding:4px;
+    font-family:sans-serif;
+    font-size:12px;
+    cursor:default;
 }
 html.show-main-menu #main-menu {
     visibility:visible;

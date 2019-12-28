@@ -16,11 +16,11 @@ function handled (event) {
 
 $(document.body, {}, [
     $toolbar = $("div", {id:"toolbar"}, [
-        $back = $("button", {id:"back"}, [], {click: e => {
+        $back = $("div", {id:"back"}, [], {click: e => {
             host.postMessage(["back"]);
             handled(e);
         }}),
-        $forward = $("button", {id:"forward"}, [], {click: e => {
+        $forward = $("div", {id:"forward"}, [], {click: e => {
             host.postMessage(["forward"]);
             handled(e);
         }}),
@@ -30,18 +30,13 @@ $(document.body, {}, [
                 handled(e);
             }
         }}),
-        $("button", {id:"toggle-sidebar"}, [], {click: e => {
+        $("div", {id:"toggle-sidebar"}, [], {click: e => {
             showing_sidebar = !showing_sidebar;
-            if (showing_sidebar) {
-                $html.classList.remove("hide-sidebar");
-            }
-            else {
-                $html.classList.add("hide-sidebar");
-            }
+            $html.classList.toggle("hide-sidebar", showing_sidebar);
             send_resize();
             handled(e);
         }}),
-        $("button", {id:"show-main-menu"}, [], {click: e => {
+        $("div", {id:"show-main-menu"}, [], {click: e => {
             if (showing_main_menu) {
                 close_main_menu();
             }
@@ -59,10 +54,10 @@ $(document.body, {}, [
         ]),
     ]),
     $main_menu = $("nav", {id:"main-menu"}, [
-        $("button", {id:"new-toplevel-tab"}, "New Toplevel Tab", {
+        $("div", {id:"new-toplevel-tab"}, "New Toplevel Tab", {
             click: menu_item("new_toplevel_tab"),
         }),
-        $("button", {id:"quit"}, "Quit", {
+        $("div", {id:"quit"}, "Quit", {
             click: menu_item("quit"),
         }),
     ]),
@@ -166,12 +161,7 @@ function expand_tab (tab) {
     for (let t = tab; t; t = tabs_by_id[t.parent]) {
         depth += 1;
     }
-    if (depth % 2) {
-        tab.$list.classList.remove("alt");
-    }
-    else {
-        tab.$list.classList.add("alt");
-    }
+    tab.$list.classList.toggle("alt", !(depth % 2));
     tab.expanded = true;
 }
 function contract_tab (tab) {
@@ -223,10 +213,10 @@ let commands = {
                     $item = $("div", {id:id,class:"item"}, [
                         $tab = $("div",
                             {class:"tab", title:tooltip}, [
-                                $("button", {class:"expand"}, [], {click:on_expand_clicked}),
+                                $("div", {class:"expand"}, [], {click:on_expand_clicked}),
                                 $title = $("div", {class:"title"}, title),
                                 $child_count = $("div", {class:"child-count"}),
-                                $("button", {class:"close"}, [], {click:on_close_clicked}),
+                                $("div", {class:"close"}, [], {click:on_close_clicked}),
                             ], {click:on_tab_clicked, auxclick:on_tab_clicked}
                         ),
                         $list = $("div", {class:"list"}),
@@ -257,25 +247,20 @@ let commands = {
                 }
 
                 if (child_count) {
-                    tab.$child_count.innerText = "+" + child_count;
+                    tab.$child_count.innerText = "(" + child_count + ")";
                     tab.$item.classList.add("parent");
                 }
                 else {
                     tab.$child_count.innerText = "";
                     tab.$item.classList.remove("parent");
                 }
-                if (loaded) {
-                    tab.$tab.classList.add("loaded");
-                }
-                else {
-                    tab.$tab.classList.remove("loaded");
-                }
+                tab.$tab.classList.toggle("loaded", loaded);
 
                 if (focus) {
                     focused_tab = tab;
                     $address.value = url;
-                    $back.disabled = !can_go_back;
-                    $forward.disabled = !can_go_forward;
+                    $back.classList.toggle("disabled", !can_go_back);
+                    $forward.classList.toggle("disabled", !can_go_forward);
                 }
             }
         }
