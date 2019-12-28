@@ -141,15 +141,11 @@ void Shell::message_from_shell (json::Value&& message) {
 
     switch (x31_hash(command.c_str())) {
     case x31_hash("ready"): {
-         // Set system colors
         message_to_shell(json::array(
-            "colors",
-            css_color(toolbar_color),
-            css_color(GetSysColor(COLOR_CAPTIONTEXT)),
-            css_color(GetSysColor(COLOR_3DFACE)),
-            css_color(GetSysColor(COLOR_WINDOWTEXT)),
-            css_color(GetSysColor(COLOR_3DHIGHLIGHT)),
-            css_color(GetSysColor(COLOR_3DSHADOW))
+            "settings",
+            json::Object{
+                std::pair{"theme", settings::theme}
+            }
         ));
         if (window()->tab) {
              // Temporary algorithm until we support expanding and collapsing trees

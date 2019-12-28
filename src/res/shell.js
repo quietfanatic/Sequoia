@@ -285,14 +285,16 @@ let commands = {
             expandUp(tabs_by_id[tab.parent]);
         }
     },
-    colors (toolbar_bg, toolbar_fg, tab_bg, tab_fg, tab_highlight, tab_shadow) {
-        let style = document.documentElement.style;
-        style.setProperty('--toolbar-bg', toolbar_bg);
-        style.setProperty('--toolbar-fg', toolbar_fg);
-        style.setProperty('--tab-bg', tab_bg);
-        style.setProperty('--tab-fg', tab_fg);
-        style.setProperty('--tab-highlight', tab_highlight);
-        style.setProperty('--tab-shadow', tab_shadow);
+    settings (settings) {
+        if ("theme" in settings) {
+            for (let token of $html.classList) {
+                if (token.startsWith("theme-")) {
+                    $html.classList.remove(token);
+                    break;
+                }
+            }
+            $html.classList.add("theme-" + settings.theme);
+        }
     }
 };
 

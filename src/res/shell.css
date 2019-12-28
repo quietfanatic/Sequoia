@@ -9,8 +9,17 @@ html {
     --main-menu-width:240px;
     --tab-height:24px;
     --tab-font-size:12px;
-    --sidebar-bottom-height:18px;
-    --sidebar-bottom-font-size:12px;
+    --sidebar-bottom-height:24px;
+    --sidebar-bottom-font-size:18px;
+
+    --toolbar-bg:#333333;
+    --toolbar-fg:#ffffff;
+    --toolbar-border:#999999;
+    --tab-bg:#333333;
+    --tab-fg:#ffffff;
+    --tab-border:#999999;
+    --tree-bg:#777777;
+    --tree-bg-alt:#888888;
 }
 body {
     width:100%;
@@ -36,12 +45,14 @@ body {
     padding-left:0.4rem;
     padding-right:0.4rem;
     background-color:inherit;
+    color:inherit;
 }
 #toolbar > button {
     height:var(--toolbar-height);
     width:var(--toolbar-height);
     border:none;
     background-color:inherit;
+    color:inherit;
     font-size:18px;  /* TODO relate to toolbar-height */
 }
 button:disabled {
@@ -76,6 +87,12 @@ html.hide-sidebar #toggle-sidebar::before {
 html.hide-sidebar #sidebar {
     display:none;
 }
+.list {
+    background-color:var(--tree-bg);
+}
+.list.alt {
+    background-color:var(--tree-bg-alt);
+}
 #sidebar > .list {
     flex-grow:1;
     overflow-y:scroll;
@@ -84,6 +101,9 @@ html.hide-sidebar #sidebar {
 #sidebar-bottom {
     flex-shrink:0;
     height:var(--sidebar-bottom-height);
+    border-top:1px solid var(--toolbar-border);
+    background-color:var(--toolbar-bg);
+    color:var(--toolbar-fg);
     font-size:var(--sidebar-bottom-font-size);
     font-weight:bold;
     line-height:var(--sidebar-bottom-height);
@@ -93,12 +113,7 @@ html.hide-sidebar #sidebar {
     flex-shrink:0;
     box-sizing:border-box;
     width:var(--sidebar-bottom-height);
-    border-left:1px solid var(--tab-highlight);
-    border-top:1px solid var(--tab-highlight);
-    border-right:1px solid var(--tab-shadow);
-    border-bottom:1px solid var(--tab-shadow);
-    background-color:var(--tab-bg);
-    color:var(--tab-fg);
+    border-right:1px solid var(--toolbar-border);
     cursor:ew-resize;
 }
 #resize::before {
@@ -107,12 +122,6 @@ html.hide-sidebar #sidebar {
 #new-tab {
     flex-grow:1;
     box-sizing:border-box;
-    border-left:1px solid var(--tab-highlight);
-    border-top:1px solid var(--tab-highlight);
-    border-right:1px solid var(--tab-shadow);
-    border-bottom:1px solid var(--tab-shadow);
-    background-color:var(--tab-bg);
-    color:var(--tab-fg);
     text-align:center;
 }
 #new-tab::before {
@@ -124,10 +133,7 @@ html.hide-sidebar #sidebar {
     width:100%;
     height:var(--tab-height);
     font-size:var(--tab-font-size);
-    border-left:1px solid var(--tab-highlight);
-    border-top:1px solid var(--tab-highlight);
-    border-right:1px solid var(--tab-shadow);
-    border-bottom:1px solid var(--tab-shadow);
+    border-top:1px solid var(--tab-border);
     background-color:var(--tab-bg);
     color:var(--tab-fg);
     display:flex;

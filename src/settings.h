@@ -1,8 +1,14 @@
 #pragma once
 
+#include <string>
+
 #include "stuff.h"
 
-extern uint32 toolbar_color;
+namespace settings {
+
+extern std::string theme;
+
+}
 
 void load_settings ();
 void save_settings ();
