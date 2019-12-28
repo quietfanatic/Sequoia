@@ -54,10 +54,18 @@ Window::Window (int64 id, int64 tab) : id(id), hwnd(create_hwnd()) {
 void Window::focus_tab (int64 t) {
     LOG("focus_tab", t);
     if (t == tab) return;
+    int64 old_tab = tab;
     tab = t;
     if (tab) {
         claim_activity(ensure_activity_for_tab(tab));
         shell.update({tab});
+         // When moving down tab list, preload next tab
+        if (old_tab) {
+            TabData data = get_tab_data(tab);
+            if (data.prev == old_tab) {
+                if (data.next) ensure_activity_for_tab(data.next);
+            }
+        }
     }
 }
 

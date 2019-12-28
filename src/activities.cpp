@@ -11,6 +11,7 @@
 #include "data.h"
 #include "hash.h"
 #include "json/json.h"
+#include "logging.h"
 #include "nursery.h"
 #include "utf8.h"
 #include "util.h"
@@ -22,6 +23,7 @@ using namespace std;
 static map<int64, Activity*> activities_by_tab;
 
 Activity::Activity (int64 t) : tab(t) {
+    LOG("new Activity", this);
     A(!activities_by_tab.contains(t));
     activities_by_tab.emplace(t, this);
 
@@ -31,6 +33,10 @@ Activity::Activity (int64 t) : tab(t) {
 
         claimed_by_window(window);
         if (window) window->resize_everything();
+
+        IWebView2Settings* settings;
+        AH(webview->get_Settings(&settings));
+        AH(settings->put_IsStatusBarEnabled(FALSE));
 
         AH(webview->add_DocumentTitleChanged(
             Callback<IWebView2DocumentTitleChangedEventHandler>(
@@ -139,8 +145,8 @@ void Activity::claimed_by_window (Window* w) {
             SetParent(webview_hwnd, window->hwnd);
         }
         else {
-            SetParent(webview_hwnd, HWND_MESSAGE);
             AH(webview->put_IsVisible(FALSE));
+            SetParent(webview_hwnd, HWND_MESSAGE);
         }
     }
 }
@@ -201,6 +207,7 @@ void Activity::navigate_url_or_search (const string& address) {
 }
 
 Activity::~Activity () {
+    LOG("delete Activity", this);
     activities_by_tab.erase(tab);
     if (window) window->activity = nullptr;
     webview->Close();
