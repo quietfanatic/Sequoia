@@ -19,7 +19,6 @@
 
 using namespace Microsoft::WRL;
 using namespace std;
-using namespace json;
 
 Window* Shell::window () { return (Window*)((char*)this - offsetof(Window, shell)); }
 
@@ -41,7 +40,7 @@ Shell::Shell () {
             args->get_WebMessageAsJson(&raw16);
             string raw = to_utf8(raw16.get());
             LOG("message_from_shell", raw);
-            message_from_shell(parse(raw));
+            message_from_shell(json::parse(raw));
             return S_OK;
         }).Get(), nullptr);
 
@@ -78,13 +77,13 @@ void Shell::Observer_after_commit (const vector<int64>& updated_tabs) {
 }
 
 void Shell::update (const vector<int64>& updated_tabs) {
-    Array updates;
+    json::Array updates;
     updates.reserve(updated_tabs.size());
     for (auto tab : updated_tabs) {
         TabData t = get_tab_data(tab);
         Activity* activity = activity_for_tab(tab);
         if (window()->tab == tab) {
-            updates.emplace_back(Array{
+            updates.emplace_back(json::array(
                 tab,
                 t.parent,
                 t.prev,
@@ -97,10 +96,10 @@ void Shell::update (const vector<int64>& updated_tabs) {
                 true,
                 activity && activity->can_go_back,
                 activity && activity->can_go_forward
-            });
+            ));
         }
         else {
-            updates.emplace_back(Array{
+            updates.emplace_back(json::array(
                 tab,
                 t.parent,
                 t.prev,
@@ -110,7 +109,7 @@ void Shell::update (const vector<int64>& updated_tabs) {
                 t.url,
                 !!activity,
                 t.closed_at
-            });
+            ));
         }
          // If the current tab is closing, find a new tab to focus
         if (window()->tab == tab && t.closed_at) {
@@ -128,7 +127,7 @@ void Shell::update (const vector<int64>& updated_tabs) {
             focus_tab(successor);
         }
     }
-    message_to_shell(Array{"update", updates});
+    message_to_shell(json::array("update", updates));
 };
 
 static string css_color (uint32 c) {
@@ -137,13 +136,13 @@ static string css_color (uint32 c) {
     return buf;
 }
 
-void Shell::message_from_shell (Value&& message) {
-    const String& command = message[0];
+void Shell::message_from_shell (json::Value&& message) {
+    const string& command = message[0];
 
     switch (x31_hash(command.c_str())) {
     case x31_hash("ready"): {
          // Set system colors
-        message_to_shell(Array{
+        message_to_shell(json::array(
             "colors",
             css_color(toolbar_color),
             css_color(GetSysColor(COLOR_CAPTIONTEXT)),
@@ -151,7 +150,7 @@ void Shell::message_from_shell (Value&& message) {
             css_color(GetSysColor(COLOR_WINDOWTEXT)),
             css_color(GetSysColor(COLOR_3DHIGHLIGHT)),
             css_color(GetSysColor(COLOR_3DSHADOW))
-        });
+        ));
         if (window()->tab) {
              // Temporary algorithm until we support expanding and collapsing trees
              // Select all tabs recursively from the root, so that we don't pick up
@@ -175,7 +174,7 @@ void Shell::message_from_shell (Value&& message) {
         break;
     }
     case x31_hash("navigate"): {
-        const String& address = message[1];
+        const string& address = message[1];
         if (window()->activity) {
             window()->activity->navigate_url_or_search(address);
         }
@@ -227,9 +226,9 @@ void Shell::message_from_shell (Value&& message) {
     }
 }
 
-void Shell::message_to_shell (Value&& message) {
+void Shell::message_to_shell (json::Value&& message) {
     if (!webview) return;
-    auto s = stringify(message);
+    auto s = json::stringify(message);
     LOG("message_to_shell", s);
     webview->PostWebMessageAsJson(to_utf16(s).c_str());
 }

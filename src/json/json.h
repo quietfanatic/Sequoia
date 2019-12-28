@@ -56,6 +56,7 @@ struct Value {
     Value (const Value& v);
     Value (Value&& v);
 
+     // Mostly an optimization for internal use, but you can use them if you know what you're doing
     explicit Value (String*&& v) : type(STRING), string(v) { v = nullptr; }
     explicit Value (Array*&& v) : type(ARRAY), array(v) { v = nullptr; }
     explicit Value (Object*&& v) : type(OBJECT), object(v) { v = nullptr; }
@@ -63,6 +64,24 @@ struct Value {
     template <class T>
     Value (T* v) { static_assert(false, "Can't convert this pointer to json::Value"); }
 
+    template <class T>
+    bool is () const { static_assert(false, "Can't call json::Value::is<>() with this type because it isn't a type json::Value can be casted to."); }
+    template <> bool is<bool> () const { return type == BOOL; }
+    template <> bool is<signed char> () const { return type == NUMBER; }
+    template <> bool is<unsigned char> () const { return type == NUMBER; }
+    template <> bool is<short> () const { return type == NUMBER; }
+    template <> bool is<unsigned short> () const { return type == NUMBER; }
+    template <> bool is<int> () const { return type == NUMBER; }
+    template <> bool is<unsigned int> () const { return type == NUMBER; }
+    template <> bool is<long> () const { return type == NUMBER; }
+    template <> bool is<unsigned long> () const { return type == NUMBER; }
+    template <> bool is<long long> () const { return type == NUMBER; }
+    template <> bool is<unsigned long long> () const { return type == NUMBER; }
+    template <> bool is<String> () const { return type == STRING; }
+    template <> bool is<Array> () const { return type == ARRAY; }
+    template <> bool is<Object> () const { return type == OBJECT; }
+
+     // General casting
     operator bool () const { assert(type == BOOL); return boolean; }
     operator signed char () const { assert(type == NUMBER); return signed char(number); }
     operator unsigned char () const { assert(type == NUMBER); return unsigned char(number); }
@@ -76,27 +95,41 @@ struct Value {
     operator unsigned long long () const { assert(type == NUMBER); return unsigned long long(number); }
     operator float () const { assert(type == NUMBER); return float(number); }
     operator double () const { assert(type == NUMBER); return number; }
-    operator const String& () const { assert(type == STRING); return *string; }
+    operator const String& () const& { assert(type == STRING); return *string; }
     operator String&& () && { assert(type == STRING); return std::move(*string); }
-    operator const Array& () const { assert(type == ARRAY); return *array; }
+    operator const Array& () const& { assert(type == ARRAY); return *array; }
     operator Array&& () && { assert(type == ARRAY); return std::move(*array); }
-    operator const Object& () const { assert(type == OBJECT); return *object; }
+    operator const Object& () const& { assert(type == OBJECT); return *object; }
     operator Object&& () && { assert(type == OBJECT); return std::move(*object); }
 
     template <class T> operator const T& () const {
-        static_assert(false, "Can't convert json::Value to this type.");
+        static_assert(false, "Can't cast json::Value to this type.");
     }
 
-    Value& operator[] (size_t i) {
-        assert(type == ARRAY && array->size() > i);
-        return (*array)[i];
-    }
-    const Value& operator[] (size_t i) const {
-        assert(type == ARRAY && array->size() > i);
-        return (*array)[i];
+    bool has (size_t i) const {
+        return(type == ARRAY && array->size() > i);
     }
 
-    Value& operator[] (const String& key) {
+    Value& operator[] (size_t i) & {
+        assert(has(i));
+        return (*array)[i];
+    }
+    const Value& operator[] (size_t i) const& {
+        return const_cast<const Value&>(const_cast<Value&>(*this)[i]);
+    }
+    Value&& operator[] (size_t i) && {
+        return std::move(const_cast<Value&>(*this)[i]);
+    }
+
+    bool has (const String& key) {
+        if (type != OBJECT) return false;
+        for (auto& p : *object) {
+            if (p.first == key) return true;
+        }
+        return false;
+    }
+
+    Value& operator[] (const String& key) & {
         assert(type == OBJECT);
         for (auto& p : *object) {
             if (p.first == key) return p.second;
@@ -105,8 +138,11 @@ struct Value {
         static Value nothing;
         return nothing;
     }
-    const Value& operator[] (const String& key) const {
+    const Value& operator[] (const String& key) const& {
         return const_cast<const Value&>(const_cast<Value&>(*this)[key]);
+    }
+    Value&& operator[] (const String& key) && {
+        return std::move(const_cast<Value&>(*this)[key]);
     }
 
     Value& operator= (const Value& v) {
@@ -122,6 +158,23 @@ struct Value {
 
     ~Value ();
 };
+
+ // There's no way to make json::Array{...} use move semantics, so here's
+ // some helper functions to avoid unnecessary copies.
+template <class... Args>
+Array array (Args&&... args) {
+    Array r;
+    r.reserve(sizeof...(args));
+    (r.emplace_back(std::forward<Args>(args)), ...);
+    return r;
+}
+template <class... Args>
+Object object (std::pair<String, Args>&&... args) {
+    Object r;
+    r.reserve(sizeof...(args));
+    (r.emplace_back(std::move(args)), ...);
+    return r;
+}
 
 bool operator== (const Value& a, const Value& b);
 inline bool operator!= (const Value& a, const Value& b) { return !(a == b); }
