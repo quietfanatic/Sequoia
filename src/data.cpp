@@ -134,7 +134,6 @@ Observer::~Observer () {
 ///// TAB HELPER STATEMENTS
 
 TabData* get_tab_data (int64 id) {
-    LOG("get_tab_data", id);
     if (auto data = cached_tab_data(id)) {
         return data;
     }
@@ -151,7 +150,7 @@ FROM tabs WHERE id = ?
 }
 
 void change_child_count (int64 parent, int64 diff) {
-    while (parent != 0) {
+    while (parent > 0) {
         if (auto data = cached_tab_data(parent)) {
             data->child_count += diff;
         }
@@ -202,6 +201,8 @@ void remove_tab (int64 id) {
     auto data = get_tab_data(id);
     if (data->prev) set_next(data->prev, data->next);
     if (data->next) set_prev(data->next, data->prev);
+    change_child_count(data->parent, -1 - data->child_count);
+    set_parent(id, -1);
 }
 
 void place_tab (int64 id, int64 reference, TabRelation rel) {
@@ -269,7 +270,6 @@ VALUES (?, ?, ?, ?, ?)
 
     place_tab(id, reference, rel);
 
-
     return id;
 }
 
@@ -285,7 +285,6 @@ SELECT id FROM tabs WHERE parent = ? AND closed_at IS NULL
 
 string get_tab_url (int64 id) {
     init_db();
-    LOG("get_tab_url", id);
     return get_tab_data(id)->url;
 }
 
@@ -323,33 +322,88 @@ void close_tab (int64 id) {
 
     if (data->closed_at) return;  // Already closed
 
+    int64 old_parent = data->parent;
+
     data->closed_at = now();
     static State<>::Ment<double, int64> close {R"(
 UPDATE tabs SET closed_at = ? WHERE id = ?
     )"};
     close.run_void(data->closed_at, id);
-    tab_updated(id);
 
     remove_tab(id);
-
-    change_child_count(data->parent, -1 - data->child_count);
+    set_parent(id, old_parent);
 }
 
-void fix_counts () {
-    LOG("fix_counts");
+void move_tab (int64 id, int64 reference, TabRelation rel) {
     Transaction tr;
+    LOG("move_tab", id, reference, uint(rel));
+    remove_tab(id);
+    place_tab(id, reference, rel);
+}
+
+void fix_problems () {
+    LOG("fix_problems");
+    Transaction tr;
+    tabs_by_id.clear();
     State<>::Ment<> fix_child_counts {R"(
 WITH RECURSIVE ancestors (child, ancestor) AS (
-    SELECT id, parent FROM tabs
+    SELECT id, parent FROM tabs WHERE closed_at IS NULL
     UNION ALL
     SELECT id, ancestor FROM tabs, ancestors
-        WHERE parent = child
-) UPDATE tabs SET child_count = (
+        WHERE closed_at IS NULL AND parent = child
+)
+UPDATE tabs SET child_count = (
     SELECT count(*) from ancestors where ancestor = id
 )
     )", true};
-    tabs_by_id.clear();
     fix_child_counts.run_void();
+
+     // These are all the correctly linked tabs according to the prev field.
+     // The next field is ignored.
+    State<>::Ment<> make_siblings {R"(
+CREATE TEMPORARY TABLE siblings AS
+WITH RECURSIVE sibs (up, left, right) AS (
+    SELECT parent, 0, id FROM tabs a
+        WHERE closed_at IS NULL AND prev = 0
+        AND NOT EXISTS (
+            SELECT 1 FROM tabs b
+            WHERE b.parent = a.parent AND b.prev = 0 AND b.created_at < a.created_at
+        )
+    UNION ALL
+    SELECT parent, prev, id FROM tabs, sibs
+        WHERE closed_at IS NULL AND parent = up AND prev = right
+) SELECT up, left, right FROM sibs
+    )", true};
+    make_siblings.run_void();
+
+    State<>::Ment<> add_final_siblings {R"(
+INSERT INTO siblings (up, left, right)
+SELECT up, right, 0 FROM siblings a
+WHERE NOT EXISTS (SELECT 1 FROM siblings b WHERE b.left = a.right)
+    )", true};
+    add_final_siblings.run_void();
+
+    State<>::Ment<> fix_siblings {R"(
+UPDATE tabs SET next = (SELECT right FROM siblings WHERE left = id)
+WHERE EXISTS (SELECT right FROM siblings WHERE left = id)
+    )", true};
+    fix_siblings.run_void();
+
+    State<int64, int64>::Ment<> get_non_siblings {R"(
+SELECT id, parent FROM tabs
+WHERE closed_at IS NULL AND id NOT IN (SELECT left FROM siblings)
+ORDER BY created_at
+    )", true};
+    vector<tuple<int64, int64>> non_siblings = get_non_siblings.run();
+    LOG("Found non-siblings numbering", non_siblings.size());
+    for (auto& pair : non_siblings) {
+        LOG("non-sibling", get<0>(pair), get<1>(pair));
+        set_parent(get<0>(pair), -1);
+        place_tab(get<0>(pair), get<1>(pair), TabRelation::LAST_CHILD);
+    }
+
+    State<>::Ment<> drop_siblings {"DROP TABLE siblings", true};
+    drop_siblings.run_void();
 }
 
 ///// WINDOWS

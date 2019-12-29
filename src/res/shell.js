@@ -56,13 +56,13 @@ $(document.body, {}, [
         ]),
     ]),
     $main_menu = $("nav", {id:"main-menu"}, [
-        $("div", {id:"new-toplevel-tab"}, "New Toplevel Tab", {
+        $("div", {}, "New Toplevel Tab", {
             click: menu_item("new_toplevel_tab"),
         }),
-        $("div", {id:"fix-counts"}, "Fix tab child counts", {
-            click: menu_item("fix_counts"),
+        $("div", {}, "Fix database problems", {
+            click: menu_item("fix_problems"),
         }),
-        $("div", {id:"quit"}, "Quit", {
+        $("div", {}, "Quit", {
             click: menu_item("quit"),
         }),
     ]),

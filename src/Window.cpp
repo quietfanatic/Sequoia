@@ -279,8 +279,8 @@ void Window::message_from_shell (json::Value&& message) {
         set_window_focused_tab(id, new_tab);
         break;
     }
-    case x31_hash("fix_counts"): {
-        fix_counts();
+    case x31_hash("fix_problems"): {
+        fix_problems();
         break;
     }
     case x31_hash("quit"): {
