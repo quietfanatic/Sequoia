@@ -388,6 +388,7 @@ let commands = {
                     tab.parent = parent;
                     tab.prev = prev;
                     tab.next = next;
+                    tab.url = url;
                     tab.$tab.setAttribute("title", tooltip);
                     tab.$title.innerText = title;
                     if (focused_id == id) {
