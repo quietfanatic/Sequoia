@@ -358,6 +358,17 @@ UPDATE tabs SET child_count = (
     )", true};
     fix_child_counts.run_void();
 
+    State<>::Ment<> fix_orphans {R"(
+UPDATE tabs AS a SET parent = CASE
+    WHEN prev > 0 AND (SELECT parent FROM tabs b WHERE b.id = a.prev) > 0
+        THEN (SELECT parent FROM tabs b WHERE b.id = a.prev)
+    WHEN next > 0 AND (SELECT parent FROM tabs b WHERE b.id = a.next) > 0
+        THEN (SELECT parent FROM tabs b WHERE b.id = a.next)
+    ELSE 0
+END
+    )", true};
+    fix_orphans.run_void();
+
      // These are all the correctly linked tabs according to the prev field.
      // The next field is ignored.
     State<>::Ment<> make_siblings {R"(
