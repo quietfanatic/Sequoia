@@ -200,13 +200,12 @@ function on_tab_drag (event) {
 }
 function on_tab_release (event) {
     grabbing_tab = false;
+    $tab_destination_marker.remove();
+    $html.classList.remove("moving-tab");
+    document.removeEventListener("mousemove", on_tab_drag);
+    document.removeEventListener("mouseup", on_tab_release);
     if (moving_tab) {
         moving_tab = false;
-        $tab_destination_marker.remove();
-        $html.classList.remove("moving-tab");
-        document.removeEventListener("mousemove", on_tab_drag);
-        document.removeEventListener("mouseup", on_tab_release);
-        console.log($move_destination);
         if ($move_destination) {
             let $item = $move_destination.closest('.item');
             if (+$item.id != moving_tab_id) {
