@@ -131,7 +131,7 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
                     successor = t.next ? t.next
                         : t.parent ? t.parent
                         : t.prev ? t.prev
-                        : create_webpage_tab(0, "about:blank");
+                        : create_webpage_tab(0, TabRelation::LAST_CHILD, "about:blank");
                     A(successor);
                     t = get_tab_data(successor);
                 }
@@ -265,7 +265,7 @@ void Window::message_from_shell (json::Value&& message) {
     }
     case x31_hash("new_toplevel_tab"): {
         Transaction tr;
-        int64 new_tab = create_webpage_tab(0, "about:blank");
+        int64 new_tab = create_webpage_tab(0, TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
         break;
     }

@@ -129,36 +129,105 @@ void change_child_count (int64 parent, int64 diff) {
     }
 }
 
+std::tuple<int64, int64, int64> get_links (int64 id) {
+    static State<int64, int64, int64>::Ment<int64> get {R"(
+SELECT parent, prev, next FROM tabs WHERE id = ?
+    )"};
+    return get.run_single(id);
+}
+
+void set_prev (int64 id, int64 prev) {
+    static State<>::Ment<int64, int64> set {R"(
+UPDATE tabs SET prev = ? WHERE id = ?
+    )"};
+    set.run_void(prev, id);
+    tab_updated(id);
+}
+
+void set_next (int64 id, int64 next) {
+    static State<>::Ment<int64, int64> set {R"(
+UPDATE tabs SET next = ? WHERE id = ?
+    )"};
+    set.run_void(next, id);
+    tab_updated(id);
+}
+
+void set_parent (int64 id, int64 parent) {
+    static State<>::Ment<int64, int64> set {R"(
+UPDATE tabs SET parent = ? WHERE id = ?
+    )"};
+    set.run_void(parent, id);
+    tab_updated(id);
+    change_child_count(parent, +1);
+}
+
+void place_tab (int64 id, int64 reference, TabRelation rel) {
+    switch (rel) {
+    case TabRelation::BEFORE: {
+        int64 parent, prev;
+        tie(parent, prev, ignore) = get_links(reference);
+        set_parent(id, parent);
+        set_next(prev, id);
+        set_prev(id, prev);
+        set_next(id, reference);
+        set_prev(reference, id);
+        break;
+    }
+    case TabRelation::AFTER: {
+        int64 parent, next;
+        tie(parent, ignore, next) = get_links(reference);
+        set_parent(id, parent);
+        set_next(reference, id);
+        set_prev(id, reference);
+        set_next(id, next);
+        set_prev(next, id);
+        break;
+    }
+    case TabRelation::FIRST_CHILD: {
+        static State<int64>::Ment<int64> find_first {R"(
+SELECT id FROM tabs WHERE closed_at IS NULL AND parent = ? AND prev = 0
+        )"};
+        vector<int64> maybe_first = find_first.run(reference);
+        int64 next = maybe_first.empty() ? 0 : maybe_first[0];
+        if (next) {
+            set_prev(next, id);
+            set_next(id, next);
+        }
+        set_parent(id, reference);
+        break;
+    }
+    case TabRelation::LAST_CHILD: {
+        static State<int64>::Ment<int64> find_last {R"(
+SELECT id FROM tabs WHERE closed_at IS NULL AND parent = ? AND next = 0
+        )"};
+        vector<int64> maybe_last = find_last.run(reference);
+        int64 prev = maybe_last.empty() ? 0 : maybe_last[0];
+
+        if (prev) {
+            set_next(prev, id);
+            set_prev(id, prev);
+        }
+        set_parent(id, reference);
+        break;
+    }
+    }
+}
+
 ///// TABS
 
-int64 create_webpage_tab (int64 parent, const string& url, const string& title) {
+int64 create_webpage_tab (int64 reference, TabRelation rel, const string& url, const string& title) {
     Transaction tr;
-    LOG("create_webpage_tab", parent, url, title);
+    LOG("create_webpage_tab", reference, uint(rel), url, title);
 
-    // TODO: detect linked list corruption?
-    static State<int64>::Ment<int64> find_prev {R"(
-SELECT id FROM tabs WHERE closed_at IS NULL AND parent = ? AND next = 0
+    static State<>::Ment<uint8, uint64, string, string, double> create {R"(
+INSERT INTO tabs (tab_type, url_hash, url, title, created_at)
+VALUES (?, ?, ?, ?, ?)
     )"};
-    vector<int64> maybe_prev = find_prev.run(parent);
-    int64 prev = maybe_prev.empty() ? 0 : maybe_prev[0];
-
-    static State<>::Ment<int64, int64, uint8, uint64, string, string, double> create {R"(
-INSERT INTO tabs (parent, prev, tab_type, url_hash, url, title, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
-    )"};
-    create.run_void(parent, prev, uint8(WEBPAGE), x31_hash(url.c_str()), url, title, now());
+    create.run_void(uint8(WEBPAGE), x31_hash(url.c_str()), url, title, now());
     int64 id = sqlite3_last_insert_rowid(db);
-    tab_updated(id);
 
-    if (prev) {
-        static State<>::Ment<int64, int64> update_prev {R"(
-UPDATE tabs SET next = ? WHERE id = ?
-        )"};
-        update_prev.run_void(id, prev);
-        tab_updated(prev);
-    }
+    place_tab(id, reference, rel);
 
-    change_child_count(parent, +1);
 
     return id;
 }

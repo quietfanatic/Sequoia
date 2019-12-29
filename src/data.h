@@ -7,12 +7,23 @@
 
 ///// TABS
 
-enum Tab_Type {
+enum TabType {
     WEBPAGE
 };
 
- // Creates tab as the last child of the parent
-int64 create_webpage_tab (int64 parent, const std::string& url, const std::string& title = "");
+enum class TabRelation {
+    FIRST_CHILD,
+    BEFORE,
+    AFTER,
+    LAST_CHILD
+};
+
+int64 create_webpage_tab (
+    int64 reference,
+    TabRelation rel,
+    const std::string& url,
+    const std::string& title = ""
+);
 
 struct TabData {
     int64 parent;
