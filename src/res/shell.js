@@ -59,6 +59,9 @@ $(document.body, {}, [
         $("div", {id:"new-toplevel-tab"}, "New Toplevel Tab", {
             click: menu_item("new_toplevel_tab"),
         }),
+        $("div", {id:"fix-counts"}, "Fix tab child counts", {
+            click: menu_item("fix_counts"),
+        }),
         $("div", {id:"quit"}, "Quit", {
             click: menu_item("quit"),
         }),

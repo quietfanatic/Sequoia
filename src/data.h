@@ -93,7 +93,7 @@ std::vector<WindowData> get_all_unclosed_windows ();
 void set_window_focused_tab (int64 window, int64 tab);
 int64 get_window_focused_tab (int64 window);
 
-void fix_child_counts ();
+void fix_counts ();
 
 ///// TRANSACTIONS
 

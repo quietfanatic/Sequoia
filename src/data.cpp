@@ -122,7 +122,7 @@ Observer::~Observer () {
 void change_child_count (int64 parent, int64 diff) {
     if (parent != 0) {
         static State<>::Ment<int64, int64> update_child_count {R"(
-    UPDATE tabs SET child_count = child_count + ? WHERE id = ?
+UPDATE tabs SET child_count = child_count + ? WHERE id = ?
         )"};
         update_child_count.run_void(diff, parent);
         tab_updated(parent);
@@ -319,15 +319,20 @@ UPDATE tabs SET prev = ? WHERE id = ?
     change_child_count(parent, -1);
 }
 
-void fix_child_counts () {
-    LOG("fix_child_counts");
+void fix_counts () {
+    LOG("fix_counts");
     Transaction tr;
-    static State<>::Ment<> fix {R"(
-UPDATE tabs SET child_count = (
+    State<>::Ment<> fix_child_counts {R"(
+WITH RECURSIVE ancestors (child, ancestor) AS (
+    SELECT id, parent FROM tabs
+    UNION ALL
+    SELECT id, ancestor FROM tabs, ancestors
+        WHERE parent = child
+) UPDATE tabs SET child_count = (
     SELECT count(*) from ancestors where ancestor = id
 )
-    )"};
-    fix.run_void();
+    )", true};
+    fix_child_counts.run_void();
 }
 
 ///// WINDOWS

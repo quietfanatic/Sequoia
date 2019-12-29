@@ -207,6 +207,7 @@ void Window::message_from_shell (json::Value&& message) {
         }
         break;
     }
+     // Toolbar buttons
     case x31_hash("back"): {
         if (activity && activity->webview) {
             activity->webview->GoBack();
@@ -231,6 +232,17 @@ void Window::message_from_shell (json::Value&& message) {
         }
         break;
     }
+    case x31_hash("show_main_menu"): {
+        main_menu_width = uint(message[1]) * 2;
+        resize();
+        break;
+    }
+    case x31_hash("hide_main_menu"): {
+        main_menu_width = 0;
+        resize();
+        break;
+    }
+     // Tab actions
     case x31_hash("focus"): {
         int64 tab = message[1];
         set_window_focused_tab(id, tab);
@@ -253,20 +265,15 @@ void Window::message_from_shell (json::Value&& message) {
         }
         break;
     }
-    case x31_hash("show_main_menu"): {
-        main_menu_width = uint(message[1]) * 2;
-        resize();
-        break;
-    }
-    case x31_hash("hide_main_menu"): {
-        main_menu_width = 0;
-        resize();
-        break;
-    }
+     // Main menu
     case x31_hash("new_toplevel_tab"): {
         Transaction tr;
         int64 new_tab = create_webpage_tab(0, TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
+        break;
+    }
+    case x31_hash("fix_counts"): {
+        fix_counts();
         break;
     }
     case x31_hash("quit"): {
