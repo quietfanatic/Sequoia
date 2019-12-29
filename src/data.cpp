@@ -367,6 +367,7 @@ UPDATE tabs AS a SET parent = CASE
         THEN (SELECT parent FROM tabs b WHERE b.id = a.next)
     ELSE 0
 END
+WHERE parent < 0
     )", true};
     fix_orphans.run_void();
 
