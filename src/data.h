@@ -29,7 +29,7 @@ struct TabData {
     int64 parent;
     int64 prev;
     int64 next;
-    uint child_count;
+    int64 child_count;
     uint8 tab_type;
     std::string url;
     std::string title;
@@ -40,7 +40,7 @@ struct TabData {
         int64 parent,
         int64 prev,
         int64 next,
-        uint child_count,
+        int64 child_count,
         uint8 tab_type,
         const std::string& url,
         const std::string& title,
@@ -61,9 +61,8 @@ struct TabData {
     { }
 };
 
-TabData get_tab_data (int64 id);
+TabData* get_tab_data (int64 id);
 std::vector<int64> get_all_children (int64 parent);
-std::string get_tab_url (int64 id);
 void set_tab_url(int64 id, const std::string& url);
 void set_tab_title(int64 id, const std::string& title);
 void close_tab(int64 id);

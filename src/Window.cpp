@@ -87,9 +87,9 @@ void Window::Observer_after_commit (
                     send_focus();
                     claim_activity(ensure_activity_for_tab(new_focus));
                     if (old_focus) {
-                        TabData data = get_tab_data(new_focus);
-                        if (data.prev == old_focus) {
-                            if (data.next) ensure_activity_for_tab(data.next);
+                        auto data = get_tab_data(new_focus);
+                        if (data->prev == old_focus) {
+                            if (data->next) ensure_activity_for_tab(data->next);
                         }
                     }
                     send_activity();
@@ -108,29 +108,29 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
     updates.reserve(updated_tabs.size());
     bool do_send_activity = false;
     for (auto tab : updated_tabs) {
-        TabData t = get_tab_data(tab);
+        auto t = get_tab_data(tab);
         Activity* activity = activity_for_tab(tab);
         updates.emplace_back(json::array(
             tab,
-            t.parent,
-            t.prev,
-            t.next,
-            t.child_count,
-            t.title,
-            t.url,
+            t->parent,
+            t->prev,
+            t->next,
+            t->child_count,
+            t->title,
+            t->url,
             !!activity,
-            t.closed_at
+            t->closed_at
         ));
         if (focused_tab == tab) {
-            if (t.closed_at) {
+            if (t->closed_at) {
                  // If the current tab is closing, find a new tab to focus
                 LOG("Finding successor", tab);
                 Transaction tr;
                 int64 successor;
-                while (t.closed_at) {
-                    successor = t.next ? t.next
-                        : t.parent ? t.parent
-                        : t.prev ? t.prev
+                while (t->closed_at) {
+                    successor = t->next ? t->next
+                        : t->parent ? t->parent
+                        : t->prev ? t->prev
                         : create_webpage_tab(0, TabRelation::LAST_CHILD, "about:blank");
                     A(successor);
                     t = get_tab_data(successor);

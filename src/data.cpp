@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <map>
 #include <sqlite3.h>
 
 #include "assert.h"
@@ -34,6 +35,18 @@ void init_db () {
 
 static double now () {
     return duration<double>(system_clock::now().time_since_epoch()).count();
+}
+
+///// Cache
+
+static std::map<int64, TabData> tabs_by_id;
+
+TabData* cached_tab_data (int64 id) {
+    auto iter = tabs_by_id.find(id);
+    if (iter != tabs_by_id.end()) {
+        return &iter->second;
+    }
+    return nullptr;
 }
 
 ///// Transactions
@@ -98,6 +111,7 @@ Transaction::~Transaction () {
             rollback.run_void();
             updated_tabs.clear();
             updated_windows.clear();
+            tabs_by_id.clear();
         }
         else {
             static State<>::Ment<> commit {"COMMIT"};
@@ -117,26 +131,43 @@ Observer::~Observer () {
     }
 }
 
-///// TAB HELPER STATMENTS
+///// TAB HELPER STATEMENTS
+
+TabData* get_tab_data (int64 id) {
+    LOG("get_tab_data", id);
+    if (auto data = cached_tab_data(id)) {
+        return data;
+    }
+
+    init_db();
+    static State<int64, int64, int64, int64, uint8, string, string, double, double, double>
+        ::Ment<int64> get {R"(
+SELECT parent, prev, next, child_count, tab_type, url, title, created_at, visited_at, closed_at
+FROM tabs WHERE id = ?
+    )"};
+
+    auto res = tabs_by_id.emplace(id, make_from_tuple<TabData>(get.run_single(id)));
+    return &res.first->second;
+}
 
 void change_child_count (int64 parent, int64 diff) {
-    if (parent != 0) {
+    while (parent != 0) {
+        if (auto data = cached_tab_data(parent)) {
+            data->child_count += diff;
+        }
         static State<>::Ment<int64, int64> update_child_count {R"(
 UPDATE tabs SET child_count = child_count + ? WHERE id = ?
         )"};
         update_child_count.run_void(diff, parent);
         tab_updated(parent);
+        parent = get_tab_data(parent)->parent;
     }
 }
 
-std::tuple<int64, int64, int64> get_links (int64 id) {
-    static State<int64, int64, int64>::Ment<int64> get {R"(
-SELECT parent, prev, next FROM tabs WHERE id = ?
-    )"};
-    return get.run_single(id);
-}
-
 void set_prev (int64 id, int64 prev) {
+    if (auto data = cached_tab_data(id)) {
+        data->prev = prev;
+    }
     static State<>::Ment<int64, int64> set {R"(
 UPDATE tabs SET prev = ? WHERE id = ?
     )"};
@@ -145,6 +176,9 @@ UPDATE tabs SET prev = ? WHERE id = ?
 }
 
 void set_next (int64 id, int64 next) {
+    if (auto data = cached_tab_data(id)) {
+        data->next = next;
+    }
     static State<>::Ment<int64, int64> set {R"(
 UPDATE tabs SET next = ? WHERE id = ?
     )"};
@@ -153,34 +187,41 @@ UPDATE tabs SET next = ? WHERE id = ?
 }
 
 void set_parent (int64 id, int64 parent) {
+    if (auto data = cached_tab_data(id)) {
+        data->parent = parent;
+    }
     static State<>::Ment<int64, int64> set {R"(
 UPDATE tabs SET parent = ? WHERE id = ?
     )"};
     set.run_void(parent, id);
     tab_updated(id);
-    change_child_count(parent, +1);
+    change_child_count(parent, 1 + get_tab_data(id)->child_count);
+}
+
+void remove_tab (int64 id) {
+    auto data = get_tab_data(id);
+    if (data->prev) set_next(data->prev, data->next);
+    if (data->next) set_prev(data->next, data->prev);
 }
 
 void place_tab (int64 id, int64 reference, TabRelation rel) {
     switch (rel) {
     case TabRelation::BEFORE: {
-        int64 parent, prev;
-        tie(parent, prev, ignore) = get_links(reference);
-        set_parent(id, parent);
-        set_next(prev, id);
-        set_prev(id, prev);
+        auto data = get_tab_data(reference);
+        set_parent(id, data->parent);
+        set_next(data->prev, id);
+        set_prev(id, data->prev);
         set_next(id, reference);
         set_prev(reference, id);
         break;
     }
     case TabRelation::AFTER: {
-        int64 parent, next;
-        tie(parent, ignore, next) = get_links(reference);
-        set_parent(id, parent);
+        auto data = get_tab_data(reference);
+        set_parent(id, data->parent);
         set_next(reference, id);
         set_prev(id, reference);
-        set_next(id, next);
-        set_prev(next, id);
+        set_next(id, data->next);
+        set_prev(data->next, id);
         break;
     }
     case TabRelation::FIRST_CHILD: {
@@ -232,16 +273,6 @@ VALUES (?, ?, ?, ?, ?)
     return id;
 }
 
-TabData get_tab_data (int64 id) {
-    init_db();
-    LOG("get_tab_data", id);
-    static State<int64, int64, int64, uint, uint8, string, string, double, double, double>
-        ::Ment<int64> get {R"(
-SELECT parent, prev, next, child_count, tab_type, url, title, created_at, visited_at, closed_at
-FROM tabs WHERE id = ?
-    )"};
-    return make_from_tuple<TabData>(get.run_single(id));
-}
 
 std::vector<int64> get_all_children (int64 parent) {
     init_db();
@@ -255,15 +286,15 @@ SELECT id FROM tabs WHERE parent = ? AND closed_at IS NULL
 string get_tab_url (int64 id) {
     init_db();
     LOG("get_tab_url", id);
-    static State<string>::Ment<int64> get {R"(
-SELECT url FROM tabs WHERE id = ?
-    )"};
-    return get.run_single(id);
+    return get_tab_data(id)->url;
 }
 
 void set_tab_url (int64 id, const string& url) {
     Transaction tr;
     LOG("set_tab_url", id, url);
+    if (auto data = cached_tab_data(id)) {
+        data->url = url;
+    }
     static State<>::Ment<uint64, string, int64> set {R"(
 UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
     )"};
@@ -274,6 +305,9 @@ UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
 void set_tab_title (int64 id, const string& title) {
     Transaction tr;
     LOG("set_tab_title", id, title);
+    if (auto data = cached_tab_data(id)) {
+        data->title = title;
+    }
     static State<>::Ment<string, int64> set {R"(
 UPDATE tabs SET title = ? WHERE id = ?
     )"};
@@ -285,38 +319,20 @@ void close_tab (int64 id) {
     Transaction tr;
     LOG("close_tab", id);
 
-    static State<int64, int64, int64, double>::Ment<int64> get_stuff {R"(
-SELECT parent, prev, next, closed_at FROM tabs WHERE id = ?
-    )"};
-    int64 parent, prev, next;
-    double closed_at;
-    tie(parent, prev, next, closed_at) = get_stuff.run_single(id);
+    auto data = get_tab_data(id);
 
-    if (closed_at) return;  // Already closed
+    if (data->closed_at) return;  // Already closed
 
+    data->closed_at = now();
     static State<>::Ment<double, int64> close {R"(
 UPDATE tabs SET closed_at = ? WHERE id = ?
     )"};
-    close.run_void(now(), id);
+    close.run_void(data->closed_at, id);
     tab_updated(id);
 
-    if (prev) {
-        static State<>::Ment<int64, int64> relink_prev {R"(
-UPDATE tabs SET next = ? WHERE id = ?
-        )"};
-        relink_prev.run_void(next, prev);
-        tab_updated(prev);
-    }
+    remove_tab(id);
 
-    if (next) {
-        static State<>::Ment<int64, int64> relink_next {R"(
-UPDATE tabs SET prev = ? WHERE id = ?
-        )"};
-        relink_next.run_void(prev, next);
-        tab_updated(next);
-    }
-
-    change_child_count(parent, -1);
+    change_child_count(data->parent, -1 - data->child_count);
 }
 
 void fix_counts () {
@@ -332,6 +348,7 @@ WITH RECURSIVE ancestors (child, ancestor) AS (
     SELECT count(*) from ancestors where ancestor = id
 )
     )", true};
+    tabs_by_id.clear();
     fix_child_counts.run_void();
 }
 

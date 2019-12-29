@@ -138,7 +138,7 @@ Activity::Activity (int64 t) : tab(t) {
             return S_OK;
         }).Get(), nullptr));
 
-        navigate_url_or_search(get_tab_url(tab));
+        navigate_url_or_search(get_tab_data(tab)->url);
     });
 }
 
