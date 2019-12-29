@@ -166,7 +166,7 @@ html.hide-sidebar #sidebar {
 .tab:not(.loaded) > .title {
     opacity:0.5;
 }
-.expand, .close {
+.expand, .new-child, .close {
     display:none;
     flex-shrink:0;
     width:16px;
@@ -181,6 +181,7 @@ html.hide-sidebar #sidebar {
     font-family:sans-serif;
 }
 .item.parent > .tab > .expand,
+.tab:hover > .new-child,
 .tab:hover > .close {
     display:block;
 }
@@ -191,6 +192,9 @@ html.hide-sidebar #sidebar {
 }
 .item.expanded > .tab > .expand::before {
     transform:rotate(0.25turn);
+}
+.new-child::before {
+    content:"+";
 }
 .close::before {
     content:"✕";

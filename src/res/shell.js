@@ -173,6 +173,14 @@ function on_tab_clicked (event) {
     handled(event);
 }
 
+function on_new_child_clicked (event) {
+    let $item = event.target.closest('.item');
+    if ($item) {
+        host.postMessage(["new_child", +$item.id]);
+    }
+    handled(event);
+}
+
 function on_close_clicked (event) {
     let $item = event.target.closest('.item');
     if ($item) {
@@ -266,6 +274,7 @@ let commands = {
                                 $("div", {class:"expand"}, [], {click:on_expand_clicked}),
                                 $title = $("div", {class:"title"}, title),
                                 $child_count = $("div", {class:"child-count"}),
+                                $("div", {class:"new-child"}, [], {click:on_new_child_clicked}),
                                 $("div", {class:"close"}, [], {click:on_close_clicked}),
                             ], {click:on_tab_clicked, auxclick:on_tab_clicked}
                         ),

@@ -257,6 +257,13 @@ void Window::message_from_shell (json::Value&& message) {
         }
         break;
     }
+    case x31_hash("new_child"): {
+        int64 tab = message[1];
+        Transaction tr;
+        int64 new_tab = create_webpage_tab(tab, TabRelation::LAST_CHILD, "about:blank");
+        set_window_focused_tab(id, new_tab);
+        break;
+    }
     case x31_hash("close"): {
         int64 tab = message[1];
         close_tab(tab);
