@@ -12,18 +12,11 @@ enum TabType {
 };
 
 enum class TabRelation {
-    FIRST_CHILD,
     BEFORE,
     AFTER,
+    FIRST_CHILD,
     LAST_CHILD
 };
-
-int64 create_webpage_tab (
-    int64 reference,
-    TabRelation rel,
-    const std::string& url,
-    const std::string& title = ""
-);
 
 struct TabData {
     int64 parent;
@@ -61,11 +54,19 @@ struct TabData {
     { }
 };
 
+int64 create_webpage_tab (
+    int64 reference,
+    TabRelation rel,
+    const std::string& url,
+    const std::string& title = ""
+);
+
 TabData* get_tab_data (int64 id);
 std::vector<int64> get_all_children (int64 parent);
 void set_tab_url(int64 id, const std::string& url);
 void set_tab_title(int64 id, const std::string& title);
 void close_tab(int64 id);
+void move_tab(int64 id, int64 reference, TabRelation rel);
 
 ///// WINDOWS
 

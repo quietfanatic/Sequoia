@@ -67,7 +67,10 @@ $(document.body, {}, [
         }),
     ]),
 ]);
-function menu_item(message) {
+
+let $tab_destination_marker = $("div", {class:"tab-destination-marker"});
+
+function menu_item (message) {
     return event => {
         host.postMessage([message]);
         close_main_menu();
@@ -111,29 +114,108 @@ let resizing_sidebar = false;
 let sidebar_resize_origin = 0;
 let sidebar_original_width = 0;
 
-function on_resize_mousedown(event) {
-     // Start resize if we're clicking the sidebar but not a tab
-    let $tab = event.target.closest('.tab');
-    if ($tab) return;
+function on_resize_mousedown (event) {
     let $resize = event.target.closest('#resize');
     if (!$resize) return;
     resizing_sidebar = true;
     sidebar_resize_origin = event.clientX;
     sidebar_original_width = $sidebar.offsetWidth;
+    document.addEventListener("mousemove", on_resize_drag);
+    document.addEventListener("mouseup", on_resize_release);
     handled(event);
 }
-document.addEventListener("mousemove", event => {
-    if (!resizing_sidebar) return;
+function on_resize_drag (event) {
     let new_width = sidebar_original_width - (event.clientX - sidebar_resize_origin);
     $html.style.setProperty('--sidebar-width', new_width + "px");
     send_resize();
     handled(event);
-});
-document.addEventListener("mouseup", event => {
-    if (!resizing_sidebar) return;
+}
+function on_resize_release (event) {
     resizing_sidebar = false;
+    document.removeEventListener("mousemove", on_resize_drag);
+    document.removeEventListener("mouseup", on_resize_release);
     handled(event);
-});
+}
+
+let grabbing_tab = false;
+let moving_tab = false;
+let moving_tab_id = 0;
+let $move_destination = null;
+let move_destination_rel = 0;
+let tab_move_origin_y = 0;
+
+let TabRelation = {
+    BEFORE: 0,
+    AFTER: 1,
+    FIRST_CHILD: 2,
+    LAST_CHILD: 3
+};
+
+function on_tab_mousedown (event) {
+    let $item = event.target.closest('.item');
+    if (!$item) return;
+    grabbing_tab = true;
+    tab_move_origin_y = event.clientY;
+    document.addEventListener("mousemove", on_tab_drag);
+    document.addEventListener("mouseup", on_tab_release);
+    moving_tab_id = +$item.id;
+    handled(event);
+}
+function on_tab_drag (event) {
+    let diff = event.clientY - tab_move_origin_y;
+    if (diff*diff > 24*24) {
+        moving_tab = true;
+        $html.classList.add("moving-tab");
+    }
+    if (moving_tab) {
+        $move_destination = event.target.closest('.tab');
+        if ($move_destination) {
+            let bounds = $move_destination.getBoundingClientRect();
+            let ratio = (event.clientY - bounds.top) / bounds.height;
+            $move_destination.appendChild($tab_destination_marker);
+            if (ratio < 0.3) {
+                move_destination_rel = TabRelation.BEFORE;
+                $tab_destination_marker.classList.add("before");
+                $tab_destination_marker.classList.remove("after");
+                $tab_destination_marker.classList.remove("inside");
+            }
+            else if (ratio > 0.7) {
+                move_destination_rel = TabRelation.AFTER;
+                $tab_destination_marker.classList.remove("before");
+                $tab_destination_marker.classList.add("after");
+                $tab_destination_marker.classList.remove("inside");
+            }
+            else {
+                move_destination_rel = TabRelation.LAST_CHILD;
+                $tab_destination_marker.classList.remove("before");
+                $tab_destination_marker.classList.remove("after");
+                $tab_destination_marker.classList.add("inside");
+            }
+        }
+        else {
+            $tab_destination_marker.remove();
+        }
+    }
+    handled(event);
+}
+function on_tab_release (event) {
+    grabbing_tab = false;
+    if (moving_tab) {
+        moving_tab = false;
+        $tab_destination_marker.remove();
+        $html.classList.remove("moving-tab");
+        document.removeEventListener("mousemove", on_tab_drag);
+        document.removeEventListener("mouseup", on_tab_release);
+        console.log($move_destination);
+        if ($move_destination) {
+            let $item = $move_destination.closest('.item');
+            if (+$item.id != moving_tab_id) {
+                host.postMessage(["move_tab", moving_tab_id, +$item.id, move_destination_rel]);
+            }
+        }
+    }
+    handled(event);
+}
 
 function send_resize () {
     let x = showing_sidebar ? $sidebar.offsetWidth : 0;
@@ -146,6 +228,7 @@ function on_new_tab_clicked (event) {
     handled(event);
 }
 
+ // Prevent autoscroll behavior
 document.addEventListener("mousedown", event => {
     if (event.button == 1) {
         handled(event);
@@ -276,7 +359,11 @@ let commands = {
                                 $child_count = $("div", {class:"child-count"}),
                                 $("div", {class:"new-child"}, [], {click:on_new_child_clicked}),
                                 $("div", {class:"close"}, [], {click:on_close_clicked}),
-                            ], {click:on_tab_clicked, auxclick:on_tab_clicked}
+                            ], {
+                                click:on_tab_clicked,
+                                auxclick:on_tab_clicked,
+                                mousedown:on_tab_mousedown,
+                            }
                         ),
                         $list = $("div", {class:"list"}),
                     ]);

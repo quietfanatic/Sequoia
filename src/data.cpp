@@ -209,20 +209,22 @@ void place_tab (int64 id, int64 reference, TabRelation rel) {
     switch (rel) {
     case TabRelation::BEFORE: {
         auto data = get_tab_data(reference);
+        int64 prev = data->prev;
         set_parent(id, data->parent);
-        set_next(data->prev, id);
-        set_prev(id, data->prev);
+        if (prev) set_next(prev, id);
+        set_prev(id, prev);
         set_next(id, reference);
         set_prev(reference, id);
         break;
     }
     case TabRelation::AFTER: {
         auto data = get_tab_data(reference);
+        int64 next = data->next;
         set_parent(id, data->parent);
         set_next(reference, id);
         set_prev(id, reference);
-        set_next(id, data->next);
-        set_prev(data->next, id);
+        set_next(id, next);
+        if (next) set_prev(next, id);
         break;
     }
     case TabRelation::FIRST_CHILD: {
@@ -231,10 +233,9 @@ SELECT id FROM tabs WHERE closed_at IS NULL AND parent = ? AND prev = 0
         )"};
         vector<int64> maybe_first = find_first.run(reference);
         int64 next = maybe_first.empty() ? 0 : maybe_first[0];
-        if (next) {
-            set_prev(next, id);
-            set_next(id, next);
-        }
+        set_prev(id, 0);
+        set_next(id, next);
+        if (next) set_prev(next, id);
         set_parent(id, reference);
         break;
     }
@@ -245,10 +246,9 @@ SELECT id FROM tabs WHERE closed_at IS NULL AND parent = ? AND next = 0
         vector<int64> maybe_last = find_last.run(reference);
         int64 prev = maybe_last.empty() ? 0 : maybe_last[0];
 
-        if (prev) {
-            set_next(prev, id);
-            set_prev(id, prev);
-        }
+        if (prev) set_next(prev, id);
+        set_prev(id, prev);
+        set_next(id, 0);
         set_parent(id, reference);
         break;
     }
@@ -335,6 +335,7 @@ UPDATE tabs SET closed_at = ? WHERE id = ?
 }
 
 void move_tab (int64 id, int64 reference, TabRelation rel) {
+    if (reference == id) return;
     Transaction tr;
     LOG("move_tab", id, reference, uint(rel));
     remove_tab(id);

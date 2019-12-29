@@ -272,6 +272,13 @@ void Window::message_from_shell (json::Value&& message) {
         }
         break;
     }
+    case x31_hash("move_tab"): {
+        int64 tab = message[1];
+        int64 reference = message[2];
+        TabRelation rel = TabRelation(uint(message[3]));
+        move_tab(tab, reference, rel);
+        break;
+    }
      // Main menu
     case x31_hash("new_toplevel_tab"): {
         Transaction tr;

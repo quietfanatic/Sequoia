@@ -22,6 +22,10 @@ html {
     --focused-tab-bg:#555555;
     --tree-bg:#777777;
     --tree-bg-alt:#888888;
+    --tab-destination-marker:#ffffff;
+}
+html.moving-tab * {
+    cursor:move !important;
 }
 body {
     width:100%;
@@ -137,6 +141,7 @@ html.hide-sidebar #sidebar {
 }
 
 .tab {
+    position:relative;
     box-sizing:border-box;
     width:100%;
     height:var(--tab-height);
@@ -238,4 +243,25 @@ html.hide-sidebar #sidebar {
 }
 html.show-main-menu #main-menu {
     visibility:visible;
+}
+.tab-destination-marker {
+    position:absolute;
+    width:100%;
+    box-sizing:border-box;
+    border:2px solid var(--tab-destination-marker);
+}
+.tab-destination-marker.inside {
+    top:0;
+    bottom:0;
+    height:100%;
+}
+.tab-destination-marker.before {
+    margin-top:-1px;
+    top:0;
+    height:0;
+}
+.tab-destination-marker.after {
+    margin-bottom:-1px;
+    bottom:0;
+    height:0;
 }
