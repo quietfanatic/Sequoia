@@ -17,66 +17,93 @@ function handled (event) {
     event.preventDefault();
 }
 
-$(document.body, {}, [
-    $toolbar = $("div", {id:"toolbar"}, [
-        $back = $("div", {id:"back"}, [], {click: e => {
-            host.postMessage(["back"]);
-            handled(e);
-        }}),
-        $forward = $("div", {id:"forward"}, [], {click: e => {
-            host.postMessage(["forward"]);
-            handled(e);
-        }}),
-        $reload = $("div", {id:"reload"}, [], {click:reload_or_stop}),
-        $address = $("input", {}, [], {keydown: e => {
-            if (e.key == "Enter") {
-                host.postMessage(["navigate", $address.value]);
+$(document.body,
+    $toolbar = $("div", {id:"toolbar"},
+        $back = $("div", {
+            id: "back",
+            click: e => {
+                host.postMessage(["back"]);
                 handled(e);
-            }
-        }}),
+            },
+        }),
+        $forward = $("div", {
+            id: "forward",
+            click: e => {
+                host.postMessage(["forward"]);
+                handled(e);
+            },
+        }),
+        $reload = $("div", {
+            id: "reload",
+            click: e => {
+                if (currently_loading) {
+                    host.postMessage(["stop"]);
+                }
+                else {
+                    host.postMessage(["reload"]);
+                }
+                handled(e);
+            },
+        }),
+        $address = $("input", {
+            id: "address",
+            keydown: e => {
+                if (e.key == "Enter") {
+                    host.postMessage(["navigate", $address.value]);
+                    handled(e);
+                }
+            },
+        }),
         $error_indicator = $("div", {
-            id:"error-indicator",
-            title:"An error has occured in the Sequoia shell.\n"
-                 +"Click here to investigate with the DevTools.",
-        }, [], {click: e => {
-            $error_indicator.classList.remove("has-error");
-            host.postMessage(["investigate_error"]);
-        }}),
-        $("div", {id:"toggle-sidebar"}, [], {click: e => {
-            showing_sidebar = !showing_sidebar;
-            $html.classList.toggle("hide-sidebar", showing_sidebar);
-            send_resize();
-            handled(e);
-        }}),
-        $("div", {id:"show-main-menu"}, [], {click: e => {
-            if (showing_main_menu) {
-                close_main_menu();
-            }
-            else {
-                open_main_menu();
-            }
-            handled(e);
-        }}),
-    ]),
-    $sidebar = $("div", {id:"sidebar"}, [
+            id: "error-indicator",
+            title: "An error has occured in the Sequoia shell.\n"
+                 + "Click here to investigate with the DevTools.",
+            click: e => {
+                $error_indicator.classList.remove("has-error");
+                host.postMessage(["investigate_error"]);
+            },
+        }),
+        $("div", {
+            id: "toggle-sidebar",
+            click: e => {
+                showing_sidebar = !showing_sidebar;
+                $html.classList.toggle("hide-sidebar", showing_sidebar);
+                send_resize();
+                handled(e);
+            },
+        }),
+        $("div", {
+            id: "show-main-menu",
+            click: e => {
+                if (showing_main_menu) {
+                    close_main_menu();
+                }
+                else {
+                    open_main_menu();
+                }
+                handled(e);
+            },
+        }),
+    ),
+    $sidebar = $("div", {id:"sidebar"},
         $toplist = $("div", {class:"list"}),
-        $("div", {id:"sidebar-bottom"}, [
-            $("div", {id:"resize"}, [], {mousedown:on_resize_mousedown}),
-            $("div", {id:"new-tab"}, [], {click:on_new_tab_clicked}),
-        ]),
-    ]),
-    $main_menu = $("nav", {id:"main-menu"}, [
-        $("div", {}, "New Toplevel Tab", {
+        $("div", {id:"sidebar-bottom"},
+            $("div", {id:"resize", mousedown:on_resize_mousedown}),
+            $("div", {id:"new-tab", click:on_new_tab_clicked}),
+        ),
+    ),
+    $main_menu = $("nav", {id:"main-menu"},
+        $("div", "New Toplevel Tab", {
             click: menu_item("new_toplevel_tab"),
         }),
-        $("div", {}, "Fix database problems", {
+        $("div", "Fix database problems", {
             click: menu_item("fix_problems"),
         }),
-        $("div", {}, "Quit", {
+        $("div", "Quit", {
             click: menu_item("quit"),
         }),
-    ]),
-]);
+    ),
+);
 
 window.addEventListener("error", e => {
     $error_indicator.classList.add("has-error");
@@ -92,21 +119,12 @@ function menu_item (message) {
     };
 }
 
-function reload_or_stop (event) {
-    if (currently_loading) {
-        host.postMessage(["stop"]);
-    }
-    else {
-        host.postMessage(["reload"]);
-    }
-    handled(event);
-}
-
 document.addEventListener("click", e => {
     let $show_main_menu = event.target.closest("#show-main-menu");
     if ($show_main_menu) return;
     close_main_menu();
 }, {capture:true});
+
 window.addEventListener("blur", e => {
     close_main_menu();
     handled(e);
@@ -364,20 +382,32 @@ let commands = {
                 let tab = tabs_by_id[id];
                 if (!tab) {  // Create new tab
                     let $item, $tab, $title, $child_count, $list;
-                    $item = $("div", {id:id,class:"item"}, [
-                        $tab = $("div",
-                            {class:"tab", title:tooltip}, [
-                                $("div", {class:"expand"}, [], {click:on_expand_clicked}),
-                                $title = $("div", {class:"title"}, title),
-                                $child_count = $("div", {class:"child-count"}),
-                                $("div", {class:"new-child"}, [], {click:on_new_child_clicked}),
-                                $("div", {class:"close"}, [], {click:on_close_clicked}),
-                            ], {
-                                click:on_tab_clicked,
-                                auxclick:on_tab_clicked,
-                                mousedown:on_tab_mousedown,
-                            }
-                        ),
+                    $item = $("div", {
+                        id: id,
+                        class: "item",
+                    }, [
+                        $tab = $("div", {
+                            class: "tab",
+                            title: tooltip,
+                            click: on_tab_clicked,
+                            auxclick: on_tab_clicked,
+                            mousedown: on_tab_mousedown,
+                        }, [
+                            $("div", {
+                                class: "expand",
+                                click: on_expand_clicked,
+                            }),
+                            $title = $("div", {class:"title"}, title),
+                            $child_count = $("div", {class:"child-count"}),
+                            $("div", {
+                                class: "new-child",
+                                click: on_new_child_clicked,
+                            }),
+                            $("div", {
+                                class: "close",
+                                click: on_close_clicked,
+                            }),
+                        ]),
                         $list = $("div", {class:"list"}),
                     ]);
 
@@ -452,13 +482,12 @@ let commands = {
 };
 
 host.addEventListener("message", e=>{
-    console.log(e.data);
     if (e.data.length < 1) {
         console.log("Shell received unrecognized message format");
         return;
     }
     let command = e.data.shift();
-    console.log(command);
+    console.log(command, e.data);
     if (command in commands) {
         commands[command].apply(undefined, e.data)
     }
