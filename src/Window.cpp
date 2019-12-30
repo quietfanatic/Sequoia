@@ -232,6 +232,10 @@ void Window::message_from_shell (json::Value&& message) {
         }
         break;
     }
+    case x31_hash("investigate_error"): {
+        webview->OpenDevToolsWindow();
+        break;
+    }
     case x31_hash("show_main_menu"): {
         main_menu_width = uint(message[1]) * 2;
         resize();

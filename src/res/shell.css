@@ -53,7 +53,7 @@ body {
     background-color:inherit;
     color:inherit;
 }
-#back, #forward, #reload, #toggle-sidebar, #show-main-menu {
+#back, #forward, #reload, #error-indicator, #toggle-sidebar, #show-main-menu {
     height:var(--toolbar-height);
     line-height:var(--toolbar-height);
     width:var(--toolbar-height);
@@ -75,6 +75,16 @@ body {
 }
 #reload.loading::before {
     content:"✕";
+}
+#error-indicator {
+    display:none;
+}
+#error-indicator.has-error {
+    display:block;
+}
+#error-indicator::before {
+    color:red;
+    content:"⚠";
 }
 #toggle-sidebar::before {
     content:"⭲";

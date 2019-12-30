@@ -8,7 +8,9 @@ let showing_main_menu = false;
 let currently_loading = false;
 
 let $html = document.documentElement;
-let $toolbar, $back, $forward, $reload, $address, $sidebar, $toplist, $main_menu;
+let $toolbar;
+let $back, $forward, $reload, $address, $error_indicator;
+let $sidebar, $toplist, $main_menu;
 
 function handled (event) {
     event.stopPropagation();
@@ -31,6 +33,14 @@ $(document.body, {}, [
                 host.postMessage(["navigate", $address.value]);
                 handled(e);
             }
+        }}),
+        $error_indicator = $("div", {
+            id:"error-indicator",
+            title:"An error has occured in the Sequoia shell.\n"
+                 +"Click here to investigate with the DevTools.",
+        }, [], {click: e => {
+            $error_indicator.classList.remove("has-error");
+            host.postMessage(["investigate_error"]);
         }}),
         $("div", {id:"toggle-sidebar"}, [], {click: e => {
             showing_sidebar = !showing_sidebar;
@@ -67,6 +77,10 @@ $(document.body, {}, [
         }),
     ]),
 ]);
+
+window.addEventListener("error", e => {
+    $error_indicator.classList.add("has-error");
+});
 
 let $tab_destination_marker = $("div", {class:"tab-destination-marker"});
 
