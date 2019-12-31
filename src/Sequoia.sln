@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29424.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sequoia", "Sequoia.vcxproj", "{499577C5-0EAE-43F6-A6A0-655442A89344}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "json_test", "json\json_test.vcxproj", "{23C02A8B-CBFA-45EC-A034-74DCFCE90C7D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{23C02A8B-CBFA-45EC-A034-74DCFCE90C7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

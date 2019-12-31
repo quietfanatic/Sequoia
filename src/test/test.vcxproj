@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{23C02A8B-CBFA-45EC-A034-74DCFCE90C7D}</ProjectGuid>
-    <RootNamespace>json_test</RootNamespace>
+    <RootNamespace>test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -127,11 +127,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="json.cpp" />
+    <ClCompile Include="../util/json.cpp" />
     <ClCompile Include="json_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="json.h" />
+    <ClInclude Include="../util/json.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

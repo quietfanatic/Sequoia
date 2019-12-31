@@ -137,7 +137,6 @@
   <ItemGroup>
     <ClCompile Include="activities.cpp" />
     <ClCompile Include="data.cpp" />
-    <ClCompile Include="json/json.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nursery.cpp" />
     <ClCompile Include="OSWindow.cpp" />
@@ -145,6 +144,7 @@
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="util/assert.cpp" />
     <ClCompile Include="util/files.cpp" />
+    <ClCompile Include="util/json.cpp" />
     <ClCompile Include="util/logging.cpp" />
     <ClCompile Include="util/utf8.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -153,7 +153,6 @@
     <ClInclude Include="_windows.h" />
     <ClInclude Include="activities.h" />
     <ClInclude Include="data.h" />
-    <ClInclude Include="json/json.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="nursery.h" />
     <ClInclude Include="OSWindow.h" />
@@ -162,6 +161,7 @@
     <ClInclude Include="util/assert.h" />
     <ClInclude Include="util/db_support.h" />
     <ClInclude Include="util/files.h" />
+    <ClInclude Include="util/json.h" />
     <ClInclude Include="util/logging.h" />
     <ClInclude Include="util/types.h" />
     <ClInclude Include="util/utf8.h" />
