@@ -96,7 +96,6 @@ static size_t transaction_depth = 0;
 
 Transaction::Transaction () {
     A(!uncaught_exceptions());
-    init_db();
     if (!transaction_depth) {
         static State<>::Ment<> begin {"BEGIN"};
         begin.run_void();
@@ -138,7 +137,6 @@ TabData* get_tab_data (int64 id) {
         return data;
     }
 
-    init_db();
     static State<int64, int64, int64, int64, uint8, string, string, double, double, double>
         ::Ment<int64> get {R"(
 SELECT parent, prev, next, child_count, tab_type, url, title, created_at, visited_at, closed_at
@@ -275,7 +273,6 @@ VALUES (?, ?, ?, ?, ?)
 
 
 std::vector<int64> get_all_children (int64 parent) {
-    init_db();
     LOG("get_all_children", parent);
     static State<int64>::Ment<int64> get {R"(
 SELECT id FROM tabs WHERE parent = ? AND closed_at IS NULL
@@ -284,13 +281,13 @@ SELECT id FROM tabs WHERE parent = ? AND closed_at IS NULL
 }
 
 string get_tab_url (int64 id) {
-    init_db();
     return get_tab_data(id)->url;
 }
 
 void set_tab_url (int64 id, const string& url) {
-    Transaction tr;
     LOG("set_tab_url", id, url);
+    Transaction tr;
+
     if (auto data = cached_tab_data(id)) {
         data->url = url;
     }
@@ -302,8 +299,9 @@ UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
 }
 
 void set_tab_title (int64 id, const string& title) {
-    Transaction tr;
     LOG("set_tab_title", id, title);
+    Transaction tr;
+
     if (auto data = cached_tab_data(id)) {
         data->title = title;
     }
@@ -315,8 +313,8 @@ UPDATE tabs SET title = ? WHERE id = ?
 }
 
 void close_tab (int64 id) {
-    Transaction tr;
     LOG("close_tab", id);
+    Transaction tr;
 
     auto data = get_tab_data(id);
 
@@ -336,8 +334,9 @@ UPDATE tabs SET closed_at = ? WHERE id = ?
 
 void move_tab (int64 id, int64 reference, TabRelation rel) {
     if (reference == id) return;
-    Transaction tr;
     LOG("move_tab", id, reference, uint(rel));
+    Transaction tr;
+
     remove_tab(id);
     place_tab(id, reference, rel);
 }
@@ -345,6 +344,7 @@ void move_tab (int64 id, int64 reference, TabRelation rel) {
 void fix_problems () {
     LOG("fix_problems");
     Transaction tr;
+
     tabs_by_id.clear();
     State<>::Ment<> fix_child_counts {R"(
 WITH RECURSIVE ancestors (child, ancestor) AS (
@@ -422,8 +422,9 @@ ORDER BY created_at
 ///// WINDOWS
 
 int64 create_window (int64 focused_tab) {
-    Transaction tr;
     LOG("create_window", focused_tab);
+    Transaction tr;
+
     static State<>::Ment<int64, double> create {R"(
 INSERT INTO windows (focused_tab, created_at) VALUES (?, ?)
     )"};
@@ -434,8 +435,8 @@ INSERT INTO windows (focused_tab, created_at) VALUES (?, ?)
 }
 
 vector<WindowData> get_all_unclosed_windows () {
-    init_db();
     LOG("get_all_unclosed_windows");
+
     static State<int64, int64, double, double>::Ment<> get {R"(
 SELECT id, focused_tab, created_at, closed_at FROM windows
 WHERE closed_at IS NULL
@@ -451,8 +452,9 @@ WHERE closed_at IS NULL
 }
 
 void set_window_focused_tab (int64 window, int64 tab) {
-    Transaction tr;
     LOG("set_window_focused_tab", window, tab);
+    Transaction tr;
+
     static State<>::Ment<int64, int64> set {R"(
 UPDATE windows SET focused_tab = ? WHERE id = ?
     )"};
@@ -461,8 +463,8 @@ UPDATE windows SET focused_tab = ? WHERE id = ?
 }
 
 int64 get_window_focused_tab (int64 window) {
-    init_db();
     LOG("get_window_focused_tab", window);
+
     static State<int64>::Ment<int64> get {R"(
 SELECT focused_tab FROM windows WHERE id = ?
     )"};

@@ -49,6 +49,7 @@ int WINAPI WinMain (
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
         load_settings(__argv, __argc);
+        init_db();
         init_nursery(profile_folder + "/edge-user-data");
         start_browser();
 
