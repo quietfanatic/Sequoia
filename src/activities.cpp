@@ -8,14 +8,14 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "assert.h"
 #include "data.h"
-#include "hash.h"
 #include "json/json.h"
-#include "logging.h"
 #include "nursery.h"
-#include "utf8.h"
-#include "util.h"
+#include "util/assert.h"
+#include "util/files.h"
+#include "util/hash.h"
+#include "util/logging.h"
+#include "util/utf8.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;

@@ -136,35 +136,35 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="activities.cpp" />
-    <ClCompile Include="assert.cpp" />
     <ClCompile Include="data.cpp" />
     <ClCompile Include="json/json.cpp" />
-    <ClCompile Include="logging.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nursery.cpp" />
+    <ClCompile Include="OSWindow.cpp" />
     <ClCompile Include="settings.cpp" />
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
-    <ClCompile Include="OSWindow.cpp" />
-    <ClCompile Include="utf8.cpp" />
-    <ClCompile Include="util.cpp" />
+    <ClCompile Include="util/assert.cpp" />
+    <ClCompile Include="util/files.cpp" />
+    <ClCompile Include="util/logging.cpp" />
+    <ClCompile Include="util/utf8.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_windows.h" />
     <ClInclude Include="activities.h" />
-    <ClInclude Include="assert.h" />
     <ClInclude Include="data.h" />
     <ClInclude Include="db_support.h" />
     <ClInclude Include="json/json.h" />
-    <ClInclude Include="logging.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="nursery.h" />
+    <ClInclude Include="OSWindow.h" />
     <ClInclude Include="settings.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
-    <ClInclude Include="stuff.h" />
-    <ClInclude Include="OSWindow.h" />
-    <ClInclude Include="utf8.h" />
-    <ClInclude Include="util.h" />
+    <ClInclude Include="util/assert.h" />
+    <ClInclude Include="util/files.h" />
+    <ClInclude Include="util/logging.h" />
+    <ClInclude Include="util/types.h" />
+    <ClInclude Include="util/utf8.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

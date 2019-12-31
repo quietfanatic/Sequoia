@@ -1,9 +1,14 @@
 #pragma once
-#include "stuff.h"
 
 #include <ostream>
 
-std::ostream& logstream ();
+#include "types.h"
+
+extern std::ostream* logstream;
+
+void init_log (const std::string& filename);
+
+double now ();
 
 namespace {
 
@@ -30,7 +35,7 @@ std::ostream& log_args (std::ostream& log, Arg1&& arg1, Arg2&& arg2, Args&&... a
 
 template <class... Args>
 void LOG (Args&&... args) {
-    log_args(logstream(), std::forward<Args>(args)...) << std::endl << std::flush;
+    log_args(*logstream, now, std::forward<Args>(args)...) << std::endl << std::flush;
 }
 
 }

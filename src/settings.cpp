@@ -3,13 +3,13 @@
 #include <filesystem>
 #include <string>
 
-#include "assert.h"
-#include "hash.h"
 #include "json/json.h"
-#include "logging.h"
 #include "main.h"
-#include "utf8.h"
-#include "util.h"
+#include "util/assert.h"
+#include "util/files.h"
+#include "util/hash.h"
+#include "util/logging.h"
+#include "util/utf8.h"
 
 using namespace std;
 
@@ -73,6 +73,7 @@ void load_settings (char** argv, int argc) {
     }
     profile_folder = to_utf8(filesystem::absolute(profile_folder));
     filesystem::create_directory(profile_folder);
+    init_log(profile_folder + "/Sequoia.log");
     LOG("Using profile folder:", profile_folder);
      // Now read the settings JSON in the profile folder
     string settings_file = profile_folder + "/settings.json";

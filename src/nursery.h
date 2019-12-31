@@ -4,7 +4,7 @@
 #include <string>
 #include <windows.h>
 
-#include "stuff.h"
+#include "util/types.h"
 
 void init_nursery (const std::string& edge_user_data_folder);
 

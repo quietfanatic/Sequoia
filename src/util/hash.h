@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stuff.h"
+#include "types.h"
 
 template <class T>
 constexpr uint64 x31_hash (T* s) {

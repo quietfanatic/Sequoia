@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include "stuff.h"
-
 extern std::string profile_name;
 extern std::string profile_folder;
 

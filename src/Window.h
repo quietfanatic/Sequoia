@@ -5,8 +5,8 @@
 #include <windows.h>
 
 #include "data.h"
-#include "stuff.h"
 #include "OSWindow.h"
+#include "util/types.h"
 
 namespace json { struct Value; }
 

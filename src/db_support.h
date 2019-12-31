@@ -6,7 +6,7 @@
 
 #include <sqlite3.h>
 
-#include "assert.h"
+#include "util/assert.h"
 
 extern sqlite3* db;
 

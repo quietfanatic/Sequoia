@@ -8,13 +8,13 @@
 #include <wrl.h>
 
 #include "activities.h"
-#include "assert.h"
 #include "data.h"
-#include "logging.h"
 #include "nursery.h"
 #include "settings.h"
-#include "util.h"
-#include "utf8.h"
+#include "util/assert.h"
+#include "util/files.h"
+#include "util/logging.h"
+#include "util/utf8.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;

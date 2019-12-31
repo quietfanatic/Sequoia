@@ -1,8 +1,6 @@
 #include "Window.h"
 
-#include <WebView2.h>
-
-#include "assert.h"
+#include "util/assert.h"
 
 using namespace std;
 

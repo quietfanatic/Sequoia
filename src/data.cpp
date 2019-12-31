@@ -5,12 +5,12 @@
 #include <map>
 #include <sqlite3.h>
 
-#include "assert.h"
 #include "db_support.h"
-#include "hash.h"
-#include "logging.h"
 #include "settings.h"
-#include "util.h"
+#include "util/assert.h"
+#include "util/files.h"
+#include "util/hash.h"
+#include "util/logging.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -26,6 +26,7 @@ void init_db () {
     bool exists = filesystem::exists(db_file) && filesystem::file_size(db_file) > 0;
     AS(sqlite3_open(db_file.c_str(), &db));
     if (!exists) {
+        Transaction tr;
         string schema = slurp(exe_relative("res/schema.sql"));
         LOG("Creating database...");
         AS(sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));

@@ -5,16 +5,16 @@
 #include <wrl.h>
 
 #include "activities.h"
-#include "assert.h"
 #include "data.h"
-#include "hash.h"
-#include "logging.h"
+#include "json/json.h"
 #include "main.h"
 #include "nursery.h"
-#include "json/json.h"
 #include "settings.h"
-#include "utf8.h"
-#include "util.h"
+#include "util/assert.h"
+#include "util/files.h"
+#include "util/hash.h"
+#include "util/logging.h"
+#include "util/utf8.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

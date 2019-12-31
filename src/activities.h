@@ -4,7 +4,7 @@
 #include <wil/com.h>
 #include <windows.h>
 
-#include "stuff.h"
+#include "util/types.h"
 
 struct Window;
 namespace json { struct Value; }

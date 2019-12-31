@@ -4,8 +4,8 @@
 #include <wil/com.h>
 #include <wrl.h>
 
-#include "assert.h"
-#include "utf8.h"
+#include "util/assert.h"
+#include "util/utf8.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
