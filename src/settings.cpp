@@ -72,8 +72,8 @@ void load_settings (char** argv, int argc) {
         profile_folder = exe_relative("profiles/" + profile_name);
     }
     profile_folder = to_utf8(filesystem::absolute(profile_folder));
-    LOG("Using profile folder:", profile_folder);
     filesystem::create_directory(profile_folder);
+    LOG("Using profile folder:", profile_folder);
      // Now read the settings JSON in the profile folder
     string settings_file = profile_folder + "/settings.json";
     if (!filesystem::exists(settings_file)) return;
