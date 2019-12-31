@@ -5,9 +5,9 @@
 #include <map>
 #include <sqlite3.h>
 
-#include "db_support.h"
 #include "settings.h"
 #include "util/assert.h"
+#include "util/db_support.h"
 #include "util/files.h"
 #include "util/hash.h"
 #include "util/logging.h"

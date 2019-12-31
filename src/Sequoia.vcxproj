@@ -153,7 +153,6 @@
     <ClInclude Include="_windows.h" />
     <ClInclude Include="activities.h" />
     <ClInclude Include="data.h" />
-    <ClInclude Include="db_support.h" />
     <ClInclude Include="json/json.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="nursery.h" />
@@ -161,6 +160,7 @@
     <ClInclude Include="settings.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="util/assert.h" />
+    <ClInclude Include="util/db_support.h" />
     <ClInclude Include="util/files.h" />
     <ClInclude Include="util/logging.h" />
     <ClInclude Include="util/types.h" />
