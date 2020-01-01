@@ -449,6 +449,7 @@ let commands = {
          //   parent tabs have been delivered.
         for (let [id] of updates) {
             let tab = tabs_by_id[id];
+            if (!tab) continue;  // Must have been deleted
             if (tab.$item.isConnected) continue;
             let $parent_list = tab.parent == 0 ? $toplist : tabs_by_id[tab.parent].$list;
              // Insert sorted by position.
