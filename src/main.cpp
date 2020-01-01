@@ -8,7 +8,7 @@
 #include <wrl.h>
 
 #include "activities.h"
-#include "data.h"
+#include "data_init.h"
 #include "nursery.h"
 #include "settings.h"
 #include "util/assert.h"
@@ -48,7 +48,7 @@ int WINAPI WinMain (
     try {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-        load_settings(__argv, __argc);
+        load_settings(__argc, __argv);
         init_db();
         init_nursery(profile_folder + "/edge-user-data");
         start_browser();

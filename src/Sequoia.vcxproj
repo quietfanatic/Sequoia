@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="activities.cpp" />
     <ClCompile Include="data.cpp" />
+    <ClCompile Include="data_init.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nursery.cpp" />
     <ClCompile Include="OSWindow.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="_windows.h" />
     <ClInclude Include="activities.h" />
     <ClInclude Include="data.h" />
+    <ClInclude Include="data_init.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="nursery.h" />
     <ClInclude Include="OSWindow.h" />

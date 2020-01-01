@@ -1,14 +1,13 @@
 #include "data.h"
 
 #include <chrono>
-#include <filesystem>
 #include <map>
 #include <sqlite3.h>
 
+#include "data_init.h"
 #include "settings.h"
 #include "util/assert.h"
 #include "util/db_support.h"
-#include "util/files.h"
 #include "util/hash.h"
 #include "util/logging.h"
 
@@ -16,23 +15,6 @@ using namespace std;
 using namespace std::chrono;
 
 ///// Misc
-
-sqlite3* db = nullptr;
-
-void init_db () {
-    if (db) return;
-    string db_file = profile_folder + "/sequoia-state.sqlite";
-    LOG("init_db", db_file);
-    bool exists = filesystem::exists(db_file) && filesystem::file_size(db_file) > 0;
-    AS(sqlite3_open(db_file.c_str(), &db));
-    if (!exists) {
-        Transaction tr;
-        string schema = slurp(exe_relative("res/schema.sql"));
-        LOG("Creating database...");
-        AS(sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));
-        LOG("Created database.");
-    }
-}
 
 static double now () {
     return duration<double>(system_clock::now().time_since_epoch()).count();

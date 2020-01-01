@@ -11,5 +11,5 @@ extern std::string theme;
 
 }
 
-void load_settings (char** argv, int argc);
+void load_settings (int argc, char** argv);
 void save_settings ();

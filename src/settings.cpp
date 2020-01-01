@@ -22,7 +22,7 @@ std::string theme = "dark";
 
 }
 
-void load_settings (char** argv, int argc) {
+void load_settings (int argc, char** argv) {
      // Parse
     bool no_more_named = false;
     vector<pair<string, string>> named;
