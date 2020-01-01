@@ -115,15 +115,18 @@ Observer::~Observer () {
 
 ///// TAB HELPER STATEMENTS
 
+bool suspend_child_counts = false;
+
 void change_child_count (int64 parent, int64 diff) {
+    if (suspend_child_counts) return;
     while (parent > 0) {
         if (auto data = cached_tab_data(parent)) {
             data->child_count += diff;
         }
-        static State<>::Ment<int64, int64> update_child_count {R"(
+        static State<>::Ment<int64, int64> update {R"(
 UPDATE tabs SET child_count = child_count + ? WHERE id = ?
         )"};
-        update_child_count.run_void(diff, parent);
+        update.run_void(diff, parent);
         tab_updated(parent);
 
         parent = get_tab_data(parent)->parent;
@@ -264,6 +267,12 @@ UPDATE tabs SET parent = ?, position = ? WHERE id = ?
 
     change_child_count(parent, 1 + data->child_count);
 }
+void move_tab (int64 id, int64 reference, TabRelation rel) {
+    int64 parent;
+    Bifractor position;
+    tie(parent, position) = make_location(reference, rel);
+    move_tab(id, parent, position);
+}
 
 pair<int64, Bifractor> make_location (int64 reference, TabRelation rel) {
     switch (rel) {
@@ -371,6 +380,19 @@ void fix_problems () {
     LOG("fix_problems");
     Transaction tr;
 
+    suspend_child_counts = true;
+
+    State<int64>::Ment<> get_orphans {R"(
+SELECT id FROM tabs a WHERE NOT EXISTS (SELECT 1 FROM tabs b WHERE b.id = a.parent) ORDER BY created_at
+    )", true};
+    vector<int64> orphans = get_orphans.run();
+    if (!orphans.empty()) {
+        int64 orphanage = create_tab(0, TabRelation::LAST_CHILD, "data:text/html,<title>Orphaned Tabs</title>", "Orphaned Tabs");
+        for (auto orphan : orphans) {
+            move_tab(orphan, orphanage, TabRelation::LAST_CHILD);
+        }
+    }
+
     tabs_by_id.clear();
     State<>::Ment<> fix_child_counts {R"(
 WITH RECURSIVE ancestors (child, ancestor) AS (
@@ -384,5 +406,7 @@ UPDATE tabs SET child_count = (
 )
     )", true};
     fix_child_counts.run_void();
+
+    suspend_child_counts = false;
 }
 

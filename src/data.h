@@ -60,6 +60,7 @@ void set_tab_url (int64 id, const std::string& url);
 void set_tab_title (int64 id, const std::string& title);
 void close_tab (int64 id);
 void move_tab (int64 id, int64 parent, const Bifractor& position);
+void move_tab (int64 id, int64 reference, TabRelation rel);
 std::pair<int64, Bifractor> make_location (int64 reference, TabRelation rel);
 
 ///// WINDOWS

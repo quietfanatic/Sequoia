@@ -278,10 +278,7 @@ void Window::message_from_shell (json::Value&& message) {
         int64 tab = message[1];
         int64 reference = message[2];
         TabRelation rel = TabRelation(uint(message[3]));
-        int64 parent;
-        Bifractor position;
-        tie(parent, position) = make_location(reference, rel);
-        move_tab(tab, parent, position);
+        move_tab(tab, reference, rel);
         break;
     }
      // Main menu
