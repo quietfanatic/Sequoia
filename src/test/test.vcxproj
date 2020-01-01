@@ -127,11 +127,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="../util/assert.cpp" />
+    <ClCompile Include="../util/bifractor.cpp" />
     <ClCompile Include="../util/json.cpp" />
+    <ClCompile Include="bifractor_test.cpp" />
     <ClCompile Include="json_test.cpp" />
+    <ClCompile Include="test_main.cpp" />
+    <ClCompile Include="tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="../util/assert.h" />
+    <ClInclude Include="../util/bifractor.h" />
     <ClInclude Include="../util/json.h" />
+    <ClInclude Include="tap.h" />
+    <ClInclude Include="tests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

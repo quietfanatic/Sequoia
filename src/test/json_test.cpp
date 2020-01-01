@@ -1,56 +1,11 @@
-#include <functional>
-#include <iostream>
 #include <string>
 
+#include "tap.h"
+#include "tests.h"
 #include "../util/json.h"
 
 using namespace json;
 using namespace std;
-
-static size_t run = 0;
-
-void plan (size_t count) {
-    cout << "1.." << count << endl;
-}
-
-bool pass (const string& name) {
-    cout << "ok " << ++run << "  # " << name << endl;
-    return true;
-}
-
-bool fail (const string& name) {
-    cout << "ok " << ++run << "  # " << name << endl;
-    return false;
-}
-
-bool catch_fail (const std::function<bool()>& f, const string& name) {
-    try { return f(); }
-    catch (std::exception& e) {
-        fail(name);
-        cout << " # Threw exception of type: " << typeid(e).name() << endl;
-        cout << " # what: " << e.what() << endl;
-        return false;
-    }
-}
-
-bool ok (bool b, const string& name) {
-    if (b) return pass(name);
-    else return fail(name);
-}
-
-bool ok (const std::function<bool()>& f, const string& name) {
-    return catch_fail([&]{ return ok(f(), name); }, name);
-}
-
-template <class A, class B>
-bool is (A a, B b, const string& name) {
-    if (!ok(a == b, name)) {
-        cout << " # Expected: " << b << endl;
-        cout << " # Got:      " << a << endl;
-        return false;
-    }
-    return true;
-}
 
 void t (const string& s) {
     catch_fail([&]{
@@ -60,9 +15,8 @@ void t (const string& s) {
     }, s);
 }
 
-#include <memory>
-
-int main () {
+Test json_test {"json", []{
+    plan(15);
     t("null");
     t("true");
     t("false");
@@ -78,5 +32,5 @@ int main () {
     t("{}");
     t("{\"asdf\":\"ghjk\"}");
     t("{\"foo\":[4,5,6],\"agfd\":[[[[4]]],{},{\"gtre\":null}],\"goo\":{}}");
-    return 0;
-}
+}};
+
