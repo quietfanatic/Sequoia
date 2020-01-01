@@ -1,13 +1,11 @@
  // This implements a class of infinite-precision fractions that can be compared with
  //   memcmp, so that they can serve as an ordered SQLite BLOB.
  //
- // A Bifractor can constructed as 0, 1, or a point between two other Bifractors.
- //
- // Technically speaking, they are represented as a base-255 string (0x00..0xfe), where the
- //   byte 0xff represents infinitely-repeating 255s.  This is because for memcmp,
- //   "\xff\x00" compares larger than "\xff", so we have to avoid that situation.  Also,
- //   bisecting a Bifractor doesn't necessarily take the strict mathematical halfway point;
- //   instead it'll pick a number with as few bytes as possible to save space.
+ // A Bifractor can constructed as 0, 1, or the bisection of two other Bifractors.
+ //   The bisecting constructor can take a bias within 0x01..0xff, with 0x80 being the
+ //   halfway point. Lower biases will make the result closer to the left side, so that
+ //   if you expect to bisect in one direction contiually, the byte string doesn't get
+ //   quite as long.
 
 #pragma once
 
@@ -35,7 +33,7 @@ struct Bifractor {
     Bifractor (bool one = false) : size(1) {
         imm[0] = one ? 0xff : 0x00;
     }
-    Bifractor (const Bifractor& a, const Bifractor& b);
+    Bifractor (const Bifractor& a, const Bifractor& b, uint bias = 0x80);
 
      // Martialling
     Bifractor (const void* bytes_ptr, size_t bytes_size);

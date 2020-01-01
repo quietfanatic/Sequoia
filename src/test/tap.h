@@ -16,7 +16,7 @@ bool pass (const std::string& name) {
 }
 
 bool fail (const std::string& name) {
-    std::cout << "ok " << ++run << "  # " << name << std::endl;
+    std::cout << "not ok " << ++run << "  # " << name << std::endl;
     return false;
 }
 

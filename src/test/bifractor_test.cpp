@@ -10,14 +10,16 @@
 using namespace std;
 
 std::ostream& operator << (std::ostream& o, const Bifractor& b) {
+    cout << std::hex << std::setfill('0');
     for (size_t i = 0; i < b.size; i++) {
-        cout << std::hex << std::setfill('0') << std::setw(2) << uint(b.bytes()[i]);
+        cout << std::setw(2) << uint(b.bytes()[i]);
     }
+    cout << std::dec;
     return o;
 }
 
 Test bifractor_test {"bifractor", []{
-    plan(10);
+    plan(21);
     srand(uint(time(0)));
 
     Bifractor zero {0};
@@ -43,6 +45,41 @@ Test bifractor_test {"bifractor", []{
             b = new_b;
         }
         ok(okay, "Continually bifracting downwards");
+        is(b.size, 1111 / 8 + 1, "Unbiased bifracting results in iterations*8 length string");
+        cout << "#" << b << endl;
+    }
+    {
+        Bifractor b = 1;
+        bool okay = true;
+        for (size_t i = 0; i < 1111; i++) {
+            Bifractor new_b {0, b, 0xf8};
+            if (new_b <= 0 || new_b >= 1 || new_b >= b) {
+                okay = false;
+                break;
+            }
+            b = new_b;
+        }
+        ok(okay, "Continually bifracting downwards, biased");
+         // Why is this +6 and not +1?  Probably due to excessive integer rounding down,
+         //   making the bias effectively lower.  I'm not too concerned though, since I
+         //   expect bifracting up with low bias will be more common than bifracting down
+         //   with high bias.
+        is(b.size, 1111 / 128 + 6, "Biased bifracting results in smaller string");
+        cout << "#" << b << endl;
+    }
+    {
+        Bifractor b = 1;
+        bool okay = true;
+        for (size_t i = 0; i < 1111; i++) {
+            Bifractor new_b {0, b, 0x08};
+            if (new_b <= 0 || new_b >= 1 || new_b >= b) {
+                okay = false;
+                break;
+            }
+            b = new_b;
+        }
+        ok(okay, "Continually bifracting downwards, wrongly biased");
+        is(b.size, 1111 / 2 + 1, "Wrongly biased bifracting results in larger string");
         cout << "#" << b << endl;
     }
     {
@@ -57,6 +94,37 @@ Test bifractor_test {"bifractor", []{
             b = new_b;
         }
         ok(okay, "Continually bifracting upwards");
+        is(b.size, 1111 / 8 + 1, "Unbiased bifracting results in iterations*8 length string");
+        cout << "#" << b << endl;
+    }
+    {
+        Bifractor b = 0;
+        bool okay = true;
+        for (size_t i = 0; i < 1111; i++) {
+            Bifractor new_b {b, 1, 0x08};
+            if (new_b <= 0 || new_b >= 1 || new_b <= b) {
+                okay = false;
+                break;
+            }
+            b = new_b;
+        }
+        ok(okay, "Continually bifracting upwards, biased");
+        is(b.size, 1111 / 128 + 2, "Biased bifracting results in smaller string");
+        cout << "#" << b << endl;
+    }
+    {
+        Bifractor b = 0;
+        bool okay = true;
+        for (size_t i = 0; i < 1111; i++) {
+            Bifractor new_b {b, 1, 0xf8};
+            if (new_b <= 0 || new_b >= 1 || new_b <= b) {
+                okay = false;
+                break;
+            }
+            b = new_b;
+        }
+        ok(okay, "Continually bifracting upwards, wrongly biased");
+        is(b.size, 1111 / 2 + 1, "Wrongly biased bifracting results in larger string");
         cout << "#" << b << endl;
     }
     {
@@ -80,7 +148,7 @@ Test bifractor_test {"bifractor", []{
                 b = new_b;
             }
         }
-        ok(okay, "Continually bifracting between 0 and 1");
+        ok(okay, "Continually bifracting randomly between 0 and 1");
         cout << "#" << b << endl;
     }
     {
