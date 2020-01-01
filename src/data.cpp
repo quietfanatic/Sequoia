@@ -383,7 +383,10 @@ void fix_problems () {
     suspend_child_counts = true;
 
     State<int64>::Ment<> get_orphans {R"(
-SELECT id FROM tabs a WHERE NOT EXISTS (SELECT 1 FROM tabs b WHERE b.id = a.parent) ORDER BY created_at
+SELECT id FROM tabs a
+WHERE parent <> 0
+AND NOT EXISTS (SELECT 1 FROM tabs b WHERE b.id = a.parent)
+ORDER BY created_at
     )", true};
     vector<int64> orphans = get_orphans.run();
     if (!orphans.empty()) {
