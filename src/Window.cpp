@@ -87,9 +87,9 @@ void Window::Observer_after_commit (
                     send_focus();
                     claim_activity(ensure_activity_for_tab(new_focus));
                     if (old_focus) {
-                        auto data = get_tab_data(new_focus);
-                        if (data->prev == old_focus) {
-                            if (data->next) ensure_activity_for_tab(data->next);
+                        if (old_focus == get_prev_tab(new_focus)) {
+                            int64 next = get_next_tab(new_focus);
+                            if (next) ensure_activity_for_tab(next);
                         }
                     }
                     send_activity();
@@ -113,8 +113,7 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
         updates.emplace_back(json::array(
             tab,
             t->parent,
-            t->prev,
-            t->next,
+            t->position.hex(),
             t->child_count,
             t->title,
             t->url,
@@ -128,11 +127,10 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
                 Transaction tr;
                 int64 successor;
                 while (t->closed_at) {
-                    successor = t->next ? t->next
-                        : t->parent ? t->parent
-                        : t->prev ? t->prev
-                        : create_webpage_tab(0, TabRelation::LAST_CHILD, "about:blank");
-                    A(successor);
+                    successor = get_next_tab(tab);
+                    if (!successor) successor = t->parent;
+                    if (!successor) successor = get_prev_tab(tab);
+                    if (!successor) successor = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
                     t = get_tab_data(successor);
                 }
                 set_window_focused_tab(id, successor);
@@ -181,9 +179,9 @@ void Window::message_from_shell (json::Value&& message) {
              // Temporary algorithm until we support expanding and collapsing trees
              // Select all tabs recursively from the root, so that we don't pick up
              // children of closed tabs
-            vector<int64> required_tabs = get_all_children(0);
+            vector<int64> required_tabs = get_all_unclosed_children(0);
             for (size_t i = 0; i < required_tabs.size(); i++) {
-                vector<int64> children = get_all_children(required_tabs[i]);
+                vector<int64> children = get_all_unclosed_children(required_tabs[i]);
                 for (auto c : children) {
                     required_tabs.push_back(c);
                 }
@@ -264,7 +262,7 @@ void Window::message_from_shell (json::Value&& message) {
     case x31_hash("new_child"): {
         int64 tab = message[1];
         Transaction tr;
-        int64 new_tab = create_webpage_tab(tab, TabRelation::LAST_CHILD, "about:blank");
+        int64 new_tab = create_tab(tab, TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
         break;
     }
@@ -280,13 +278,16 @@ void Window::message_from_shell (json::Value&& message) {
         int64 tab = message[1];
         int64 reference = message[2];
         TabRelation rel = TabRelation(uint(message[3]));
-        move_tab(tab, reference, rel);
+        int64 parent;
+        Bifractor position;
+        tie(parent, position) = make_location(reference, rel);
+        move_tab(tab, parent, position);
         break;
     }
      // Main menu
     case x31_hash("new_toplevel_tab"): {
         Transaction tr;
-        int64 new_tab = create_webpage_tab(0, TabRelation::LAST_CHILD, "about:blank");
+        int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
         break;
     }

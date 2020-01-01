@@ -10,6 +10,8 @@
 #pragma once
 
 #include <new>
+#include <string>
+#include <ostream>
 
 #include "types.h"
 
@@ -28,6 +30,8 @@ struct Bifractor {
         if (size <= sizeof(ptr)) return imm;
         else return ptr;
     }
+
+    std::string hex () const;
 
      // Manufacturing
     Bifractor (bool one = false) : size(1) {
@@ -78,5 +82,10 @@ static inline bool operator >= (const Bifractor& a, const Bifractor& b) {
 }
 static inline bool operator > (const Bifractor& a, const Bifractor& b) {
     return Bifractor::compare(a, b) > 0;
+}
+
+static inline std::ostream& operator << (std::ostream& o, const Bifractor& b) {
+    o << b.hex();
+    return o;
 }
 

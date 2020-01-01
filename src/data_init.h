@@ -5,5 +5,3 @@
 extern sqlite3* db;
 
 void init_db ();
-
-void migrate_db ();

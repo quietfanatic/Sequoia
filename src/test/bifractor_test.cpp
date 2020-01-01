@@ -9,17 +9,8 @@
 
 using namespace std;
 
-std::ostream& operator << (std::ostream& o, const Bifractor& b) {
-    cout << std::hex << std::setfill('0');
-    for (size_t i = 0; i < b.size; i++) {
-        cout << std::setw(2) << uint(b.bytes()[i]);
-    }
-    cout << std::dec;
-    return o;
-}
-
 Test bifractor_test {"bifractor", []{
-    plan(21);
+    plan(22);
     srand(uint(time(0)));
 
     Bifractor zero {0};
@@ -46,7 +37,6 @@ Test bifractor_test {"bifractor", []{
         }
         ok(okay, "Continually bifracting downwards");
         is(b.size, 1111 / 8 + 1, "Unbiased bifracting results in iterations*8 length string");
-        cout << "#" << b << endl;
     }
     {
         Bifractor b = 1;
@@ -65,7 +55,6 @@ Test bifractor_test {"bifractor", []{
          //   expect bifracting up with low bias will be more common than bifracting down
          //   with high bias.
         is(b.size, 1111 / 128 + 6, "Biased bifracting results in smaller string");
-        cout << "#" << b << endl;
     }
     {
         Bifractor b = 1;
@@ -80,7 +69,6 @@ Test bifractor_test {"bifractor", []{
         }
         ok(okay, "Continually bifracting downwards, wrongly biased");
         is(b.size, 1111 / 2 + 1, "Wrongly biased bifracting results in larger string");
-        cout << "#" << b << endl;
     }
     {
         Bifractor b = 0;
@@ -95,7 +83,6 @@ Test bifractor_test {"bifractor", []{
         }
         ok(okay, "Continually bifracting upwards");
         is(b.size, 1111 / 8 + 1, "Unbiased bifracting results in iterations*8 length string");
-        cout << "#" << b << endl;
     }
     {
         Bifractor b = 0;
@@ -110,7 +97,6 @@ Test bifractor_test {"bifractor", []{
         }
         ok(okay, "Continually bifracting upwards, biased");
         is(b.size, 1111 / 128 + 2, "Biased bifracting results in smaller string");
-        cout << "#" << b << endl;
     }
     {
         Bifractor b = 0;
@@ -125,7 +111,6 @@ Test bifractor_test {"bifractor", []{
         }
         ok(okay, "Continually bifracting upwards, wrongly biased");
         is(b.size, 1111 / 2 + 1, "Wrongly biased bifracting results in larger string");
-        cout << "#" << b << endl;
     }
     {
         Bifractor b {Bifractor{0}, Bifractor{1}};
@@ -149,7 +134,6 @@ Test bifractor_test {"bifractor", []{
             }
         }
         ok(okay, "Continually bifracting randomly between 0 and 1");
-        cout << "#" << b << endl;
     }
     {
         Bifractor low_b {0};
@@ -169,9 +153,11 @@ Test bifractor_test {"bifractor", []{
             }
         }
         ok(okay, "Continually bifracting randomly increasingly smaller");
-        cout << "#" << low_b << endl;
-        cout << "#" << high_b << endl;
     }
-
+    is(
+        Bifractor{Bifractor{0}, Bifractor{Bifractor{0}, Bifractor{1}}}.hex(),
+        "3F",
+        "Brief test of hex()"
+    );
 }};
 

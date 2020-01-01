@@ -3,13 +3,10 @@
 #include <string>
 #include <vector>
 
+#include "util/bifractor.h"
 #include "util/types.h"
 
 ///// TABS
-
-enum TabType {
-    WEBPAGE
-};
 
 enum class TabRelation {
     BEFORE,
@@ -20,10 +17,8 @@ enum class TabRelation {
 
 struct TabData {
     int64 parent;
-    int64 prev;
-    int64 next;
+    Bifractor position;
     int64 child_count;
-    uint8 tab_type;
     std::string url;
     std::string title;
     double created_at;
@@ -31,10 +26,8 @@ struct TabData {
     double closed_at;
     TabData(
         int64 parent,
-        int64 prev,
-        int64 next,
+        const Bifractor& position,
         int64 child_count,
-        uint8 tab_type,
         const std::string& url,
         const std::string& title,
         double created_at,
@@ -42,10 +35,8 @@ struct TabData {
         double closed_at
     ) :
         parent(parent),
-        prev(prev),
-        next(next),
+        position(position),
         child_count(child_count),
-        tab_type(tab_type),
         url(url),
         title(title),
         created_at(created_at),
@@ -54,7 +45,7 @@ struct TabData {
     { }
 };
 
-int64 create_webpage_tab (
+int64 create_tab (
     int64 reference,
     TabRelation rel,
     const std::string& url,
@@ -62,11 +53,14 @@ int64 create_webpage_tab (
 );
 
 TabData* get_tab_data (int64 id);
-std::vector<int64> get_all_children (int64 parent);
-void set_tab_url(int64 id, const std::string& url);
-void set_tab_title(int64 id, const std::string& title);
-void close_tab(int64 id);
-void move_tab(int64 id, int64 reference, TabRelation rel);
+int64 get_prev_tab (int64 id);  // Returns 0 if there is none.
+int64 get_next_tab (int64 id);
+std::vector<int64> get_all_unclosed_children (int64 parent);
+void set_tab_url (int64 id, const std::string& url);
+void set_tab_title (int64 id, const std::string& title);
+void close_tab (int64 id);
+void move_tab (int64 id, int64 parent, const Bifractor& position);
+std::pair<int64, Bifractor> make_location (int64 reference, TabRelation rel);
 
 ///// WINDOWS
 
@@ -111,6 +105,5 @@ struct Observer {
 
 ///// MISC
 
-void init_db ();
 void fix_problems ();
 

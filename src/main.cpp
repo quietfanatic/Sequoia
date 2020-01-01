@@ -24,9 +24,9 @@ void start_browser () {
     vector<WindowData> all_windows = get_all_unclosed_windows();
     if (all_windows.empty()) {
         Transaction tr;
-        vector<int64> top_level_tabs = get_all_children(0);
+        vector<int64> top_level_tabs = get_all_unclosed_children(0);
         int64 first_tab = top_level_tabs.empty()
-            ? create_webpage_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/")
+            ? create_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/")
             : top_level_tabs[0];
         int64 first_window = create_window(first_tab);
         auto window = new Window(first_window, first_tab);

@@ -7,7 +7,9 @@
 #include <sqlite3.h>
 
 #include "assert.h"
+#include "bifractor.h"
 
+ // Kinda cheating but whatever
 extern sqlite3* db;
 
 struct Statement {
@@ -40,6 +42,9 @@ struct Statement {
          // STATIC might be better for most use cases
         AS(sqlite3_bind_text(handle, index, v.c_str(), int(v.size()), SQLITE_TRANSIENT));
     }
+    void bind_param (int index, const Bifractor& v) {
+        AS(sqlite3_bind_blob(handle, index, v.bytes(), int(v.size), SQLITE_TRANSIENT));
+    }
 
     void step () {
         A(result_code != SQLITE_DONE);
@@ -53,17 +58,23 @@ struct Statement {
         return T(sqlite3_column_int64(handle, index));
     }
     template <>
-    std::string read_column<std::string> (int index) {
-        auto p = reinterpret_cast<const char*>(sqlite3_column_text(handle, index));
-        return p ? p : "";
-    }
-    template <>
     float read_column<float> (int index) {
         return float(sqlite3_column_double(handle, index));
     }
     template <>
     double read_column<double> (int index) {
         return sqlite3_column_double(handle, index);
+    }
+    template <>
+    std::string read_column<std::string> (int index) {
+        auto p = reinterpret_cast<const char*>(sqlite3_column_text(handle, index));
+        return p ? p : "";
+    }
+    template <>
+    Bifractor read_column<Bifractor> (int index) {
+        const void* data = sqlite3_column_blob(handle, index);
+        int size = sqlite3_column_bytes(handle, index);
+        return Bifractor(data, size);
     }
 
     bool done () {

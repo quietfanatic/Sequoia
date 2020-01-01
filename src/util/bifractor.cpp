@@ -3,6 +3,27 @@
 #include <memory>
 #include <stdexcept>
 
+static char hex_nyb (uint8 nyb) {
+    switch (nyb) {
+    default: return '0' + nyb;
+    case 0xa:
+    case 0xb:
+    case 0xc:
+    case 0xd:
+    case 0xe:
+    case 0xf: return 'A' + nyb - 0xa;
+    }
+}
+
+std::string Bifractor::hex () const {
+    std::string r (size*2, 0);
+    for (size_t i = 0; i < size; i++) {
+        r[i*2] = hex_nyb(bytes()[i] >> 4);
+        r[i*2+1] = hex_nyb(bytes()[i] & 0xf);
+    }
+    return r;
+}
+
 Bifractor::Bifractor (const Bifractor& a, const Bifractor& b, uint bias) {
     size_t max_size = (a.size > b.size ? a.size : b.size) + 1;
 

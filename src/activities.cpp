@@ -106,7 +106,7 @@ Activity::Activity (int64 t) : tab(t) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            create_webpage_tab(tab, TabRelation::LAST_CHILD, to_utf8(url.get()));
+            create_tab(tab, TabRelation::LAST_CHILD, to_utf8(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -149,7 +149,7 @@ void Activity::message_from_webview(json::Value&& message) {
     case x31_hash("new_child_tab"): {
         const string& url = message[1];
         const string& title = message[2];
-        create_webpage_tab(tab, TabRelation::LAST_CHILD, url, title);
+        create_tab(tab, TabRelation::LAST_CHILD, url, title);
         break;
     }
     default: {

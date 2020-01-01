@@ -144,6 +144,7 @@
     <ClCompile Include="settings.cpp" />
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="util/assert.cpp" />
+    <ClCompile Include="util/bifractor.cpp" />
     <ClCompile Include="util/files.cpp" />
     <ClCompile Include="util/json.cpp" />
     <ClCompile Include="util/logging.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="settings.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="util/assert.h" />
+    <ClInclude Include="util/bifractor.h" />
     <ClInclude Include="util/db_support.h" />
     <ClInclude Include="util/files.h" />
     <ClInclude Include="util/json.h" />

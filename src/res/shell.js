@@ -358,13 +358,8 @@ let commands = {
     },
     tabs (updates) {
         for (let [
-            id, parent, prev, next, child_count, title, url, loaded, closed_at
+            id, parent, position, child_count, title, url, loaded, closed_at
         ] of updates) {
-            id = +id;
-            parent = +parent;
-            prev = +prev;
-            next = +next;
-            child_count = +child_count;
             if (closed_at != 0) {  // Remove tab
                 let tab = tabs_by_id[id];
                 if (tab) {
@@ -414,8 +409,7 @@ let commands = {
                     tab = tabs_by_id[id] = {
                         id: id,
                         parent: parent,
-                        prev: prev,
-                        next: next,
+                        position: position,
                         url: url,
                         expanded: false,
                         $item: $item,
@@ -426,12 +420,11 @@ let commands = {
                     };
                 }
                 else {  // Update existing tab
-                    if (parent != tab.parent || prev != tab.prev || next != tab.next) {
+                    if (parent != tab.parent || position != tab.position) {
                         tab.$item.remove();
                     }
                     tab.parent = parent;
-                    tab.prev = prev;
-                    tab.next = next;
+                    tab.position = position;
                     tab.url = url;
                     tab.$tab.setAttribute("title", tooltip);
                     tab.$title.innerText = title;
@@ -452,20 +445,23 @@ let commands = {
 
             }
         }
-         // Wait until we're done updating to insert moved tabs, so that all new
-         // prev and next ids are reflected.
+         // Wait until we're done updating to insert moved tabs, to make sure
+         //   parent tabs have been delivered.
         for (let [id] of updates) {
-            id = +id;
-            function insertIfNeeded (tab) {
-                if (!tab) return;
-                if (tab.$item.isConnected) return;
-                let next = tab.next == 0 ? null : tabs_by_id[tab.next];
-                if (next && !next.$item.isConnected) return;
-                let $parent_list = tab.parent == 0 ? $toplist : tabs_by_id[tab.parent].$list;
-                $parent_list.insertBefore(tab.$item, next ? next.$item : null);
-                insertIfNeeded(tabs_by_id[tab.prev]);
+            let tab = tabs_by_id[id];
+            if (tab.$item.isConnected) continue;
+            let $parent_list = tab.parent == 0 ? $toplist : tabs_by_id[tab.parent].$list;
+             // Insert sorted by position.
+            for (let $child_item of $parent_list.childNodes) {
+                let child = tabs_by_id[+$child_item.id];
+                if (tab.position < child.position) {
+                    $parent_list.insertBefore(tab.$item, $child_item);
+                    break;
+                }
             }
-            insertIfNeeded(tabs_by_id[id]);
+            if (!tab.$item.isConnected) {
+                $parent_list.appendChild(tab.$item);
+            }
         }
     },
     settings (settings) {
