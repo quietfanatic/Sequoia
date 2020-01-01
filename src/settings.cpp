@@ -72,7 +72,7 @@ void load_settings (int argc, char** argv) {
         profile_folder = exe_relative("profiles/" + profile_name);
     }
     profile_folder = to_utf8(filesystem::absolute(profile_folder));
-    filesystem::create_directory(profile_folder);
+    filesystem::create_directories(profile_folder);
     init_log(profile_folder + "/Sequoia.log");
     LOG("Using profile folder:", profile_folder);
      // Now read the settings JSON in the profile folder

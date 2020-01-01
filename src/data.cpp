@@ -309,6 +309,7 @@ SELECT position FROM tabs WHERE parent = ? ORDER BY position DESC LIMIT 1
             Bifractor(last.empty() ? 0 : last[0], 1, 0x08)
         );
     }
+    default: throw std::logic_error("make_location called with invalid TabRelation");
     }
 }
 

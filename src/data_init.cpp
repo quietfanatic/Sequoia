@@ -45,7 +45,7 @@ void init_db () {
     else {
          // Create new database
         Transaction tr;
-        string schema = slurp(exe_relative("res/schema.sql"));
+        string schema = slurp(exe_relative("res/schema-1.sql"));
         LOG("Creating database...");
         AS(sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));
         LOG("Creation complete.");
