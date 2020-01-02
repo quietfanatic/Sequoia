@@ -180,6 +180,7 @@ html:not(.show-closed) .item.closed {
     color:var(--tab-fg);
     display:flex;
     align-items:center;
+    outline:none;
 }
 .tab.focused {
     background-color:var(--focused-tab-bg);

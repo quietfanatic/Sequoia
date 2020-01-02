@@ -33,7 +33,12 @@ Activity::Activity (int64 t) : tab(t) {
         webview_hwnd = hwnd;
 
         claimed_by_window(window);
-        if (window) window->resize();
+        if (window) {
+            window->resize();
+            if (get_tab_data(tab)->url != "about:blank") {
+                AH(webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
+            }
+        }
 
         IWebView2Settings* settings;
         AH(webview->get_Settings(&settings));

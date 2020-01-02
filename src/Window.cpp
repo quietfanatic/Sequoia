@@ -92,6 +92,9 @@ void Window::Observer_after_commit (
             set_tab_visited(focused_tab);
             send_focus();
             claim_activity(ensure_activity_for_tab(focused_tab));
+            if (activity->webview && get_tab_data(focused_tab)->url != "about:blank") {
+                AH(activity->webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
+            }
             send_activity();
 
             if (old_focus && get_next_unclosed_tab(old_focus) == focused_tab) {

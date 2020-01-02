@@ -309,6 +309,7 @@ function on_tab_clicked (event) {
             else if (!tabs_by_id[id].loaded) {
                 host.postMessage(["load", id]);
             }
+            tabs_by_id[id].$tab.focus();
         }
         else if (event.button == 1) {
             close_or_delete_item($item);
@@ -361,7 +362,7 @@ function on_expand_clicked (event) {
 }
 
 function set_address (url) {
-    $address.value = url == "about:blank" ? "" : url;
+    $address.value = (url == "about:blank" ? "" : url);
 }
 
 let commands = {
@@ -381,6 +382,9 @@ let commands = {
                 if (!tab) return;
                 expand_tab(tab);
                 expandUp(tabs_by_id[tab.parent]);
+            }
+            if (tab.url == "about:blank") {
+                $address.focus();
             }
         }
     },
@@ -419,6 +423,7 @@ let commands = {
                     $tab = $("div", {
                         class: "tab",
                         title: tooltip,
+                        tabIndex: "0",
                         click: on_tab_clicked,
                         auxclick: on_tab_clicked,
                         mousedown: on_tab_mousedown,
