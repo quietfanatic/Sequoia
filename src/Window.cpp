@@ -61,9 +61,13 @@ void Window::resize () {
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
         );
     }
+    auto dpi = GetDpiForWindow(os_window.hwnd);
+    AW(dpi);
+    double scale = dpi / 96.0;
     if (!os_window.fullscreen) {
-        bounds.top += toolbar_height;
-        bounds.right -= sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
+        bounds.top += uint(toolbar_height * scale);
+        double side_width = sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
+        bounds.right -= uint(side_width * scale);
     }
     if (activity) {
         activity->resize(bounds);
@@ -194,9 +198,8 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("resize"): {
-         // TODO: get rasterization scale instead of hardcoding 2 for my laptop
-        sidebar_width = uint(message[1]) * 2;
-        toolbar_height = uint(message[2]) * 2;
+        sidebar_width = uint(message[1]);
+        toolbar_height = uint(message[2]);
         resize();
         break;
     }
@@ -237,7 +240,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("show_main_menu"): {
-        main_menu_width = uint(message[1]) * 2;
+        main_menu_width = uint(message[1]);
         resize();
         break;
     }

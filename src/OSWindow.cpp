@@ -9,6 +9,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
     if (!window) return DefWindowProc(hwnd, message, w, l);
     switch (message) {
     case WM_SIZE:
+    case WM_DPICHANGED:
         window->resize();
         return 0;
     case WM_DESTROY:

@@ -23,10 +23,10 @@ struct Window : Observer {
     OSWindow os_window;
     Window (int64 id, int64 focused_tab);
 
-     // These are in device pixels, not dips
-    uint sidebar_width = 480;
-    uint toolbar_height = 56;
-    uint main_menu_width = 0;
+     // In DIPs
+    double sidebar_width = 240;
+    double toolbar_height = 28;
+    double main_menu_width = 0;
 
     void resize ();
 
