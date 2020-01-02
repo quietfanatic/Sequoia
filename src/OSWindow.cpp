@@ -1,6 +1,7 @@
 #include "Window.h"
 
 #include "util/assert.h"
+#include "util/utf8.h"
 
 using namespace std;
 
@@ -26,21 +27,21 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
 }
 
 static HWND create_hwnd () {
-    static auto class_name = "Sequoia";
+    static auto class_name = L"Sequoia";
     static bool init = []{
-        WNDCLASSEX c {};
+        WNDCLASSEXW c {};
         c.cbSize = sizeof(WNDCLASSEX);
         c.style = CS_HREDRAW | CS_VREDRAW;
         c.lpfnWndProc = WndProcStatic;
         c.hInstance = GetModuleHandle(nullptr);
         c.hCursor = LoadCursor(NULL, IDC_ARROW);
         c.lpszClassName = class_name;
-        AW(RegisterClassEx(&c));
+        AW(RegisterClassExW(&c));
         return true;
     }();
-    HWND hwnd = CreateWindow(
+    HWND hwnd = CreateWindowW(
         class_name,
-        "(Sequoia)",
+        L"Sequoia",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         1920, 1200,
@@ -59,7 +60,7 @@ OSWindow::OSWindow (Window* window) : hwnd(create_hwnd()) {
 }
 
 void OSWindow::set_title (const char* title) {
-    AW(SetWindowText(hwnd, title));
+    AW(SetWindowTextW(hwnd, to_utf16(title).c_str()));
 }
 
 void OSWindow::set_fullscreen (bool fs) {

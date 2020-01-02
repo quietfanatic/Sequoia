@@ -21,19 +21,19 @@ void init_nursery (const string& edge_user_data_folder) {
     A(!nursery_hwnd);
     edge_udf = to_utf16(edge_user_data_folder);
 
-    static auto class_name = "Sequoia Nursery";
+    static auto class_name = L"Sequoia Nursery";
     static bool init = []{
-        WNDCLASSEX c {};
+        WNDCLASSEXW c {};
         c.cbSize = sizeof(WNDCLASSEX);
         c.lpfnWndProc = DefWindowProc;
         c.hInstance = GetModuleHandle(nullptr);
         c.lpszClassName = class_name;
-        AW(RegisterClassEx(&c));
+        AW(RegisterClassExW(&c));
         return true;
     }();
-    nursery_hwnd = CreateWindow(
+    nursery_hwnd = CreateWindowW(
         class_name,
-        "Sequoia Nursery",
+        L"Sequoia Nursery",
         0,
         0, 0,
         0, 0,

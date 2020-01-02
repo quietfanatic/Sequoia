@@ -151,6 +151,8 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
 };
 
 void Window::send_focus () {
+    const string& title = get_tab_data(focused_tab)->title;
+    os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
     message_to_shell(json::array("focus", focused_tab));
 }
 
