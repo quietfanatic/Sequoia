@@ -9,7 +9,7 @@ let currently_loading = false;
 
 let $html = document.documentElement;
 let $toolbar;
-let $back, $forward, $reload, $address, $error_indicator;
+let $back, $forward, $reload, $address, $error_indicator, $toggle_sidebar;
 let $sidebar, $toplist, $main_menu;
 
 function handled (event) {
@@ -21,6 +21,7 @@ $(document.body,
     $toolbar = $("div", {id:"toolbar"},
         $back = $("div", {
             id: "back",
+            title: "Back",
             click: e => {
                 host.postMessage(["back"]);
                 handled(e);
@@ -28,6 +29,7 @@ $(document.body,
         }),
         $forward = $("div", {
             id: "forward",
+            title: "Forward",
             click: e => {
                 host.postMessage(["forward"]);
                 handled(e);
@@ -35,6 +37,7 @@ $(document.body,
         }),
         $reload = $("div", {
             id: "reload",
+            title: "Reload",
             click: e => {
                 if (currently_loading) {
                     host.postMessage(["stop"]);
@@ -63,17 +66,20 @@ $(document.body,
                 host.postMessage(["investigate_error"]);
             },
         }),
-        $("div", {
+        $toggle_sidebar = $("div", {
             id: "toggle-sidebar",
+            title: "Hide sidebar",
             click: e => {
                 showing_sidebar = !showing_sidebar;
-                $html.classList.toggle("hide-sidebar", showing_sidebar);
+                $html.classList.toggle("hide-sidebar", !showing_sidebar);
+                $toggle_sidebar.title = showing_sidebar ? "Hide sidebar" : "Show sidebar";
                 send_resize();
                 handled(e);
             },
         }),
         $("div", {
             id: "show-main-menu",
+            title: "Main menu",
             click: e => {
                 if (showing_main_menu) {
                     close_main_menu();
@@ -88,7 +94,11 @@ $(document.body,
     $sidebar = $("div", {id:"sidebar"},
         $toplist = $("div", {class:"list"}),
         $("div", {id:"sidebar-bottom"},
-            $("div", {id:"resize", mousedown:on_resize_mousedown}),
+            $("div", {
+                id: "resize",
+                title: "Resize sidebar",
+                mousedown: on_resize_mousedown
+            }),
             $("div", {
                 id: "show-closed",
                 title: "Show closed tabs",
@@ -371,6 +381,7 @@ let commands = {
         $forward.classList.toggle("disabled", !can_go_forward);
         currently_loading = loading;
         $reload.classList.toggle("loading", loading);
+        $reload.title = currently_loading ? "Stop" : "Reload";
     },
     tabs (updates) {
         for (let [
