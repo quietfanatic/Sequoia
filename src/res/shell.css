@@ -11,6 +11,7 @@ html {
     --tab-font-size:12px;
     --sidebar-bottom-height:24px;
     --sidebar-bottom-font-size:18px;
+    --tree-bottom-padding:72px;
 
     --toolbar-bg:#333333;
     --toolbar-fg:#ffffff;
@@ -22,6 +23,7 @@ html {
     --focused-tab-bg:#555555;
     --tree-bg:#777777;
     --tree-bg-alt:#888888;
+    --tree-fg:#ffffff;
     --tab-destination-marker:#ffffff;
 }
 html.moving-tab * {
@@ -117,10 +119,11 @@ html.hide-sidebar #sidebar {
 .list.alt {
     background-color:var(--tree-bg-alt);
 }
-#sidebar > .list {
+#tree {
     flex-grow:1;
     overflow-y:scroll;
     overflow-x:hidden;
+    background-color:var(--tree-bg);
 }
 #sidebar-bottom {
     flex-shrink:0;
@@ -152,9 +155,11 @@ html:not(.show-closed) #show-closed::before {
     opacity:0.5;
 }
 #new-tab {
-    flex-grow:1;
-    box-sizing:border-box;
+    width:100%;
+    font-size:120%;
+    height:var(--tree-bottom-padding);
     text-align:center;
+    color:var(--tree-fg);
 }
 #new-tab::before {
     content:"+";
@@ -230,6 +235,7 @@ html:not(.show-closed) .item.closed {
     transform:rotate(0.25turn);
 }
 .new-child::before {
+    font-size:120%;
     content:"+";
 }
 .close::before {
