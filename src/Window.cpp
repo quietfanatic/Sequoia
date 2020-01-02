@@ -77,30 +77,26 @@ void Window::Observer_after_commit (
     send_tabs(updated_tabs);
 
     for (auto updated_id : updated_windows) {
-        if (updated_id == id) {
-            int64 new_focus = get_window_focused_tab(id);
-            if (new_focus != focused_tab) {
-                LOG("focus_tab", new_focus);
-                int64 old_focus = focused_tab;
-                focused_tab = new_focus;
-                if (focused_tab) {
-                    set_tab_visited(focused_tab);
-                    send_focus();
-                    claim_activity(ensure_activity_for_tab(new_focus));
-                    if (old_focus) {
-                        if (new_focus == get_next_unclosed_tab(old_focus)) {
-                            int64 next = get_next_unclosed_tab(new_focus);
-                            if (next) ensure_activity_for_tab(next);
-                        }
-                    }
-                    send_activity();
-                }
-                else {
-                    claim_activity(nullptr);
-                }
+        if (updated_id != id) continue;
+
+        int64 old_focus = focused_tab;
+        focused_tab = get_window_focused_tab(id);
+        if (focused_tab == old_focus) break;
+
+        LOG("focus_tab", focused_tab);
+        if (focused_tab) {
+            set_tab_visited(focused_tab);
+            send_focus();
+            claim_activity(ensure_activity_for_tab(focused_tab));
+            send_activity();
+
+            if (old_focus && get_next_unclosed_tab(old_focus) == focused_tab) {
+                int64 next = get_next_unclosed_tab(focused_tab);
+                if (next) ensure_activity_for_tab(next);
             }
-            break;
         }
+        else claim_activity(nullptr);
+        break;
     }
 }
 
