@@ -183,28 +183,27 @@ string get_tab_url (int64 id) {
     return get_tab_data(id)->url;
 }
 
-int64 get_prev_tab (int64 id) {
-    LOG("get_prev_tab", id);
+int64 get_prev_unclosed_tab (int64 id) {
+    LOG("get_prev_unclosed_tab", id);
 
     auto data = get_tab_data(id);
     State<int64>::Ment<int64, Bifractor> get {R"(
-SELECT id FROM tabs WHERE parent = ? AND position < ? ORDER BY position DESC LIMIT 1
+SELECT id FROM tabs WHERE parent = ? AND position < ? AND closed_at IS NULL ORDER BY position DESC LIMIT 1
     )"};
     vector<int64> prev = get.run(data->parent, data->position);
     return prev.empty() ? 0 : prev[0];
 }
 
-int64 get_next_tab (int64 id) {
-    LOG("get_next_tab", id);
+int64 get_next_unclosed_tab (int64 id) {
+    LOG("get_next_unclosed_tab", id);
 
     auto data = get_tab_data(id);
     State<int64>::Ment<int64, Bifractor> get {R"(
-SELECT id FROM tabs WHERE parent = ? AND position > ? ORDER BY position ASC LIMIT 1
+SELECT id FROM tabs WHERE parent = ? AND position > ? AND closed_at IS NULL ORDER BY position ASC LIMIT 1
     )"};
     vector<int64> next = get.run(data->parent, data->position);
     return next.empty() ? 0 : next[0];
 }
-
 
 void set_tab_url (int64 id, const string& url) {
     LOG("set_tab_url", id, url);

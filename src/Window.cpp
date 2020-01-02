@@ -87,8 +87,8 @@ void Window::Observer_after_commit (
                     send_focus();
                     claim_activity(ensure_activity_for_tab(new_focus));
                     if (old_focus) {
-                        if (old_focus == get_prev_tab(new_focus)) {
-                            int64 next = get_next_tab(new_focus);
+                        if (old_focus == get_prev_unclosed_tab(new_focus)) {
+                            int64 next = get_next_unclosed_tab(new_focus);
                             if (next) ensure_activity_for_tab(next);
                         }
                     }
@@ -127,9 +127,9 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
                 Transaction tr;
                 int64 successor;
                 while (t->closed_at) {
-                    successor = get_next_tab(tab);
+                    successor = get_next_unclosed_tab(tab);
                     if (!successor) successor = t->parent;
-                    if (!successor) successor = get_prev_tab(tab);
+                    if (!successor) successor = get_prev_unclosed_tab(tab);
                     if (!successor) successor = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
                     t = get_tab_data(successor);
                 }
