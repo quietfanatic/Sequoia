@@ -24,6 +24,7 @@ struct TabData {
     double created_at;
     double visited_at;
     double closed_at;
+    bool deleted = false;
     TabData(
         int64 parent,
         const Bifractor& position,
@@ -61,6 +62,7 @@ void set_tab_title (int64 id, const std::string& title);
 void set_tab_visited (int64 id);
 void close_tab (int64 id);
 void unclose_tab (int64 id);
+void delete_tab_and_children (int64 id);
 void move_tab (int64 id, int64 parent, const Bifractor& position);
 void move_tab (int64 id, int64 reference, TabRelation rel);
 std::pair<int64, Bifractor> make_location (int64 reference, TabRelation rel);

@@ -271,6 +271,23 @@ UPDATE tabs SET closed_at = NULL WHERE id = ?
     change_child_count(data->parent, 1 + data->child_count);
 }
 
+void delete_tab_and_children (int64 id) {
+    LOG("delete_tab_and_children", id);
+    Transaction tr;
+
+    auto data = get_tab_data(id);
+    A(data->closed_at);
+    for (int64 child : get_all_children(id)) {
+        delete_tab_and_children(child);
+    }
+    data->deleted = true;
+    static State<>::Ment<int64> do_it {R"(
+DELETE FROM tabs WHERE id = ?
+    )"};
+    do_it.run_void(id);
+    tab_updated(id);
+}
+
 void move_tab (int64 id, int64 parent, const Bifractor& position) {
     LOG("move_tab", id, parent, position);
     Transaction tr;

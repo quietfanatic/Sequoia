@@ -275,6 +275,15 @@ document.addEventListener("mousedown", event => {
 
 let tabs_by_id = {};
 
+function close_or_delete_item ($item) {
+    if ($item.classList.contains("closed")) {
+        host.postMessage(["delete", +$item.id]);
+    }
+    else {
+        host.postMessage(["close", +$item.id]);
+    }
+}
+
 function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
     if ($item) {
@@ -288,7 +297,7 @@ function on_tab_clicked (event) {
             }
         }
         else if (event.button == 1) {
-            host.postMessage(["close", id]);
+            close_or_delete_item($item);
         }
     }
     handled(event);
@@ -305,7 +314,7 @@ function on_new_child_clicked (event) {
 function on_close_clicked (event) {
     let $item = event.target.closest('.item');
     if ($item) {
-        host.postMessage(["close", +$item.id]);
+        close_or_delete_item($item);
     }
     handled(event);
 }
@@ -367,6 +376,14 @@ let commands = {
         for (let [
             id, parent, position, child_count, title, url, loaded, visited_at, closed_at
         ] of updates) {
+            if (parent === undefined) {
+                let tab = tabs_by_id[id];
+                if (tab) {
+                    tab.$item.remove();
+                }
+                delete tabs_by_id[id];
+                continue;
+            }
             let tooltip = title;
             if (url) tooltip += "\n" + url;
             if (child_count > 1) tooltip += "\n(" + child_count + ")";

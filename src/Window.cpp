@@ -110,6 +110,10 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
     bool do_send_activity = false;
     for (auto tab : updated_tabs) {
         auto t = get_tab_data(tab);
+        if (t->deleted) {
+            updates.emplace_back(json::array(tab));
+            continue;
+        }
         Activity* activity = activity_for_tab(tab);
         updates.emplace_back(json::array(
             tab,
@@ -270,8 +274,20 @@ void Window::message_from_shell (json::Value&& message) {
         set_window_focused_tab(id, new_tab);
         break;
     }
+    case x31_hash("delete"): {
+        int64 tab = message[1];
+        auto data = get_tab_data(tab);
+        if (data->closed_at) {
+            delete_tab_and_children(tab);
+            if (auto activity = activity_for_tab(tab)) {
+                delete activity;
+            }
+        }
+        break;
+    }
     case x31_hash("close"): {
         int64 tab = message[1];
+        auto data = get_tab_data(tab);
         close_tab(tab);
         if (auto activity = activity_for_tab(tab)) {
             delete activity;
