@@ -22,20 +22,28 @@ using namespace std;
 
 void start_browser () {
     vector<WindowData> all_windows = get_all_unclosed_windows();
-    if (all_windows.empty()) {
-        Transaction tr;
-        vector<int64> top_level_tabs = get_all_unclosed_children(0);
-        int64 first_tab = top_level_tabs.empty()
-            ? create_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/")
-            : top_level_tabs[0];
-        int64 first_window = create_window(first_tab);
-        auto window = new Window(first_window, first_tab);
-        window->claim_activity(ensure_activity_for_tab(first_tab));
-    }
-    else {
+    if (!all_windows.empty()) {
         for (auto& w : all_windows) {
             new Window(w.id, w.focused_tab);
         }
+    }
+    else {
+        int64 first_tab = 0;
+        Transaction tr;
+        vector<int64> top_level_tabs = get_all_children(0);
+        for (auto tab : top_level_tabs) {
+            auto data = get_tab_data(tab);
+            if (!data->closed_at) {
+                first_tab = tab;
+                break;
+            }
+        }
+        if (!first_tab) {
+            first_tab = create_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/");
+        }
+        int64 first_window = create_window(first_tab);
+        auto window = new Window(first_window, first_tab);
+        window->claim_activity(ensure_activity_for_tab(first_tab));
     }
 }
 

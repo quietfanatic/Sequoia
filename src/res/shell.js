@@ -89,6 +89,13 @@ $(document.body,
         $toplist = $("div", {class:"list"}),
         $("div", {id:"sidebar-bottom"},
             $("div", {id:"resize", mousedown:on_resize_mousedown}),
+            $("div", {
+                id: "show-closed",
+                title: "Show closed tabs",
+                click: e => {
+                    $html.classList.toggle("show-closed");
+                },
+            }),
             $("div", {id:"new-tab", click:on_new_tab_clicked}),
         ),
     ),
@@ -358,92 +365,84 @@ let commands = {
     },
     tabs (updates) {
         for (let [
-            id, parent, position, child_count, title, url, loaded, closed_at
+            id, parent, position, child_count, title, url, loaded, visited_at, closed_at
         ] of updates) {
-            if (closed_at != 0) {  // Remove tab
-                let tab = tabs_by_id[id];
-                if (tab) {
+            let tooltip = title;
+            if (url) tooltip += "\n" + url;
+            if (child_count > 1) tooltip += "\n(" + child_count + ")";
+
+            if (!title) title = url;
+
+            let tab = tabs_by_id[id];
+            if (!tab) {  // Create new tab
+                let $item, $tab, $title, $child_count, $list;
+                $item = $("div", {
+                    id: id,
+                    class: "item",
+                }, [
+                    $tab = $("div", {
+                        class: "tab",
+                        title: tooltip,
+                        click: on_tab_clicked,
+                        auxclick: on_tab_clicked,
+                        mousedown: on_tab_mousedown,
+                    }, [
+                        $("div", {
+                            class: "expand",
+                            click: on_expand_clicked,
+                        }),
+                        $title = $("div", {class:"title"}, title),
+                        $child_count = $("div", {class:"child-count"}),
+                        $("div", {
+                            class: "new-child",
+                            click: on_new_child_clicked,
+                        }),
+                        $("div", {
+                            class: "close",
+                            click: on_close_clicked,
+                        }),
+                    ]),
+                    $list = $("div", {class:"list"}),
+                ]);
+
+                tab = tabs_by_id[id] = {
+                    id: id,
+                    parent: parent,
+                    position: position,
+                    url: url,
+                    expanded: false,
+                    $item: $item,
+                    $tab: $tab,
+                    $title: $title,
+                    $child_count: $child_count,
+                    $list: $list,
+                };
+            }
+            else {  // Update existing tab
+                if (parent != tab.parent || position != tab.position) {
                     tab.$item.remove();
-                    delete tabs_by_id[id];
                 }
+                tab.parent = parent;
+                tab.position = position;
+                tab.url = url;
+                tab.$tab.setAttribute("title", tooltip);
+                tab.$title.innerText = title;
+                if (focused_id == id) {
+                    $address.value = tab.url;
+                }
+            }
+
+            if (child_count) {
+                tab.$child_count.innerText = "(" + child_count + ")";
+                tab.$item.classList.add("parent");
             }
             else {
-                let tooltip = title;
-                if (url) tooltip += "\n" + url;
-                if (child_count > 1) tooltip += "\n(" + child_count + ")";
-
-                if (!title) title = url;
-
-                let tab = tabs_by_id[id];
-                if (!tab) {  // Create new tab
-                    let $item, $tab, $title, $child_count, $list;
-                    $item = $("div", {
-                        id: id,
-                        class: "item",
-                    }, [
-                        $tab = $("div", {
-                            class: "tab",
-                            title: tooltip,
-                            click: on_tab_clicked,
-                            auxclick: on_tab_clicked,
-                            mousedown: on_tab_mousedown,
-                        }, [
-                            $("div", {
-                                class: "expand",
-                                click: on_expand_clicked,
-                            }),
-                            $title = $("div", {class:"title"}, title),
-                            $child_count = $("div", {class:"child-count"}),
-                            $("div", {
-                                class: "new-child",
-                                click: on_new_child_clicked,
-                            }),
-                            $("div", {
-                                class: "close",
-                                click: on_close_clicked,
-                            }),
-                        ]),
-                        $list = $("div", {class:"list"}),
-                    ]);
-
-                    tab = tabs_by_id[id] = {
-                        id: id,
-                        parent: parent,
-                        position: position,
-                        url: url,
-                        expanded: false,
-                        $item: $item,
-                        $tab: $tab,
-                        $title: $title,
-                        $child_count: $child_count,
-                        $list: $list,
-                    };
-                }
-                else {  // Update existing tab
-                    if (parent != tab.parent || position != tab.position) {
-                        tab.$item.remove();
-                    }
-                    tab.parent = parent;
-                    tab.position = position;
-                    tab.url = url;
-                    tab.$tab.setAttribute("title", tooltip);
-                    tab.$title.innerText = title;
-                    if (focused_id == id) {
-                        $address.value = tab.url;
-                    }
-                }
-
-                if (child_count) {
-                    tab.$child_count.innerText = "(" + child_count + ")";
-                    tab.$item.classList.add("parent");
-                }
-                else {
-                    tab.$child_count.innerText = "";
-                    tab.$item.classList.remove("parent");
-                }
-                tab.$tab.classList.toggle("loaded", loaded);
-
+                tab.$child_count.innerText = "";
+                tab.$item.classList.remove("parent");
             }
+            tab.$tab.classList.toggle("loaded", loaded);
+            tab.$tab.classList.toggle("visited", visited_at > 0);
+            tab.$item.classList.toggle("closed", closed_at > 0);
         }
          // Wait until we're done updating to insert moved tabs, to make sure
          //   parent tabs have been delivered.

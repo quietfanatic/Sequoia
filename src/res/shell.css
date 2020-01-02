@@ -130,16 +130,24 @@ html.hide-sidebar #sidebar {
     line-height:var(--sidebar-bottom-height);
     display:flex;
 }
-#resize {
+#resize, #show-closed {
     flex-shrink:0;
     box-sizing:border-box;
     width:var(--sidebar-bottom-height);
     text-align:center;
     border-right:1px solid var(--toolbar-border);
+}
+#resize {
     cursor:ew-resize;
 }
 #resize::before {
     content:"↔";
+}
+#show-closed::before {
+    content:"⊗";
+}
+html:not(.show-closed) #show-closed::before {
+    opacity:0.5;
 }
 #new-tab {
     flex-grow:1;
@@ -148,6 +156,13 @@ html.hide-sidebar #sidebar {
 }
 #new-tab::before {
     content:"+";
+}
+
+.item.closed > .tab {
+    opacity:0.5;
+}
+html:not(.show-closed) .item.closed {
+    display:none;
 }
 
 .tab {
@@ -179,7 +194,10 @@ html.hide-sidebar #sidebar {
     padding-left:0;
 }
 .tab:not(.loaded) > .title {
-    opacity:0.5;
+    opacity:0.7;
+}
+.tab:not(.visited) > .title {
+    font-style:italic;
 }
 .expand, .new-child, .close {
     display:none;

@@ -120,16 +120,15 @@ bool suspend_child_counts = false;
 void change_child_count (int64 parent, int64 diff) {
     if (suspend_child_counts) return;
     while (parent > 0) {
-        if (auto data = cached_tab_data(parent)) {
-            data->child_count += diff;
-        }
+        auto data = get_tab_data(parent);
+        data->child_count += diff;
         static State<>::Ment<int64, int64> update {R"(
 UPDATE tabs SET child_count = child_count + ? WHERE id = ?
         )"};
         update.run_void(diff, parent);
         tab_updated(parent);
 
-        parent = get_tab_data(parent)->parent;
+        parent = data->parent;
     }
 }
 
@@ -171,10 +170,10 @@ FROM tabs WHERE id = ?
     return &res.first->second;
 }
 
-std::vector<int64> get_all_unclosed_children (int64 parent) {
-    LOG("get_all_unclosed_children", parent);
+std::vector<int64> get_all_children (int64 parent) {
+    LOG("get_all_children", parent);
     static State<int64>::Ment<int64> get {R"(
-SELECT id FROM tabs WHERE parent = ? AND closed_at IS NULL
+SELECT id FROM tabs WHERE parent = ?
     )"};
     return get.run(parent);
 }
@@ -209,9 +208,7 @@ void set_tab_url (int64 id, const string& url) {
     LOG("set_tab_url", id, url);
     Transaction tr;
 
-    if (auto data = cached_tab_data(id)) {
-        data->url = url;
-    }
+    get_tab_data(id)->url = url;
     static State<>::Ment<uint64, string, int64> set {R"(
 UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
     )"};
@@ -223,13 +220,24 @@ void set_tab_title (int64 id, const string& title) {
     LOG("set_tab_title", id, title);
     Transaction tr;
 
-    if (auto data = cached_tab_data(id)) {
-        data->title = title;
-    }
+    get_tab_data(id)->title = title;
     static State<>::Ment<string, int64> set {R"(
 UPDATE tabs SET title = ? WHERE id = ?
     )"};
     set.run_void(title, id);
+    tab_updated(id);
+}
+
+void set_tab_visited (int64 id) {
+    LOG("set_tab_visited", id);
+    Transaction tr;
+
+    double visited_at = now();
+    get_tab_data(id)->visited_at = visited_at;
+    static State<>::Ment<double, int64> set {R"(
+UPDATE tabs SET visited_at = ? WHERE id = ?
+    )"};
+    set.run_void(visited_at, id);
     tab_updated(id);
 }
 
@@ -247,6 +255,20 @@ UPDATE tabs SET closed_at = ? WHERE id = ?
     close.run_void(data->closed_at, id);
     tab_updated(id);
     change_child_count(data->parent, -1 - data->child_count);
+}
+void unclose_tab (int64 id) {
+    LOG("unclose_tab", id);
+    Transaction tr;
+
+    auto data = get_tab_data(id);
+    data->closed_at = 0;
+
+    static State<>::Ment<int64> unclose {R"(
+UPDATE tabs SET closed_at = NULL WHERE id = ?
+    )"};
+    unclose.run_void(id);
+    tab_updated(id);
+    change_child_count(data->parent, 1 + data->child_count);
 }
 
 void move_tab (int64 id, int64 parent, const Bifractor& position) {

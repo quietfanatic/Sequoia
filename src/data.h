@@ -55,10 +55,12 @@ int64 create_tab (
 TabData* get_tab_data (int64 id);
 int64 get_prev_unclosed_tab (int64 id);  // Returns 0 if there is none.
 int64 get_next_unclosed_tab (int64 id);
-std::vector<int64> get_all_unclosed_children (int64 parent);
+std::vector<int64> get_all_children (int64 parent);
 void set_tab_url (int64 id, const std::string& url);
 void set_tab_title (int64 id, const std::string& title);
+void set_tab_visited (int64 id);
 void close_tab (int64 id);
+void unclose_tab (int64 id);
 void move_tab (int64 id, int64 parent, const Bifractor& position);
 void move_tab (int64 id, int64 reference, TabRelation rel);
 std::pair<int64, Bifractor> make_location (int64 reference, TabRelation rel);

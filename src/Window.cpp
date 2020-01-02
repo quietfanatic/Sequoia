@@ -84,6 +84,7 @@ void Window::Observer_after_commit (
                 int64 old_focus = focused_tab;
                 focused_tab = new_focus;
                 if (focused_tab) {
+                    set_tab_visited(focused_tab);
                     send_focus();
                     claim_activity(ensure_activity_for_tab(new_focus));
                     if (old_focus) {
@@ -118,6 +119,7 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
             t->title,
             t->url,
             !!activity,
+            t->visited_at,
             t->closed_at
         ));
         if (focused_tab == tab) {
@@ -179,9 +181,9 @@ void Window::message_from_shell (json::Value&& message) {
              // Temporary algorithm until we support expanding and collapsing trees
              // Select all tabs recursively from the root, so that we don't pick up
              // children of closed tabs
-            vector<int64> required_tabs = get_all_unclosed_children(0);
+            vector<int64> required_tabs = get_all_children(0);
             for (size_t i = 0; i < required_tabs.size(); i++) {
-                vector<int64> children = get_all_unclosed_children(required_tabs[i]);
+                vector<int64> children = get_all_children(required_tabs[i]);
                 for (auto c : children) {
                     required_tabs.push_back(c);
                 }
@@ -247,6 +249,8 @@ void Window::message_from_shell (json::Value&& message) {
      // Tab actions
     case x31_hash("focus"): {
         int64 tab = message[1];
+        Transaction tr;
+        unclose_tab(tab);
         set_window_focused_tab(id, tab);
         break;
     }
