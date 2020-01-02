@@ -261,6 +261,7 @@ void unclose_tab (int64 id) {
     Transaction tr;
 
     auto data = get_tab_data(id);
+    if (!data->closed_at) return;  // Not closed
     data->closed_at = 0;
 
     static State<>::Ment<int64> unclose {R"(
