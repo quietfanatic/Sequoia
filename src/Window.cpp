@@ -88,7 +88,7 @@ void Window::Observer_after_commit (
                     send_focus();
                     claim_activity(ensure_activity_for_tab(new_focus));
                     if (old_focus) {
-                        if (old_focus == get_prev_unclosed_tab(new_focus)) {
+                        if (new_focus == get_next_unclosed_tab(old_focus)) {
                             int64 next = get_next_unclosed_tab(new_focus);
                             if (next) ensure_activity_for_tab(next);
                         }
