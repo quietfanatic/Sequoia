@@ -50,6 +50,10 @@ $(document.body,
         }),
         $address = $("input", {
             id: "address",
+            spellcheck: "false",
+            autocapitalize: "off",
+            inputmode: "url",
+            placeholder: "Search or enter web address",
             keydown: e => {
                 if (e.key == "Enter") {
                     host.postMessage(["navigate", $address.value]);
@@ -356,6 +360,10 @@ function on_expand_clicked (event) {
     handled(event);
 }
 
+function set_address (url) {
+    $address.value = url == "about:blank" ? "" : url;
+}
+
 let commands = {
     focus (id) {
         let old_tab = tabs_by_id[focused_id];
@@ -366,7 +374,7 @@ let commands = {
         let tab = tabs_by_id[id];
         if (tab) {
             tab.$tab.classList.add("focused");
-            $address.value = tab.url;
+            set_address(tab.url);
              // Expand everything above and including the focused tab
             expandUp(tab)
             function expandUp (tab) {
@@ -456,7 +464,7 @@ let commands = {
                 tab.$tab.setAttribute("title", tooltip);
                 tab.$title.innerText = title;
                 if (focused_id == id) {
-                    $address.value = tab.url;
+                    set_address(tab.url);
                 }
             }
 
