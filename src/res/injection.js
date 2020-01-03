@@ -2,18 +2,25 @@
 (()=>{
 
 let host = chrome.webview;
-if (!host) return;  // Probably in an iframe
+if (host === undefined) return;  // Probably in an iframe
  // Prevent page from abusing this
 delete chrome.webview;
+
+let JSON_stringify = JSON.stringify;
 
 function host_post (message) {
     let old_Array_toJSON = Array.prototype.toJSON;
     delete Array.prototype.toJSON;
     let old_String_toJSON = String.prototype.toJSON;
     delete String.prototype.toJSON;
+    let old_JSON_stringify = JSON.stringify;
+    JSON.stringify = JSON_stringify;
+
     host.postMessage(message);
+
     Array.prototype.toJSON = old_Array_toJSON;
     String.prototype.toJSON = old_String_toJSON;
+    JSON.stringify = old_JSON_stringify;
 }
 
 window.addEventListener("DOMContentLoaded", event=>{
@@ -50,7 +57,7 @@ window.addEventListener("auxclick", event=>{
                 title = $img.alt;
             }
             if (!title) {
-                title = $a.innerText.substring(0, 128);
+                title = $a.innerText.substring(0, 120);
                 if (!title) {
                     title = $a.href;
                 }
