@@ -25,14 +25,12 @@ window.addEventListener("auxclick", event=>{
         title = $a.innerText.substring(0, 128);
     }
     title = title.replace(/^\n|\n.*/g, "");
-    let message = ["new_child_tab", $a.href, title];
-    console.log(message);
 
     let old_Array_toJSON = Array.prototype.toJSON;
     delete Array.prototype.toJSON;
     let old_String_toJSON = String.prototype.toJSON;
     delete String.prototype.toJSON;
-    host.postMessage(message);
+    host.postMessage(["new_child_tab", $a.href, title]);
     Array.prototype.toJSON = old_Array_toJSON;
     String.prototype.toJSON = old_String_toJSON;
 
