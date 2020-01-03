@@ -18,8 +18,12 @@ function host_post (message) {
 
     host.postMessage(message);
 
-    Array.prototype.toJSON = old_Array_toJSON;
-    String.prototype.toJSON = old_String_toJSON;
+    if (old_Array_toJSON !== undefined) {
+        Array.prototype.toJSON = old_Array_toJSON;
+    }
+    if (old_String_toJSON !== undefined) {
+        String.prototype.toJSON = old_String_toJSON;
+    }
     JSON.stringify = old_JSON_stringify;
 }
 
