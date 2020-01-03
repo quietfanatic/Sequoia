@@ -35,6 +35,9 @@ window.addEventListener("DOMContentLoaded", event=>{
     else if (location.protocol == "http:" || location.protocol == "https:") {
         host_post(["favicon", location.origin + "/favicon.ico"]);
     }
+    else {
+        host_post(["favicon", ""]);
+    }
 });
 
 let $last_a = null;
