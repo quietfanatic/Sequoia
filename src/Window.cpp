@@ -123,8 +123,9 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
             t->parent,
             t->position.hex(),
             t->child_count,
-            t->title,
             t->url,
+            t->title,
+            t->favicon,
             !!activity,
             t->visited_at,
             t->closed_at

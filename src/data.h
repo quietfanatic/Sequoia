@@ -21,6 +21,7 @@ struct TabData {
     int64 child_count;
     std::string url;
     std::string title;
+    std::string favicon;
     double created_at;
     double visited_at;
     double closed_at;
@@ -31,6 +32,7 @@ struct TabData {
         int64 child_count,
         const std::string& url,
         const std::string& title,
+        const std::string& favicon,
         double created_at,
         double visited_at,
         double closed_at
@@ -40,6 +42,7 @@ struct TabData {
         child_count(child_count),
         url(url),
         title(title),
+        favicon(favicon),
         created_at(created_at),
         visited_at(visited_at),
         closed_at(closed_at)
@@ -59,6 +62,7 @@ int64 get_next_unclosed_tab (int64 id);
 std::vector<int64> get_all_children (int64 parent);
 void set_tab_url (int64 id, const std::string& url);
 void set_tab_title (int64 id, const std::string& title);
+void set_tab_favicon (int64 id, const std::string& favicon);
 void set_tab_visited (int64 id);
 void close_tab (int64 id);
 void unclose_tab (int64 id);

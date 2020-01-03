@@ -1,9 +1,20 @@
 "use strict";
 (()=>{
 
-let webview = chrome.webview;
+let host = chrome.webview;
+if (!host) return;  // Probably in an iframe
  // Prevent page from abusing this
 delete chrome.webview;
+
+window.addEventListener("DOMContentLoaded", event=>{
+    let $icons = document.querySelectorAll("link[rel~=icon][href]");
+    if ($icons.length > 0) {
+        host.postMessage(["favicon", $icons[$icons.length-1].href]);
+    }
+    else if (location.protocol == "http:" || location.protocol == "https:") {
+        host.postMessage(["favicon", location.origin + "/favicion.ico"]);
+    }
+});
 
 window.addEventListener("auxclick", event=>{
     if (event.button != 1) return;
@@ -21,7 +32,7 @@ window.addEventListener("auxclick", event=>{
     delete Array.prototype.toJSON;
     let old_String_toJSON = String.prototype.toJSON;
     delete String.prototype.toJSON;
-    webview.postMessage(message);
+    host.postMessage(message);
     Array.prototype.toJSON = old_Array_toJSON;
     String.prototype.toJSON = old_String_toJSON;
 

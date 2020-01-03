@@ -157,6 +157,11 @@ void Activity::message_from_webview(json::Value&& message) {
         create_tab(tab, TabRelation::LAST_CHILD, url, title);
         break;
     }
+    case x31_hash("favicon"): {
+        const string& favicon = message[1];
+        set_tab_favicon(tab, favicon);
+        break;
+    }
     default: {
         throw logic_error("Unknown message name");
     }

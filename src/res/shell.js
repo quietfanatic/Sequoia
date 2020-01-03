@@ -400,7 +400,7 @@ let commands = {
     },
     tabs (updates) {
         for (let [
-            id, parent, position, child_count, title, url, loaded, visited_at, closed_at
+            id, parent, position, child_count, url, title, favicon, loaded, visited_at, closed_at
         ] of updates) {
             if (parent === undefined) {
                 let tab = tabs_by_id[id];
@@ -418,7 +418,7 @@ let commands = {
 
             let tab = tabs_by_id[id];
             if (!tab) {  // Create new tab
-                let $item, $tab, $title, $child_count, $list;
+                let $item, $tab, $favicon, $title, $child_count, $list;
                 $item = $("div", {
                     id: id,
                     class: "item",
@@ -435,6 +435,7 @@ let commands = {
                             class: "expand",
                             click: on_expand_clicked,
                         }),
+                        $favicon = $("img", {class:"favicon"}),
                         $title = $("div", {class:"title"}, title),
                         $child_count = $("div", {class:"child-count"}),
                         $("div", {
@@ -457,6 +458,7 @@ let commands = {
                     expanded: false,
                     $item: $item,
                     $tab: $tab,
+                    $favicon: $favicon,
                     $title: $title,
                     $child_count: $child_count,
                     $list: $list,
@@ -487,6 +489,8 @@ let commands = {
             tab.$tab.classList.toggle("loaded", loaded);
             tab.$tab.classList.toggle("visited", visited_at > 0);
             tab.$item.classList.toggle("closed", closed_at > 0);
+            if (favicon) tab.$favicon.src = favicon;
+            else tab.$favicon.removeAttribute("src");
         }
          // Wait until we're done updating to insert moved tabs, to make sure
          //   parent tabs have been delivered.

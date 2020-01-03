@@ -187,19 +187,24 @@ html:not(.show-closed) .item.closed {
     align-items:center;
     outline:none;
 }
+.item:not(.parent) > .tab {
+    padding-left:4px;
+}
 .tab.focused {
     background-color:var(--focused-tab-bg);
+}
+.favicon {
+    width:16px;
+    height:16px;
+    flex-shrink:0;
+    padding-right:4px;
 }
 .title {
     flex-grow:1;
     overflow:hidden;
     white-space:pre;
     cursor:default;
-    padding-left:4px;
     font-family:sans-serif;
-}
-.item.parent > .tab > .title {
-    padding-left:0;
 }
 .tab:not(.loaded) > .title {
     opacity:0.7;

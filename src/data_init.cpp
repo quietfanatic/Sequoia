@@ -17,9 +17,18 @@ sqlite3* db = nullptr;
 
 void init_db () {
     if (db) return;
-    string db_file = profile_folder + "/sequoia-state.sqlite";
+    string db_file = profile_folder + "/state.sqlite";
     LOG("init_db", db_file);
     bool exists = filesystem::exists(db_file) && filesystem::file_size(db_file) > 0;
+
+    if (!exists) {
+        string old_db = profile_folder + "/Sequoia-state.sqlite";
+        if (filesystem::exists(old_db) && filesystem::file_size(old_db) > 0) {
+            filesystem::rename(old_db, db_file);
+        }
+        exists = true;
+    }
+
     AS(sqlite3_open(db_file.c_str(), &db));
 
     if (exists) {
@@ -37,9 +46,17 @@ void init_db () {
             LOG("Migration complete.");
             [[fallthrough]];
         }
-        case 1:
+        case 1: {
+            LOG("Migrating to schema version 2...");
+            Transaction tr;
+            string sql = slurp(exe_relative("res/migrate-1-2.sql"));
+            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
+            LOG("Migration complete.");
+            [[fallthrough]];
+        }
+        case 2:
             break;  // Current version, nothing to do
-        default: throw std::logic_error("Unknown user version number in db");
+        default: throw std::logic_error("Unknown user_version number in db");
         }
     }
     else {
