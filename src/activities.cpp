@@ -151,15 +151,21 @@ void Activity::message_from_webview(json::Value&& message) {
     const string& command = message[0];
 
     switch (x31_hash(command.c_str())) {
-    case x31_hash("new_child_tab"): {
-        const string& url = message[1];
-        const string& title = message[2];
-        create_tab(tab, TabRelation::LAST_CHILD, url, title);
-        break;
-    }
     case x31_hash("favicon"): {
         const string& favicon = message[1];
         set_tab_favicon(tab, favicon);
+        break;
+    }
+    case x31_hash("new_child_tab"): {
+        const string& url = message[1];
+        const string& title = message[2];
+        last_created_new_child = create_tab(tab, TabRelation::LAST_CHILD, url, title);
+        break;
+    }
+    case x31_hash("switch_to_new_child"): {
+        if (last_created_new_child && window) {
+            set_window_focused_tab(window->id, last_created_new_child);
+        }
         break;
     }
     default: {

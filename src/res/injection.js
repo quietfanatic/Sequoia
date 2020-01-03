@@ -26,27 +26,40 @@ window.addEventListener("DOMContentLoaded", event=>{
     }
 });
 
+let $last_a = null;
+let last_timeStamp = 0.0;
+
 window.addEventListener("auxclick", event=>{
     if (event.button != 1) return;
     let $a = event.target.closest("[href]");
     if ($a === null) return;
 
-    let title = $a.getAttribute("title");
-    if (!title) {
-        let $img = $a.querySelector("img");
-        if ($img) {
-            title = $img.alt;
-        }
+     // Double-click to immediately switch
+    if ($a == $last_a && event.timeStamp < last_timeStamp + 400) {
+        host_post(["switch_to_new_child"]);
+        $last_a = null;
+    }
+    else {
+        $last_a = $a;
+        last_timeStamp = event.timeStamp;
+
+        let title = $a.getAttribute("title");
         if (!title) {
-            title = $a.innerText.substring(0, 128);
+            let $img = $a.querySelector("img");
+            if ($img) {
+                title = $img.alt;
+            }
             if (!title) {
-                title = $a.href;
+                title = $a.innerText.substring(0, 128);
+                if (!title) {
+                    title = $a.href;
+                }
             }
         }
-    }
-    title = title.trim().replace(/\n/g, "  ");
+        title = title.trim().replace(/\n/g, "  ");
 
-    host_post(["new_child_tab", $a.href, title]);
+        host_post(["new_child_tab", $a.href, title]);
+    }
 
     event.stopPropagation();
     event.preventDefault();

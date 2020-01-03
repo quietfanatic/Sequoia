@@ -19,6 +19,8 @@ struct Activity {
     bool can_go_forward = false;
     bool currently_loading = false;
 
+    int64 last_created_new_child = 0;
+
     Activity(int64 tab);
 
     void resize (RECT available);
