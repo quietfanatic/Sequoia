@@ -366,6 +366,14 @@ function on_expand_clicked (event) {
     handled(event);
 }
 
+function on_favicon_load (event) {
+    event.target.classList.add("loaded");
+}
+
+function on_favicon_error (event) {
+    event.target.classList.remove("loaded");
+}
+
 function set_address (url) {
     $address.value = (url == "about:blank" ? "" : url);
 }
@@ -437,7 +445,11 @@ let commands = {
                             class: "expand",
                             click: on_expand_clicked,
                         }),
-                        $favicon = $("img", {class:"favicon"}),
+                        $favicon = $("img", {
+                            class:"favicon",
+                            load: on_favicon_load,
+                            error: on_favicon_error,
+                        }),
                         $title = $("div", {class:"title"}, title),
                         $child_count = $("div", {class:"child-count"}),
                         $("div", {
@@ -491,8 +503,13 @@ let commands = {
             tab.$tab.classList.toggle("loaded", loaded);
             tab.$tab.classList.toggle("visited", visited_at > 0);
             tab.$item.classList.toggle("closed", closed_at > 0);
-            if (favicon) tab.$favicon.src = favicon;
-            else tab.$favicon.removeAttribute("src");
+            if (favicon) {
+                tab.$favicon.src = favicon;
+            }
+            else {
+                tab.$favicon.removeAttribute("src");
+                tab.$favicon.classList.remove("loaded");
+            }
         }
          // Wait until we're done updating to insert moved tabs, to make sure
          //   parent tabs have been delivered.

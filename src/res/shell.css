@@ -197,7 +197,10 @@ html:not(.show-closed) .item.closed {
     width:16px;
     height:16px;
     flex-shrink:0;
-    padding-right:4px;
+    margin-right:4px;
+}
+.favicon:not(.loaded) {
+    display:none;
 }
 .title {
     flex-grow:1;

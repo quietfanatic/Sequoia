@@ -12,7 +12,7 @@ window.addEventListener("DOMContentLoaded", event=>{
         host.postMessage(["favicon", $icons[$icons.length-1].href]);
     }
     else if (location.protocol == "http:" || location.protocol == "https:") {
-        host.postMessage(["favicon", location.origin + "/favicion.ico"]);
+        host.postMessage(["favicon", location.origin + "/favicon.ico"]);
     }
 });
 
