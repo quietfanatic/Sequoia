@@ -30,11 +30,21 @@ window.addEventListener("auxclick", event=>{
     if (event.button != 1) return;
     let $a = event.target.closest("[href]");
     if ($a === null) return;
+
     let title = $a.getAttribute("title");
     if (!title) {
-        title = $a.innerText.substring(0, 128);
+        let $img = $a.querySelector("img");
+        if ($img) {
+            title = $img.alt;
+        }
+        if (!title) {
+            title = $a.innerText.substring(0, 128);
+            if (!title) {
+                title = $a.href;
+            }
+        }
     }
-    title = title.replace(/^\n|\n.*/g, "");
+    title = title.trim().replace(/\n/g, "  ");
 
     host_post(["new_child_tab", $a.href, title]);
 
