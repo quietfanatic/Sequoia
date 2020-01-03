@@ -243,6 +243,11 @@ void Activity::navigate_url_or_search (const string& address) {
     }
 }
 
+void Activity::enter_fullscreen () {
+    if (!webview) return;
+    webview->ExecuteScript(to_utf16("document.documentElement.requestFullscreen()").c_str(), nullptr);
+}
+
 Activity::~Activity () {
     LOG("delete Activity", this);
     activities_by_tab.erase(tab);

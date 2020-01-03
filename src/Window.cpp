@@ -256,6 +256,12 @@ void Window::message_from_shell (json::Value&& message) {
         resize();
         break;
     }
+    case x31_hash("new_toplevel_tab"): {
+        Transaction tr;
+        int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
+        set_window_focused_tab(id, new_tab);
+        break;
+    }
      // Tab actions
     case x31_hash("focus"): {
         int64 tab = message[1];
@@ -309,10 +315,8 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
      // Main menu
-    case x31_hash("new_toplevel_tab"): {
-        Transaction tr;
-        int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
-        set_window_focused_tab(id, new_tab);
+    case x31_hash("fullscreen"): {
+        if (activity) activity->enter_fullscreen();
         break;
     }
     case x31_hash("fix_problems"): {

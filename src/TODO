@@ -16,3 +16,5 @@
 [ ] new tab buttons
 [✓] Reorganize window/shell relationships (OSWindow/Window)
 [ ] Destruct statements
+[ ] Clear favicon when navigating (to different origin?)
+[ ] Accept URL on command line (send it to existing process)

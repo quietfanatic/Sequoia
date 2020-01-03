@@ -31,6 +31,9 @@ struct Activity {
     void claimed_by_window (Window*);
     void message_from_webview (json::Value&& message);
 
+     // Inject script to call document.documentElement.requestFullscreen()
+    void enter_fullscreen ();
+
     ~Activity();
 };
 

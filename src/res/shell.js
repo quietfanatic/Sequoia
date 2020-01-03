@@ -116,8 +116,8 @@ $(document.body,
         ),
     ),
     $main_menu = $("nav", {id:"main-menu"},
-        $("div", "New Toplevel Tab", {
-            click: menu_item("new_toplevel_tab"),
+        $("div", "Enter fullscreen", {
+            click: menu_item("fullscreen"),
         }),
         $("div", "Fix database problems", {
             click: menu_item("fix_problems"),
