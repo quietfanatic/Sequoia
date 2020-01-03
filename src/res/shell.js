@@ -339,10 +339,11 @@ function on_close_clicked (event) {
 function expand_tab (tab) {
     tab.$item.classList.add("expanded");
     let depth = 0;
-    for (let t = tab; t; t = tabs_by_id[t.parent]) {
+    let t = tab;
+    while (t = tabs_by_id[t.parent]) {
         depth += 1;
     }
-    tab.$list.classList.toggle("alt", !(depth % 2));
+    tab.$list.classList.toggle("alt", depth % 4 >= 2);
     tab.expanded = true;
 }
 function contract_tab (tab) {
