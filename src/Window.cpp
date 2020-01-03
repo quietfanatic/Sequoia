@@ -298,6 +298,7 @@ void Window::message_from_shell (json::Value&& message) {
         if (auto activity = activity_for_tab(tab)) {
             delete activity;
         }
+        prune_closed_tabs(20, 15*60);
         break;
     }
     case x31_hash("move_tab"): {

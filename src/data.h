@@ -67,6 +67,9 @@ void set_tab_visited (int64 id);
 void close_tab (int64 id);
 void unclose_tab (int64 id);
 void delete_tab_and_children (int64 id);
+ // Will prune tabs that are more than more_than *and* older than older_than.
+ // (Will always keep at least more_than tabs and all tabs younger than older_than).
+void prune_closed_tabs (int64 more_than, double older_than);
 void move_tab (int64 id, int64 parent, const Bifractor& position);
 void move_tab (int64 id, int64 reference, TabRelation rel);
 std::pair<int64, Bifractor> make_location (int64 reference, TabRelation rel);

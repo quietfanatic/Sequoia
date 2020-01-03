@@ -307,6 +307,24 @@ DELETE FROM tabs WHERE id = ?
     tab_updated(id);
 }
 
+void prune_closed_tabs (int64 more_than, double older_than) {
+    LOG("prune_closed_tabs", more_than, older_than);
+    Transaction tr;
+
+    static State<int64>::Ment<int64, double> find {R"(
+SELECT id FROM (
+    SELECT id, closed_at FROM tabs
+    WHERE closed_at IS NOT NULL
+    ORDER BY closed_at DESC LIMIT -1 OFFSET ?
+)
+WHERE closed_at < ?
+    )"};
+    auto pruned_tabs = find.run(more_than, now() - older_than);
+    for (int64 tab : pruned_tabs) {
+        delete_tab_and_children(tab);
+    }
+}
+
 void move_tab (int64 id, int64 parent, const Bifractor& position) {
     LOG("move_tab", id, parent, position);
     Transaction tr;
