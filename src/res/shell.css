@@ -234,6 +234,9 @@ html:not(.show-closed) .item.closed {
 .tab:hover > .close {
     display:block;
 }
+.item:not(.parent) > .tab {
+    padding-left:16px;
+}
 .expand::before {
     display:block;
     font-size:80%;
