@@ -206,9 +206,11 @@ SELECT id FROM tabs WHERE parent = ? AND position > ? AND closed_at IS NULL ORDE
 
 void set_tab_url (int64 id, const string& url) {
     LOG("set_tab_url", id, url);
-    Transaction tr;
+    auto data = get_tab_data(id);
+    if (url == data->url) return;
 
-    get_tab_data(id)->url = url;
+    Transaction tr;
+    data->url = url;
     static State<>::Ment<uint64, string, int64> set {R"(
 UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
     )"};
@@ -218,9 +220,11 @@ UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
 
 void set_tab_title (int64 id, const string& title) {
     LOG("set_tab_title", id, title);
-    Transaction tr;
+    auto data = get_tab_data(id);
+    if (title == data->title) return;
 
-    get_tab_data(id)->title = title;
+    Transaction tr;
+    data->title = title;
     static State<>::Ment<string, int64> set {R"(
 UPDATE tabs SET title = ? WHERE id = ?
     )"};
@@ -230,9 +234,11 @@ UPDATE tabs SET title = ? WHERE id = ?
 
 void set_tab_favicon (int64 id, const string& favicon) {
     LOG("set_tab_favicon", id, favicon);
-    Transaction tr;
+    auto data = get_tab_data(id);
+    if (favicon == data->favicon) return;
 
-    get_tab_data(id)->favicon = favicon;
+    Transaction tr;
+    data->favicon = favicon;
     static State<>::Ment<string, int64> set {R"(
 UPDATE tabs SET favicon = ? WHERE id = ?
     )"};

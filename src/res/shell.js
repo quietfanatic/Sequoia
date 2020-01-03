@@ -154,12 +154,14 @@ window.addEventListener("blur", e => {
 });
 
 function open_main_menu () {
+    if (showing_main_menu) return;
     showing_main_menu = true;
     $html.classList.add("show-main-menu");
     host.postMessage(["show_main_menu", $main_menu.offsetWidth]);
 }
 
 function close_main_menu () {
+    if (!showing_main_menu) return;
     showing_main_menu = false;
     $html.classList.remove("show-main-menu");
     host.postMessage(["hide_main_menu"]);

@@ -108,6 +108,7 @@ void Window::Observer_after_commit (
 }
 
 void Window::send_tabs (const vector<int64>& updated_tabs) {
+    if (updated_tabs.empty()) return;
     json::Array updates;
     updates.reserve(updated_tabs.size());
     bool do_send_activity = false;
