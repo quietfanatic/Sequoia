@@ -295,11 +295,12 @@ void delete_tab_and_children (int64 id) {
     Transaction tr;
 
     auto data = get_tab_data(id);
-    A(data->closed_at);
     for (int64 child : get_all_children(id)) {
         delete_tab_and_children(child);
     }
     data->deleted = true;
+    delete activity_for_tab(tab);
+
     static State<>::Ment<int64> do_it {R"(
 DELETE FROM tabs WHERE id = ?
     )"};
