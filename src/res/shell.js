@@ -456,16 +456,16 @@ let commands = {
                         $title = $("div", {class:"title"}, title),
                         $child_count = $("div", {class:"child-count"}),
                         $("div", {
+                            class: "close",
+                            click: on_close_clicked,
+                        }),
+                        $("div", {
                             class: "new-child",
                             click: on_new_child_clicked,
                         }),
                         $("div", {
                             class: "star",
                             click: on_star_clicked,
-                        }),
-                        $("div", {
-                            class: "close",
-                            click: on_close_clicked,
                         }),
                     ]),
                     $list = $("div", {class:"list"}),

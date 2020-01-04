@@ -120,12 +120,23 @@ html.hide-sidebar #sidebar {
 .list.alt {
     background-color:var(--tree-bg-alt);
 }
+
 #tree {
     flex-grow:1;
     overflow-y:scroll;
     overflow-x:hidden;
     background-color:var(--tree-bg);
 }
+#new-tab {
+    width:100%;
+    height:var(--tree-bottom-padding);
+    text-align:center;
+    color:var(--tree-fg);
+}
+#new-tab::before {
+    content:"🞢";
+}
+
 #sidebar-bottom {
     flex-shrink:0;
     height:var(--sidebar-bottom-height);
@@ -154,15 +165,6 @@ html.hide-sidebar #sidebar {
 }
 html:not(.show-closed) #show-closed::before {
     opacity:0.5;
-}
-#new-tab {
-    width:100%;
-    height:var(--tree-bottom-padding);
-    text-align:center;
-    color:var(--tree-fg);
-}
-#new-tab::before {
-    content:"🞢";
 }
 
 .item.closed > .tab {
@@ -232,8 +234,10 @@ html:not(.show-closed) .item.closed {
 .item.parent > .tab > .expand,
 .tab:hover > .new-child,
 .tab:hover > .star,
-.tab.starred > .star,
-.tab:not(.starred):hover > .close {
+.tab.focused > .close,
+.tab.focused > .new-child,
+.tab.focused > .star,
+.tab.starred > .star {
     display:block;
 }
 .item:not(.parent) > .tab {
@@ -245,7 +249,7 @@ html:not(.show-closed) .item.closed {
     content:"▶︎";
 }
 .item.expanded > .tab > .expand::before {
-    transform:rotate(0.25turn);
+    transform:rotate(90deg);
 }
 .new-child::before {
     content:"🞢";
