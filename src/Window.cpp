@@ -190,6 +190,7 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
             t->favicon,
             !!activity,
             t->visited_at,
+            t->starred_at,
             t->closed_at
         ));
         if (focused_tab == tab) {
@@ -272,10 +273,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("navigate"): {
-        const string& address = message[1];
-        if (activity) {
-            activity->navigate_url_or_search(address);
-        }
+        if (activity) activity->navigate_url_or_search(message[1]);
         break;
     }
      // Toolbar buttons
@@ -341,23 +339,28 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("new_child"): {
-        int64 tab = message[1];
         Transaction tr;
-        int64 new_tab = create_tab(tab, TabRelation::LAST_CHILD, "about:blank");
+        int64 new_tab = create_tab(message[1], TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
+        break;
+    }
+    case x31_hash("star"): {
+        star_tab(message[1]);
+        break;
+    }
+    case x31_hash("unstar"): {
+        unstar_tab(message[1]);
+        break;
+    }
+    case x31_hash("close"): {
+        close_tab(message[1]);
         break;
     }
     case x31_hash("delete"): {
         int64 tab = message[1];
-        auto data = get_tab_data(tab);
-        if (data->closed_at) {
+        if (get_tab_data(tab)->closed_at) {
             delete_tab_and_children(tab);
         }
-        break;
-    }
-    case x31_hash("close"): {
-        int64 tab = message[1];
-        close_tab(tab);
         break;
     }
     case x31_hash("move_tab"): {

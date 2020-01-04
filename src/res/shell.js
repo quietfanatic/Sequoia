@@ -210,7 +210,6 @@ let TabRelation = {
 
 function on_tab_mousedown (event) {
     let $item = event.target.closest('.item');
-    if (!$item) return;
     grabbing_tab = true;
     tab_move_origin_y = event.clientY;
     document.addEventListener("mousemove", on_tab_drag);
@@ -304,37 +303,43 @@ function close_or_delete_item ($item) {
 
 function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
-    if ($item) {
-        let id = +$item.id;
-        if (event.button == 0) {
-            if (focused_id != id) {
-                host.postMessage(["focus", id]);
-            }
-            else if (!tabs_by_id[id].loaded) {
-                host.postMessage(["load", id]);
-            }
-            tabs_by_id[id].$tab.focus();
+    let id = +$item.id;
+    if (event.button == 0) {
+        if (focused_id != id) {
+            host.postMessage(["focus", id]);
         }
-        else if (event.button == 1) {
-            close_or_delete_item($item);
+        else if (!tabs_by_id[id].loaded) {
+            host.postMessage(["load", id]);
         }
+        tabs_by_id[id].$tab.focus();
+    }
+    else if (event.button == 1) {
+        close_or_delete_item($item);
     }
     handled(event);
 }
 
 function on_new_child_clicked (event) {
     let $item = event.target.closest('.item');
-    if ($item) {
-        host.postMessage(["new_child", +$item.id]);
+    host.postMessage(["new_child", +$item.id]);
+    handled(event);
+}
+
+function on_star_clicked (event) {
+    let $item = event.target.closest('.item');
+    let id = +$item.id;
+    if (tabs_by_id[id].$tab.classList.contains("starred")) {
+        host.postMessage(["unstar", id]);
+    }
+    else {
+        host.postMessage(["star", id]);
     }
     handled(event);
 }
 
 function on_close_clicked (event) {
     let $item = event.target.closest('.item');
-    if ($item) {
-        close_or_delete_item($item);
-    }
+    close_or_delete_item($item);
     handled(event);
 }
 
@@ -354,14 +359,12 @@ function contract_tab (tab) {
 }
 function on_expand_clicked (event) {
     let $item = event.target.closest('.item');
-    if ($item) {
-        let tab = tabs_by_id[+$item.id];
-        if (tab.expanded) {
-            contract_tab(tab);
-        }
-        else {
-            expand_tab(tab);
-        }
+    let tab = tabs_by_id[+$item.id];
+    if (tab.expanded) {
+        contract_tab(tab);
+    }
+    else {
+        expand_tab(tab);
     }
     handled(event);
 }
@@ -410,7 +413,7 @@ let commands = {
     },
     tabs (updates) {
         for (let [
-            id, parent, position, child_count, url, title, favicon, loaded, visited_at, closed_at
+            id, parent, position, child_count, url, title, favicon, loaded, visited_at, starred_at, closed_at
         ] of updates) {
             if (parent === undefined) {
                 let tab = tabs_by_id[id];
@@ -455,6 +458,10 @@ let commands = {
                         $("div", {
                             class: "new-child",
                             click: on_new_child_clicked,
+                        }),
+                        $("div", {
+                            class: "star",
+                            click: on_star_clicked,
                         }),
                         $("div", {
                             class: "close",
@@ -502,6 +509,7 @@ let commands = {
             }
             tab.$tab.classList.toggle("loaded", loaded);
             tab.$tab.classList.toggle("visited", visited_at > 0);
+            tab.$tab.classList.toggle("starred", starred_at > 0);
             tab.$item.classList.toggle("closed", closed_at > 0);
             if (favicon) {
                 tab.$favicon.src = favicon;

@@ -24,6 +24,7 @@ struct TabData {
     std::string favicon;
     double created_at;
     double visited_at;
+    double starred_at;
     double closed_at;
     bool deleted = false;
     TabData(
@@ -35,6 +36,7 @@ struct TabData {
         const std::string& favicon,
         double created_at,
         double visited_at,
+        double starred_at,
         double closed_at
     ) :
         parent(parent),
@@ -45,6 +47,7 @@ struct TabData {
         favicon(favicon),
         created_at(created_at),
         visited_at(visited_at),
+        starred_at(starred_at),
         closed_at(closed_at)
     { }
 };
@@ -64,6 +67,8 @@ void set_tab_url (int64 id, const std::string& url);
 void set_tab_title (int64 id, const std::string& title);
 void set_tab_favicon (int64 id, const std::string& favicon);
 void set_tab_visited (int64 id);
+void star_tab (int64 id);
+void unstar_tab (int64 id);
 int64 get_last_closed_tab ();
 void close_tab (int64 id);
 void unclose_tab (int64 id);

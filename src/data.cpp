@@ -160,9 +160,9 @@ TabData* get_tab_data (int64 id) {
         return data;
     }
 
-    static State<int64, Bifractor, int64, string, string, string, double, double, double>
+    static State<int64, Bifractor, int64, string, string, string, double, double, double, double>
         ::Ment<int64> get {R"(
-SELECT parent, position, child_count, url, title, favicon, created_at, visited_at, closed_at
+SELECT parent, position, child_count, url, title, favicon, created_at, visited_at, starred_at, closed_at
 FROM tabs WHERE id = ?
     )"};
 
@@ -257,6 +257,31 @@ void set_tab_visited (int64 id) {
 UPDATE tabs SET visited_at = ? WHERE id = ?
     )"};
     set.run_void(visited_at, id);
+    tab_updated(id);
+}
+
+void star_tab (int64 id) {
+    LOG("star_tab", id);
+    Transaction tr;
+
+    double starred_at = now();
+    get_tab_data(id)->starred_at = starred_at;
+    static State<>::Ment<double, int64> set {R"(
+UPDATE tabs SET starred_at = ? WHERE id = ?
+    )"};
+    set.run_void(starred_at, id);
+    tab_updated(id);
+}
+
+void unstar_tab (int64 id) {
+    LOG("unstar_tab", id);
+    Transaction tr;
+
+    get_tab_data(id)->starred_at = 0;
+    static State<>::Ment<int64> set {R"(
+UPDATE tabs SET starred_at = NULL WHERE id = ?
+    )"};
+    set.run_void(id);
     tab_updated(id);
 }
 

@@ -9,6 +9,7 @@ html {
     --main-menu-width:240px;
     --tab-height:24px;
     --tab-font-size:12px;
+    --tab-button-font-size:14px;
     --sidebar-bottom-height:24px;
     --sidebar-bottom-font-size:18px;
     --tree-bottom-padding:72px;
@@ -156,13 +157,12 @@ html:not(.show-closed) #show-closed::before {
 }
 #new-tab {
     width:100%;
-    font-size:120%;
     height:var(--tree-bottom-padding);
     text-align:center;
     color:var(--tree-fg);
 }
 #new-tab::before {
-    content:"+";
+    content:"🞢";
 }
 
 .item.closed > .tab {
@@ -215,7 +215,7 @@ html:not(.show-closed) .item.closed {
 .tab:not(.visited) > .title {
     font-style:italic;
 }
-.expand, .new-child, .close {
+.expand, .new-child, .star, .close {
     display:none;
     flex-shrink:0;
     width:16px;
@@ -226,12 +226,14 @@ html:not(.show-closed) .item.closed {
     border:none;
     padding:0;
     background:none;
-    font-size:var(--tab-font-size);
+    font-size:var(--tab-button-font-size);
     font-family:sans-serif;
 }
 .item.parent > .tab > .expand,
 .tab:hover > .new-child,
-.tab:hover > .close {
+.tab:hover > .star,
+.tab.starred > .star,
+.tab:not(.starred):hover > .close {
     display:block;
 }
 .item:not(.parent) > .tab {
@@ -246,8 +248,14 @@ html:not(.show-closed) .item.closed {
     transform:rotate(0.25turn);
 }
 .new-child::before {
+    content:"🞢";
+}
+.star::before {
     font-size:120%;
-    content:"+";
+    content:"✩";
+}
+.tab.starred > .star::before {
+    content:"🟊";
 }
 .close::before {
     content:"✕";
