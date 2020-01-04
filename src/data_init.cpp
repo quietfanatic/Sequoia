@@ -25,8 +25,8 @@ void init_db () {
         string old_db = profile_folder + "/Sequoia-state.sqlite";
         if (filesystem::exists(old_db) && filesystem::file_size(old_db) > 0) {
             filesystem::rename(old_db, db_file);
+            exists = true;
         }
-        exists = true;
     }
 
     AS(sqlite3_open(db_file.c_str(), &db));
