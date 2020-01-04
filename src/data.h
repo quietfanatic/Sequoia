@@ -64,6 +64,7 @@ void set_tab_url (int64 id, const std::string& url);
 void set_tab_title (int64 id, const std::string& title);
 void set_tab_favicon (int64 id, const std::string& favicon);
 void set_tab_visited (int64 id);
+int64 get_last_closed_tab ();
 void close_tab (int64 id);
 void unclose_tab (int64 id);
 void delete_tab_and_children (int64 id);

@@ -260,6 +260,18 @@ UPDATE tabs SET visited_at = ? WHERE id = ?
     tab_updated(id);
 }
 
+int64 get_last_closed_tab () {
+    LOG("get_last_closed_tab");
+    Transaction tr;
+
+    static State<int64>::Ment<> find {R"(
+SELECT id FROM tabs WHERE closed_at IS NOT NULL
+ORDER BY closed_at DESC LIMIT 1
+    )"};
+    vector<int64> result = find.run();
+    return result.empty() ? 0 : result[0];
+}
+
 void close_tab (int64 id) {
     LOG("close_tab", id);
     Transaction tr;

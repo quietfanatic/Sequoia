@@ -89,11 +89,21 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         };
         break;
     case 'T':
-        if (!shift && ctrl && !alt) return [this]{
-            Transaction tr;
-            int64 new_tab = create_tab(focused_tab, TabRelation::LAST_CHILD, "about:blank");
-            set_window_focused_tab(id, new_tab);
-        };
+        if (ctrl && !alt) {
+            if (shift) return [this]{
+                Transaction tr;
+                int64 tab = get_last_closed_tab();
+                if (tab) {
+                    unclose_tab(tab);
+                    set_window_focused_tab(id, tab);
+                }
+            };
+            else return [this]{
+                Transaction tr;
+                int64 new_tab = create_tab(focused_tab, TabRelation::LAST_CHILD, "about:blank");
+                set_window_focused_tab(id, new_tab);
+            };
+        }
         break;
     case 'W':
         if (!shift && ctrl && !alt) return [this]{
