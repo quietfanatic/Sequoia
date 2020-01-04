@@ -4,6 +4,7 @@
 #include <map>
 #include <sqlite3.h>
 
+#include "activities.h"
 #include "data_init.h"
 #include "settings.h"
 #include "util/assert.h"
@@ -266,6 +267,7 @@ void close_tab (int64 id) {
     auto data = get_tab_data(id);
     if (data->closed_at) return;  // Already closed
     data->closed_at = now();
+    delete activity_for_tab(id);
 
     static State<>::Ment<double, int64> close {R"(
 UPDATE tabs SET closed_at = ? WHERE id = ?
@@ -273,6 +275,8 @@ UPDATE tabs SET closed_at = ? WHERE id = ?
     close.run_void(data->closed_at, id);
     tab_updated(id);
     change_child_count(data->parent, -1 - data->child_count);
+
+    prune_closed_tabs(20, 15*60);
 }
 void unclose_tab (int64 id) {
     LOG("unclose_tab", id);
@@ -299,7 +303,7 @@ void delete_tab_and_children (int64 id) {
         delete_tab_and_children(child);
     }
     data->deleted = true;
-    delete activity_for_tab(tab);
+    delete activity_for_tab(id);
 
     static State<>::Ment<int64> do_it {R"(
 DELETE FROM tabs WHERE id = ?

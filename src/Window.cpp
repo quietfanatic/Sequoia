@@ -43,6 +43,12 @@ Window::Window (int64 id, int64 tab) :
             return S_OK;
         }).Get(), nullptr);
 
+        webview->add_AcceleratorKeyPressed(
+            Callback<IWebView2AcceleratorKeyPressedEventHandler>(
+                this, &Window::on_AcceleratorKeyPressed
+            ).Get(), nullptr
+        );
+
         webview->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
 
         resize();
@@ -72,6 +78,44 @@ void Window::resize () {
     if (activity) {
         activity->resize(bounds);
     }
+}
+
+
+std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, bool alt) {
+    switch (key) {
+    case VK_F11:
+        if (!shift && !ctrl && !alt) return [this]{
+            if (activity) activity->enter_fullscreen();
+        };
+        break;
+    case 'T':
+        if (!shift && ctrl && !alt) return [this]{
+            Transaction tr;
+            int64 new_tab = create_tab(focused_tab, TabRelation::LAST_CHILD, "about:blank");
+            set_window_focused_tab(id, new_tab);
+        };
+        break;
+    case 'W':
+        if (!shift && ctrl && !alt) return [this]{
+            close_tab(focused_tab);
+        };
+        break;
+    case VK_TAB:
+        if (ctrl && !alt) {
+            if (shift) return [this]{
+                if (int64 prev = get_prev_unclosed_tab(focused_tab)) {
+                    set_window_focused_tab(id, prev);
+                }
+            };
+            else return [this]{
+                if (int64 next = get_next_unclosed_tab(focused_tab)) {
+                    set_window_focused_tab(id, next);
+                }
+            };
+        }
+        break;
+    }
+    return nullptr;
 }
 
 void Window::Observer_after_commit (
@@ -291,20 +335,12 @@ void Window::message_from_shell (json::Value&& message) {
         auto data = get_tab_data(tab);
         if (data->closed_at) {
             delete_tab_and_children(tab);
-            if (auto activity = activity_for_tab(tab)) {
-                delete activity;
-            }
         }
         break;
     }
     case x31_hash("close"): {
         int64 tab = message[1];
-        auto data = get_tab_data(tab);
         close_tab(tab);
-        if (auto activity = activity_for_tab(tab)) {
-            delete activity;
-        }
-        prune_closed_tabs(20, 15*60);
         break;
     }
     case x31_hash("move_tab"): {
@@ -348,6 +384,32 @@ void Window::claim_activity (Activity* a) {
     if (activity) activity->claimed_by_window(this);
 
     resize();
+}
+
+HRESULT Window::on_AcceleratorKeyPressed (
+    IWebView2WebView* sender,
+    IWebView2AcceleratorKeyPressedEventArgs* args
+) {
+    WEBVIEW2_KEY_EVENT_TYPE type; AH(args->get_KeyEventType(&type));
+    switch (type) {
+    case WEBVIEW2_KEY_EVENT_TYPE_KEY_DOWN: break;
+    case WEBVIEW2_KEY_EVENT_TYPE_SYSTEM_KEY_DOWN: break;
+    default: return S_OK;
+    }
+    UINT key; AH(args->get_VirtualKey(&key));
+    INT l; AH(args->get_KeyEventLParam(&l));
+    auto handle = get_key_handler(
+        key,
+        GetKeyState(VK_SHIFT) < 0,
+        GetKeyState(VK_CONTROL) < 0,
+        GetKeyState(VK_MENU) < 0
+    );
+    if (handle) {
+        AH(args->Handle(TRUE));
+        bool repeated = l & (1 << 30);
+        if (!repeated) handle();
+    }
+    return S_OK;
 }
 
 Window::~Window () {

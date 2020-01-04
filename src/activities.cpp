@@ -133,6 +133,17 @@ Activity::Activity (int64 t) : tab(t) {
             return S_OK;
         }).Get(), nullptr));
 
+        AH(webview->add_AcceleratorKeyPressed(
+            Callback<IWebView2AcceleratorKeyPressedEventHandler>(
+                [this](
+                    IWebView2WebView* sender,
+                    IWebView2AcceleratorKeyPressedEventArgs* args
+                )
+        {
+            if (!window) return S_OK;
+            return window->on_AcceleratorKeyPressed(sender, args);
+        }).Get(), nullptr));
+
         AH(webview->add_ContainsFullScreenElementChanged(
             Callback<IWebView2ContainsFullScreenElementChangedEventHandler>(
                 [this](IWebView2WebView5* sender, IUnknown* args) -> HRESULT

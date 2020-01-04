@@ -1,6 +1,7 @@
 #include "Window.h"
 
 #include "util/assert.h"
+#include "util/logging.h"
 #include "util/utf8.h"
 
 using namespace std;
@@ -13,6 +14,22 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
     case WM_DPICHANGED:
         window->resize();
         return 0;
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN: {
+         // Since our application is only webviews, I'm not we ever get here
+        auto handler = window->get_key_handler(
+            uint(w),
+            GetKeyState(VK_SHIFT) < 0,
+            GetKeyState(VK_CONTROL) < 0,
+            GetKeyState(VK_MENU) < 0
+        );
+        if (handler) {
+            bool repeated = l & (1 << 30);
+            if (!repeated) handler();
+            return 0;
+        }
+        break;
+    }
     case WM_DESTROY:
          // Prevent activity's HWND from being destroyed.
         window->claim_activity(nullptr);
