@@ -106,6 +106,8 @@ html.hide-sidebar #toggle-sidebar::before {
     top:var(--toolbar-height);
     bottom:0;
     width:var(--sidebar-width);
+    min-width:var(--sidebar-bottom-height);
+    max-width:92%;
     box-sizing:border-box;
     background-color:var(--toolbar-bg);
     display:flex;
