@@ -35,34 +35,39 @@ void init_db () {
          // Migrate database to new schema if necessary
         State<int>::Ment<> get_version {"PRAGMA user_version", true};
         int version = get_version.run_single();
+        if (version == CURRENT_SCHEMA_VERSION) return;
+
+        LOG("Migrating schema", version, CURRENT_SCHEMA_VERSION);
+        Transaction tr;
+
         switch (version) {
+        default: throw std::logic_error("Unknown user_version number in db");
         case 0: {
-            LOG("Migrating to schema version 1...");
-            Transaction tr;
             string sql = slurp(exe_relative("res/migrate-0-1-before.sql"))
                        + slurp(exe_relative("res/schema-1.sql"))
                        + slurp(exe_relative("res/migrate-0-1-after.sql"));
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
-            LOG("Migration complete.");
             [[fallthrough]];
         }
         case 1: {
-            LOG("Migrating to schema version 2...");
-            Transaction tr;
             string sql = slurp(exe_relative("res/migrate-1-2.sql"));
+            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
+            [[fallthrough]];
+        }
+        case 2: {
+            string sql = slurp(exe_relative("res/migrate-2-3.sql"));
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             LOG("Migration complete.");
             [[fallthrough]];
         }
-        case 2:
+        case 3:
             break;  // Current version, nothing to do
-        default: throw std::logic_error("Unknown user_version number in db");
         }
     }
     else {
          // Create new database
         Transaction tr;
-        string schema = slurp(exe_relative("res/schema-2.sql"));
+        string schema = slurp(exe_relative("res/schema-3.sql"));
         LOG("Creating database...");
         AS(sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));
         LOG("Creation complete.");
