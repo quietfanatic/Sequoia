@@ -234,7 +234,7 @@ html:not(.show-closed) .item.closed {
 .item.parent > .tab > .expand,
 .tab:hover > .new-child,
 .tab:hover > .star,
-.tab.focused > .close,
+.item:not(.parent) .tab.focused:not(.starred) > .close,
 .tab.focused > .new-child,
 .tab.focused > .star,
 .tab.starred > .star {
