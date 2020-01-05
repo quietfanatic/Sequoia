@@ -356,6 +356,20 @@ void Window::message_from_shell (json::Value&& message) {
         close_tab(message[1]);
         break;
     }
+    case x31_hash("inherit_close"): {
+        int64 tab = message[1];
+        Transaction tr;
+        vector<int64> children = get_all_unclosed_children(tab);
+        if (!children.empty()) {
+            int64 heir = children[0];
+            for (size_t i = 1; i < children.size(); i++) {
+                move_tab(children[i], heir, TabRelation::LAST_CHILD);
+            }
+            move_tab(heir, tab, TabRelation::AFTER);
+        }
+        close_tab(tab);
+        break;
+    }
     case x31_hash("delete"): {
         int64 tab = message[1];
         if (get_tab_data(tab)->closed_at) {

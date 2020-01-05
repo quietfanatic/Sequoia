@@ -174,7 +174,15 @@ FROM tabs WHERE id = ?
 std::vector<int64> get_all_children (int64 parent) {
     LOG("get_all_children", parent);
     static State<int64>::Ment<int64> get {R"(
-SELECT id FROM tabs WHERE parent = ?
+SELECT id FROM tabs WHERE parent = ? ORDER BY position
+    )"};
+    return get.run(parent);
+}
+
+std::vector<int64> get_all_unclosed_children (int64 parent) {
+    LOG("get_all_unclosed_children", parent);
+    static State<int64>::Ment<int64> get {R"(
+SELECT id FROM tabs WHERE parent = ? AND closed_at IS NULL ORDER BY position
     )"};
     return get.run(parent);
 }
@@ -190,8 +198,7 @@ int64 get_prev_unclosed_tab (int64 id) {
     State<int64>::Ment<int64, Bifractor> get {R"(
 SELECT id FROM tabs WHERE parent = ? AND position < ? AND closed_at IS NULL ORDER BY position DESC LIMIT 1
     )"};
-    vector<int64> prev = get.run(data->parent, data->position);
-    return prev.empty() ? 0 : prev[0];
+    return get.run_or(data->parent, data->position, 0);
 }
 
 int64 get_next_unclosed_tab (int64 id) {
@@ -201,8 +208,7 @@ int64 get_next_unclosed_tab (int64 id) {
     State<int64>::Ment<int64, Bifractor> get {R"(
 SELECT id FROM tabs WHERE parent = ? AND position > ? AND closed_at IS NULL ORDER BY position ASC LIMIT 1
     )"};
-    vector<int64> next = get.run(data->parent, data->position);
-    return next.empty() ? 0 : next[0];
+    return get.run_or(data->parent, data->position, 0);
 }
 
 void set_tab_url (int64 id, const string& url) {
@@ -293,8 +299,7 @@ int64 get_last_closed_tab () {
 SELECT id FROM tabs WHERE closed_at IS NOT NULL
 ORDER BY closed_at DESC LIMIT 1
     )"};
-    vector<int64> result = find.run();
-    return result.empty() ? 0 : result[0];
+    return find.run_or(0);
 }
 
 void close_tab (int64 id) {
@@ -315,6 +320,7 @@ UPDATE tabs SET closed_at = ? WHERE id = ?
 
     prune_closed_tabs(20, 15*60);
 }
+
 void unclose_tab (int64 id) {
     LOG("unclose_tab", id);
     Transaction tr;
@@ -372,7 +378,9 @@ void move_tab (int64 id, int64 parent, const Bifractor& position) {
     Transaction tr;
 
     auto data = get_tab_data(id);
-    change_child_count(data->parent, -1 - data->child_count);
+    if (!data->closed_at) {
+        change_child_count(data->parent, -1 - data->child_count);
+    }
 
     data->parent = parent;
     data->position = position;
@@ -382,7 +390,9 @@ UPDATE tabs SET parent = ?, position = ? WHERE id = ?
     set.run_void(parent, position, id);
     tab_updated(id);
 
-    change_child_count(parent, 1 + data->child_count);
+    if (!data->closed_at) {
+        change_child_count(parent, 1 + data->child_count);
+    }
 }
 void move_tab (int64 id, int64 reference, TabRelation rel) {
     int64 parent;

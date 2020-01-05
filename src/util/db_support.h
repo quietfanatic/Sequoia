@@ -160,5 +160,20 @@ struct Ment : Statement {
         reset();
         return r;
     }
+
+    Result run_or (const Params&... params, const Result& def) {
+        bind(params...);
+        step();
+        if (done()) {
+            reset();
+            return def;
+        }
+        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        Result r = read();
+        step();
+        A(done());
+        reset();
+        return r;
+    }
 };
 };

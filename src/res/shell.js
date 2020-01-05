@@ -292,29 +292,32 @@ document.addEventListener("mousedown", event => {
 
 let tabs_by_id = {};
 
-function close_or_delete_item ($item) {
-    if ($item.classList.contains("closed")) {
-        host.postMessage(["delete", +$item.id]);
+function close_or_delete_tab (tab) {
+    if (tab.$item.classList.contains("closed")) {
+        host.postMessage(["delete", tab.id]);
+    }
+    else if (tab.expanded) {
+        host.postMessage(["inherit_close", tab.id]);
     }
     else {
-        host.postMessage(["close", +$item.id]);
+        host.postMessage(["close", tab.id]);
     }
 }
 
 function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
-    let id = +$item.id;
+    let tab = tabs_by_id[+$item.id];
     if (event.button == 0) {
-        if (focused_id != id) {
-            host.postMessage(["focus", id]);
+        if (focused_id != tab.id) {
+            host.postMessage(["focus", tab.id]);
         }
-        else if (!tabs_by_id[id].loaded) {
-            host.postMessage(["load", id]);
+        else if (!tab.loaded) {
+            host.postMessage(["load", tab.id]);
         }
-        tabs_by_id[id].$tab.focus();
+        tab.$tab.focus();
     }
     else if (event.button == 1) {
-        close_or_delete_item($item);
+        close_or_delete_tab(tab);
     }
     handled(event);
 }
@@ -339,7 +342,7 @@ function on_star_clicked (event) {
 
 function on_close_clicked (event) {
     let $item = event.target.closest('.item');
-    close_or_delete_item($item);
+    close_or_delete_tab(tabs_by_id[+$item.id]);
     handled(event);
 }
 
@@ -402,6 +405,7 @@ let commands = {
             if (tab.url == "about:blank") {
                 $address.focus();
             }
+            tab.$tab.scrollIntoViewIfNeeded();
         }
     },
     activity (can_go_back, can_go_forward, loading) {
@@ -536,6 +540,9 @@ let commands = {
             }
             if (!tab.$item.isConnected) {
                 $parent_list.appendChild(tab.$item);
+            }
+            if (updates.length == 1) {
+                tab.$tab.scrollIntoViewIfNeeded();
             }
         }
     },
