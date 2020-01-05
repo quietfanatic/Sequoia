@@ -88,6 +88,13 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
             if (activity) activity->toggle_fullscreen();
         };
         break;
+    case 'L':
+        if (!shift && ctrl && !alt) return [this]{
+            if (!webview) return;
+            message_to_shell(json::array("select_location"));
+            webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+        };
+        break;
     case 'T':
         if (ctrl && !alt) {
             if (shift) return [this]{
@@ -153,6 +160,7 @@ void Window::Observer_after_commit (
             }
             else {
                 if (webview) {
+                    message_to_shell(json::array("select_location"));
                     webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
                 }
             }

@@ -385,36 +385,17 @@ function set_address (url) {
 }
 
 let commands = {
-    focus (id) {
-        let old_tab = tabs_by_id[focused_id];
-        if (old_tab) {
-            old_tab.$tab.classList.remove("focused");
-        }
-        focused_id = id;
-        let tab = tabs_by_id[id];
-        if (tab) {
-            tab.$tab.classList.add("focused");
-            set_address(tab.url);
-             // Expand everything above and including the focused tab
-            expandUp(tab)
-            function expandUp (tab) {
-                if (!tab) return;
-                expand_tab(tab);
-                expandUp(tabs_by_id[tab.parent]);
+    settings (settings) {
+        if ("theme" in settings) {
+            for (let token of $html.classList) {
+                if (token.startsWith("theme-")) {
+                    $html.classList.remove(token);
+                    break;
+                }
             }
-            if (tab.url == "about:blank") {
-                $address.focus();
-            }
-            tab.$tab.scrollIntoViewIfNeeded();
+            $html.classList.add("theme-" + settings.theme);
         }
-    },
-    activity (can_go_back, can_go_forward, loading) {
-        $back.classList.toggle("disabled", !can_go_back);
-        $forward.classList.toggle("disabled", !can_go_forward);
-        currently_loading = loading;
-        $reload.classList.toggle("loading", loading);
-        $reload.title = currently_loading ? "Stop" : "Reload";
-    },
+    }
     tabs (updates) {
         for (let [
             id, parent, position, child_count, url, title, favicon, loaded, visited_at, starred_at, closed_at
@@ -546,17 +527,37 @@ let commands = {
             }
         }
     },
-    settings (settings) {
-        if ("theme" in settings) {
-            for (let token of $html.classList) {
-                if (token.startsWith("theme-")) {
-                    $html.classList.remove(token);
-                    break;
-                }
-            }
-            $html.classList.add("theme-" + settings.theme);
+    focus (id) {
+        let old_tab = tabs_by_id[focused_id];
+        if (old_tab) {
+            old_tab.$tab.classList.remove("focused");
         }
-    }
+        focused_id = id;
+        let tab = tabs_by_id[id];
+        if (tab) {
+            tab.$tab.classList.add("focused");
+            set_address(tab.url);
+             // Expand everything above and including the focused tab
+            expandUp(tab)
+            function expandUp (tab) {
+                if (!tab) return;
+                expand_tab(tab);
+                expandUp(tabs_by_id[tab.parent]);
+            }
+            tab.$tab.scrollIntoViewIfNeeded();
+        }
+    },
+    activity (can_go_back, can_go_forward, loading) {
+        $back.classList.toggle("disabled", !can_go_back);
+        $forward.classList.toggle("disabled", !can_go_forward);
+        currently_loading = loading;
+        $reload.classList.toggle("loading", loading);
+        $reload.title = currently_loading ? "Stop" : "Reload";
+    },
+    select_location () {
+        $address.select();
+        $address.focus();
+    },
 };
 
 host.addEventListener("message", e=>{
