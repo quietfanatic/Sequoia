@@ -30,6 +30,9 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         }
         break;
     }
+    case WM_CLOSE:
+        close_window(window->id);
+        return 0;
     case WM_DESTROY:
          // Prevent activity's HWND from being destroyed.
         window->claim_activity(nullptr);
@@ -37,7 +40,6 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
     case WM_NCDESTROY:
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);
         delete window;
-        PostQuitMessage(0);
         return 0;
     }
     return DefWindowProc(hwnd, message, w, l);

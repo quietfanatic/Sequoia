@@ -395,7 +395,7 @@ let commands = {
             }
             $html.classList.add("theme-" + settings.theme);
         }
-    }
+    },
     tabs (updates) {
         for (let [
             id, parent, position, child_count, url, title, favicon, loaded, visited_at, starred_at, closed_at

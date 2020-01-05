@@ -1,5 +1,6 @@
 #include "Window.h"
 
+#include <map>
 #include <stdexcept>
 #include <WebView2.h>
 #include <wrl.h>
@@ -19,9 +20,12 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-Window::Window (int64 id, int64 tab) :
-    id(id), focused_tab(tab), os_window(this)
+size_t n_windows = 0;
+
+Window::Window (int64 id) :
+    id(id), focused_tab(get_window_data(id)->focused_tab), os_window(this)
 {
+    ++n_windows;
     new_webview([this](WebView* wv, HWND hwnd){
         webview = wv;
         webview_hwnd = hwnd;
@@ -95,6 +99,13 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
             webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
         };
         break;
+    case 'N':
+        if (!shift && ctrl && !alt) return [this]{
+            int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
+            int64 new_window = create_window(new_tab);
+            (new Window(new_window))->claim_activity(ensure_activity_for_tab(new_tab));
+        };
+        break;
     case 'T':
         if (ctrl && !alt) {
             if (shift) return [this]{
@@ -144,8 +155,14 @@ void Window::Observer_after_commit (
     for (auto updated_id : updated_windows) {
         if (updated_id != id) continue;
 
+        if (get_window_data(id)->closed_at) {
+            LOG("Destroying window", id);
+            AW(DestroyWindow(os_window.hwnd));
+            break;
+        }
+
         int64 old_focus = focused_tab;
-        focused_tab = get_window_focused_tab(id);
+        focused_tab = get_window_data(id)->focused_tab;
         if (focused_tab == old_focus) break;
 
         LOG("focus_tab", focused_tab);
@@ -446,4 +463,5 @@ HRESULT Window::on_AcceleratorKeyPressed (
 
 Window::~Window () {
     if (activity) activity->claimed_by_window(nullptr);
+    if (--n_windows == 0) quit();
 }

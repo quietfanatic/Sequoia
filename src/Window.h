@@ -24,7 +24,7 @@ struct Window : Observer {
     Activity* activity = nullptr;
 
     OSWindow os_window;
-    Window (int64 id, int64 focused_tab);
+    Window (int64 id);
 
      // In DIPs
     double sidebar_width = 240;
@@ -53,3 +53,4 @@ struct Window : Observer {
 
     ~Window();
 };
+

@@ -17,20 +17,11 @@ using namespace std::chrono;
 
 ///// Misc
 
+map<int64, TabData> tabs_by_id;
+map<int64, WindowData> windows_by_id;
+
 static double now () {
     return duration<double>(system_clock::now().time_since_epoch()).count();
-}
-
-///// Cache
-
-static std::map<int64, TabData> tabs_by_id;
-
-TabData* cached_tab_data (int64 id) {
-    auto iter = tabs_by_id.find(id);
-    if (iter != tabs_by_id.end()) {
-        return &iter->second;
-    }
-    return nullptr;
 }
 
 ///// Transactions
@@ -95,6 +86,7 @@ Transaction::~Transaction () {
             updated_tabs.clear();
             updated_windows.clear();
             tabs_by_id.clear();
+            windows_by_id.clear();
         }
         else {
             static State<>::Ment<> commit {"COMMIT"};
@@ -156,8 +148,9 @@ VALUES (?, ?, ?, ?, ?, ?)
 }
 
 TabData* get_tab_data (int64 id) {
-    if (auto data = cached_tab_data(id)) {
-        return data;
+    auto iter = tabs_by_id.find(id);
+    if (iter != tabs_by_id.end()) {
+        return &iter->second;
     }
 
     static State<int64, Bifractor, int64, string, string, string, double, double, double, double>
@@ -479,27 +472,44 @@ INSERT INTO windows (focused_tab, created_at) VALUES (?, ?)
     return id;
 }
 
-vector<WindowData> get_all_unclosed_windows () {
+WindowData* get_window_data (int64 id) {
+    LOG("get_window_data", id);
+
+    auto iter = windows_by_id.find(id);
+    if (iter != windows_by_id.end()) {
+        return &iter->second;
+    }
+
+    static State<int64, int64, double, double>::Ment<int64> get {R"(
+SELECT id, focused_tab, created_at, closed_at FROM windows WHERE id = ?
+    )"};
+    auto res = windows_by_id.emplace(id, make_from_tuple<WindowData>(get.run_single(id)));
+    return &res.first->second;
+}
+
+vector<int64> get_all_unclosed_windows () {
     LOG("get_all_unclosed_windows");
 
-    static State<int64, int64, double, double>::Ment<> get {R"(
-SELECT id, focused_tab, created_at, closed_at FROM windows
-WHERE closed_at IS NULL
+    static State<int64>::Ment<> get {R"(
+SELECT id FROM windows WHERE closed_at IS NULL
     )"};
-     // Should be a way to avoid this copy but it's not very important
-    auto results = get.run();
-    vector<WindowData> r;
-    r.reserve(results.size());
-    for (auto& res : results) {
-        r.push_back(make_from_tuple<WindowData>(res));
-    }
-    return r;
+    return get.run();
+}
+
+int64 get_last_closed_window () {
+    LOG("get_last_closed_window");
+
+    static State<int64>::Ment<> get {R"(
+SELECT id FROM windows WHERE closed_at IS NULL ORDER BY closed_at DESC LIMIT 1
+    )"};
+    return get.run_or(0);
 }
 
 void set_window_focused_tab (int64 window, int64 tab) {
     LOG("set_window_focused_tab", window, tab);
     Transaction tr;
 
+    get_window_data(window)->focused_tab = tab;
     static State<>::Ment<int64, int64> set {R"(
 UPDATE windows SET focused_tab = ? WHERE id = ?
     )"};
@@ -514,6 +524,31 @@ int64 get_window_focused_tab (int64 window) {
 SELECT focused_tab FROM windows WHERE id = ?
     )"};
     return get.run_single(window);
+}
+
+void close_window (int64 window) {
+    LOG("close_window", window);
+    Transaction tr;
+
+    double closed_at = now();
+    get_window_data(window)->closed_at = closed_at;
+    static State<>::Ment<double, int64> set {R"(
+UPDATE windows SET closed_at = ? WHERE id = ?
+    )"};
+    set.run_void(closed_at, window);
+    window_updated(window);
+}
+
+void unclose_window (int64 window) {
+    LOG("unclose_window", window);
+    Transaction tr;
+
+    get_window_data(window)->closed_at = 0;
+    static State<>::Ment<int64> set {R"(
+UPDATE windows SET closed_at = NULL WHERE id = ?
+    )"};
+    set.run_void(window);
+    window_updated(window);
 }
 
 ///// MISC

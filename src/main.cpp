@@ -21,13 +21,20 @@ using namespace Microsoft::WRL;
 using namespace std;
 
 void start_browser () {
-    vector<WindowData> all_windows = get_all_unclosed_windows();
+    vector<int64> all_windows = get_all_unclosed_windows();
     if (!all_windows.empty()) {
-        for (auto& w : all_windows) {
-            new Window(w.id, w.focused_tab);
+        for (auto w : all_windows) {
+            auto data = get_window_data(w);
+            new Window(data->id);
         }
     }
+    else if (int64 w = get_last_closed_window()) {
+        unclose_window(w);
+         // TODO: do this through a WindowFactory observer or something
+        new Window(w);
+    }
     else {
+         // Otherwise create a new window if none exists
         int64 first_tab = 0;
         Transaction tr;
         vector<int64> top_level_tabs = get_all_children(0);
@@ -42,7 +49,7 @@ void start_browser () {
             first_tab = create_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/");
         }
         int64 first_window = create_window(first_tab);
-        auto window = new Window(first_window, first_tab);
+        auto window = new Window(first_window);
         window->claim_activity(ensure_activity_for_tab(first_tab));
     }
 }
