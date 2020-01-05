@@ -85,7 +85,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
-            if (activity) activity->enter_fullscreen();
+            if (activity) activity->toggle_fullscreen();
         };
         break;
     case 'T':

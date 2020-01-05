@@ -148,9 +148,7 @@ Activity::Activity (int64 t) : tab(t) {
             Callback<IWebView2ContainsFullScreenElementChangedEventHandler>(
                 [this](IWebView2WebView5* sender, IUnknown* args) -> HRESULT
         {
-            BOOL fs;
-            AH(webview->get_ContainsFullScreenElement(&fs));
-            window->os_window.set_fullscreen(fs);
+            window->os_window.set_fullscreen(is_fullscreen());
             return S_OK;
         }).Get(), nullptr));
 
@@ -254,9 +252,23 @@ void Activity::navigate_url_or_search (const string& address) {
     }
 }
 
+bool Activity::is_fullscreen () {
+    if (!webview) return false;
+    BOOL fs; AH(webview->get_ContainsFullScreenElement(&fs));
+    return fs;
+}
+
 void Activity::enter_fullscreen () {
     if (!webview) return;
     webview->ExecuteScript(to_utf16("document.documentElement.requestFullscreen()").c_str(), nullptr);
+}
+
+void Activity::leave_fullscreen () {
+    if (!webview) return;
+    webview->ExecuteScript(to_utf16("document.exitFullscreen()").c_str(), nullptr);
+}
+void Activity::toggle_fullscreen () {
+    is_fullscreen() ? leave_fullscreen() : enter_fullscreen();
 }
 
 Activity::~Activity () {
