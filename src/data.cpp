@@ -321,6 +321,21 @@ UPDATE tabs SET closed_at = ? WHERE id = ?
     prune_closed_tabs(20, 15*60);
 }
 
+void close_tab_with_heritage (int64 id) {
+    LOG("close_tab_with_heritage", id);
+    Transaction tr;
+
+    vector<int64> children = get_all_unclosed_children(id);
+    if (!children.empty()) {
+        int64 heir = children[0];
+        for (size_t i = 1; i < children.size(); i++) {
+            move_tab(children[i], heir, TabRelation::LAST_CHILD);
+        }
+        move_tab(heir, id, TabRelation::AFTER);
+    }
+    close_tab(id);
+}
+
 void unclose_tab (int64 id) {
     LOG("unclose_tab", id);
     Transaction tr;

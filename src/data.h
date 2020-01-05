@@ -72,6 +72,7 @@ void star_tab (int64 id);
 void unstar_tab (int64 id);
 int64 get_last_closed_tab ();
 void close_tab (int64 id);
+void close_tab_with_heritage (int64 id);
 void unclose_tab (int64 id);
 void delete_tab_and_children (int64 id);
  // Will prune tabs that are more than more_than *and* older than older_than.
