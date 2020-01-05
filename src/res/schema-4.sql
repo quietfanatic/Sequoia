@@ -1,4 +1,4 @@
-PRAGMA user_version = 2;
+PRAGMA user_version = 4;
 
 ----- TABS
 
@@ -14,6 +14,7 @@ CREATE TABLE tabs (
     visited_at REAL,
     closed_at REAL,
     favicon TEXT,  -- Deduplicating can come later.
+    starred_at REAL,
     CHECK(id > 0),
     CHECK(parent >= 0 AND parent <> id),
     CHECK(position > X'00' AND position < X'ff'),
@@ -37,11 +38,21 @@ CREATE INDEX closed_tabs_by_closed_at ON tabs (
     closed_at
 ) WHERE closed_at IS NOT NULL;
 
+CREATE INDEX starred_tabs_by_starred_at ON tabs (
+    starred_at
+) WHERE starred_at IS NOT NULL;
+
 ----- WINDOWS
 
-CREATE TABLE IF NOT EXISTS windows (
+CREATE TABLE windows (
     id INTEGER PRIMARY KEY,  -- AUTOINCREMENT
     focused_tab INTEGER NOT NULL,
     created_at REAL NOT NULL,
-    closed_at REAL
+    closed_at REAL,
 );
+
+CREATE TABLE expanded_tabs (
+    window_id INTEGER,
+    tab_id INTEGER,
+    PRIMARY_KEY (window_id, tab_id)
+) WITHOUT ROWID;

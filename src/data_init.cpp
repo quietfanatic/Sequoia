@@ -57,17 +57,19 @@ void init_db () {
         case 2: {
             string sql = slurp(exe_relative("res/migrate-2-3.sql"));
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
-            LOG("Migration complete.");
             [[fallthrough]];
         }
-        case 3:
-            break;  // Current version, nothing to do
+        case 3: {
+            string sql = slurp(exe_relative("res/migrate-3-4.sql"));
+            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
         }
+        }
+        LOG("Migration complete.");
     }
     else {
          // Create new database
         Transaction tr;
-        string schema = slurp(exe_relative("res/schema-3.sql"));
+        string schema = slurp(exe_relative("res/schema-4.sql"));
         LOG("Creating database...");
         AS(sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));
         LOG("Creation complete.");
