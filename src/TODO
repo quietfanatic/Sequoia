@@ -15,6 +15,7 @@
 [ ] security for messages from webpage
 [ ] new tab buttons
 [✓] Reorganize window/shell relationships (OSWindow/Window)
-[ ] Destruct statements
+[✓] Destruct statements
 [ ] Clear favicon when navigating (to different origin?)
+[ ] Cache favicons
 [ ] Accept URL on command line (send it to existing process)

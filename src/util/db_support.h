@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -45,6 +46,15 @@ struct Statement {
     void bind_param (int index, const Bifractor& v) {
         AS(sqlite3_bind_blob(handle, index, v.bytes(), int(v.size), SQLITE_TRANSIENT));
     }
+    template <class T>
+    void bind_param (int index, const std::optional<T>& v) {
+        if (v) {
+            bind_param(index, *v);
+        }
+        else {
+            AS(sqlite3_bind_null(handle, index));
+        }
+    }
 
     void step () {
         A(result_code != SQLITE_DONE);
@@ -87,6 +97,9 @@ struct Statement {
         result_code = 0;
     }
 
+    ~Statement () {
+        AS(sqlite3_finalize(handle));
+    }
 };
 
 template <class... Ts>
@@ -158,7 +171,22 @@ struct Ment : Statement {
         step();
         A(done());
         reset();
-        return r;
+        return std::move(r);
+    }
+
+    std::optional<Result> run_optional (const Params&... params, const Result& def) {
+        bind(params...);
+        step();
+        if (done()) {
+            reset();
+            return std::nullopt;
+        }
+        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        Result r = read();
+        step();
+        A(done());
+        reset();
+        return std::move(r);
     }
 
     Result run_or (const Params&... params, const Result& def) {
@@ -173,7 +201,7 @@ struct Ment : Statement {
         step();
         A(done());
         reset();
-        return r;
+        return std::move(r);
     }
 };
 };

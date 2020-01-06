@@ -259,29 +259,24 @@ UPDATE tabs SET visited_at = ? WHERE id = ?
     tab_updated(id);
 }
 
-void star_tab (int64 id) {
-    LOG("star_tab", id);
+void set_tab_starred_at (int64 id, optional<double> starred_at) {
     Transaction tr;
-
-    double starred_at = now();
-    get_tab_data(id)->starred_at = starred_at;
-    static State<>::Ment<double, int64> set {R"(
+    get_tab_data(id)->starred_at = starred_at.value_or(0);
+    static State<>::Ment<optional<double>, int64> set {R"(
 UPDATE tabs SET starred_at = ? WHERE id = ?
     )"};
     set.run_void(starred_at, id);
     tab_updated(id);
 }
 
+void star_tab (int64 id) {
+    LOG("star_tab", id);
+    set_tab_starred_at(id, now());
+}
+
 void unstar_tab (int64 id) {
     LOG("unstar_tab", id);
-    Transaction tr;
-
-    get_tab_data(id)->starred_at = 0;
-    static State<>::Ment<int64> set {R"(
-UPDATE tabs SET starred_at = NULL WHERE id = ?
-    )"};
-    set.run_void(id);
-    tab_updated(id);
+    set_tab_starred_at(id, nullopt);
 }
 
 int64 get_last_closed_tab () {
@@ -295,22 +290,25 @@ ORDER BY closed_at DESC LIMIT 1
     return find.run_or(0);
 }
 
+void set_tab_closed_at (int64 id, optional<double> closed_at) {
+    get_tab_data(id)->closed_at = closed_at.value_or(0);
+    static State<>::Ment<optional<double>, int64> set {R"(
+UPDATE tabs SET closed_at = ? WHERE id = ?
+    )"};
+    set.run_void(closed_at, id);
+    tab_updated(id);
+}
+
 void close_tab (int64 id) {
     LOG("close_tab", id);
     Transaction tr;
 
     auto data = get_tab_data(id);
-    if (data->closed_at) return;  // Already closed
-    data->closed_at = now();
+    if (data->closed_at) return;
+
     delete activity_for_tab(id);
-
-    static State<>::Ment<double, int64> close {R"(
-UPDATE tabs SET closed_at = ? WHERE id = ?
-    )"};
-    close.run_void(data->closed_at, id);
-    tab_updated(id);
+    set_tab_closed_at(id, now());
     change_child_count(data->parent, -1 - data->child_count);
-
     prune_closed_tabs(20, 15*60);
 }
 
@@ -334,14 +332,8 @@ void unclose_tab (int64 id) {
     Transaction tr;
 
     auto data = get_tab_data(id);
-    if (!data->closed_at) return;  // Not closed
-    data->closed_at = 0;
-
-    static State<>::Ment<int64> unclose {R"(
-UPDATE tabs SET closed_at = NULL WHERE id = ?
-    )"};
-    unclose.run_void(id);
-    tab_updated(id);
+    if (!get_tab_data(id)->closed_at) return;
+    set_tab_closed_at(id, nullopt);
     change_child_count(data->parent, 1 + data->child_count);
 }
 
@@ -526,29 +518,24 @@ SELECT focused_tab FROM windows WHERE id = ?
     return get.run_single(window);
 }
 
-void close_window (int64 window) {
-    LOG("close_window", window);
+void set_window_closed_at (int64 window, optional<double> closed_at) {
     Transaction tr;
-
-    double closed_at = now();
-    get_window_data(window)->closed_at = closed_at;
-    static State<>::Ment<double, int64> set {R"(
+    get_window_data(window)->closed_at = closed_at.value_or(0);
+    static State<>::Ment<optional<double>, int64> set {R"(
 UPDATE windows SET closed_at = ? WHERE id = ?
     )"};
     set.run_void(closed_at, window);
     window_updated(window);
 }
 
+void close_window (int64 window) {
+    LOG("close_window", window);
+    set_window_closed_at(window, now());
+}
+
 void unclose_window (int64 window) {
     LOG("unclose_window", window);
-    Transaction tr;
-
-    get_window_data(window)->closed_at = 0;
-    static State<>::Ment<int64> set {R"(
-UPDATE windows SET closed_at = NULL WHERE id = ?
-    )"};
-    set.run_void(window);
-    window_updated(window);
+    set_window_closed_at(window, nullopt);
 }
 
 ///// MISC
