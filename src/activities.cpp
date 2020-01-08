@@ -40,10 +40,6 @@ Activity::Activity (int64 t) : tab(t) {
             }
         }
 
-        IWebView2Settings* settings;
-        AH(webview->get_Settings(&settings));
-        AH(settings->put_IsStatusBarEnabled(FALSE));
-
         AH(webview->add_NavigationStarting(
             Callback<IWebView2NavigationStartingEventHandler>([this](
                 IWebView2WebView* sender,
