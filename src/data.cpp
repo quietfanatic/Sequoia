@@ -492,7 +492,7 @@ int64 get_last_closed_window () {
     LOG("get_last_closed_window");
 
     static State<int64>::Ment<> get {R"(
-SELECT id FROM windows WHERE closed_at IS NULL ORDER BY closed_at DESC LIMIT 1
+SELECT id FROM windows WHERE closed_at IS NOT NULL ORDER BY closed_at DESC LIMIT 1
     )"};
     return get.run_or(0);
 }
