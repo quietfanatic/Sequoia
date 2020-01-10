@@ -191,6 +191,12 @@ void Window::Observer_after_commit (
         else claim_activity(nullptr);
         break;
     }
+    for (auto tab : updated_tabs) {
+        if (tab == focused_tab) {
+            send_focus();
+            break;
+        }
+    }
 }
 
 void Window::send_tabs (const vector<int64>& updated_tabs) {
