@@ -5,7 +5,7 @@
 #include <wrl.h>
 
 #include "util/assert.h"
-#include "util/utf8.h"
+#include "util/text.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

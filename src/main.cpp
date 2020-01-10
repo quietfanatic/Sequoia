@@ -14,7 +14,7 @@
 #include "util/assert.h"
 #include "util/files.h"
 #include "util/logging.h"
-#include "util/utf8.h"
+#include "util/text.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;

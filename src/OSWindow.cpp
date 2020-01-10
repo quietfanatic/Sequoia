@@ -2,7 +2,7 @@
 
 #include "util/assert.h"
 #include "util/logging.h"
-#include "util/utf8.h"
+#include "util/text.h"
 
 using namespace std;
 

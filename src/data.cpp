@@ -11,6 +11,7 @@
 #include "util/db_support.h"
 #include "util/hash.h"
 #include "util/logging.h"
+#include "util/text.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -206,15 +207,16 @@ SELECT id FROM tabs WHERE parent = ? AND position > ? AND closed_at IS NULL ORDE
 
 void set_tab_url (int64 id, const string& url) {
     LOG("set_tab_url", id, url);
+    string utf8_url = make_url_utf8(url);
     auto data = get_tab_data(id);
-    if (url == data->url) return;
+    if (utf8_url == data->url) return;
 
     Transaction tr;
-    data->url = url;
+    data->url = utf8_url;
     static State<>::Ment<uint64, string, int64> set {R"(
 UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
     )"};
-    set.run_void(x31_hash(url), url, id);
+    set.run_void(x31_hash(utf8_url), utf8_url, id);
     tab_updated(id);
 }
 

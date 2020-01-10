@@ -15,7 +15,7 @@
 #include "util/hash.h"
 #include "util/json.h"
 #include "util/logging.h"
-#include "util/utf8.h"
+#include "util/text.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -41,7 +41,7 @@ Window::Window (int64 id) :
         {
             wil::unique_cotaskmem_string raw16;
             args->get_WebMessageAsJson(&raw16);
-            string raw = to_utf8(raw16.get());
+            string raw = from_utf16(raw16.get());
             LOG("message_from_shell", raw);
             message_from_shell(json::parse(raw));
             return S_OK;

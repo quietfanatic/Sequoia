@@ -15,7 +15,7 @@
 #include "util/hash.h"
 #include "util/json.h"
 #include "util/logging.h"
-#include "util/utf8.h"
+#include "util/text.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;
@@ -60,7 +60,7 @@ Activity::Activity (int64 t) : tab(t) {
             if (wcscmp(source.get(), L"about:blank") != 0) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                set_tab_title(tab, to_utf8(title.get()));
+                set_tab_title(tab, from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
@@ -83,7 +83,7 @@ Activity::Activity (int64 t) : tab(t) {
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
             if (wcscmp(source.get(), L"about:blank") != 0) {
-                set_tab_url(tab, to_utf8(source.get()));
+                set_tab_url(tab, from_utf16(source.get()));
             }
 
             return S_OK;
@@ -107,7 +107,7 @@ Activity::Activity (int64 t) : tab(t) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            create_tab(tab, TabRelation::LAST_CHILD, to_utf8(url.get()));
+            create_tab(tab, TabRelation::LAST_CHILD, from_utf16(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -125,7 +125,7 @@ Activity::Activity (int64 t) : tab(t) {
         {
             wil::unique_cotaskmem_string raw;
             args->get_WebMessageAsJson(&raw);
-            message_from_webview(json::parse(to_utf8(raw.get())));
+            message_from_webview(json::parse(from_utf16(raw.get())));
             return S_OK;
         }).Get(), nullptr));
 
@@ -207,24 +207,7 @@ bool Activity::navigate_url (const string& address) {
 }
 void Activity::navigate_search (const string& search) {
      // Escape URL characters
-    string url = "https://duckduckgo.com/?q=";
-    for (auto c : search) {
-        switch (c) {
-        case ' ': url += '+'; break;
-        case '+':
-        case '&':
-        case ';':
-        case '=':
-        case '?':
-        case '#': {
-            stringstream ss;
-            ss << "%" << hex << setw(2) << uint(c);
-            url += ss.str();
-            break;
-        }
-        default: url += c; break;
-        }
-    }
+    string url = "https://duckduckgo.com/?q=" + escape_url(search);
      // If the search URL is invalid, treat it as a bug
     A(navigate_url(url));
 }

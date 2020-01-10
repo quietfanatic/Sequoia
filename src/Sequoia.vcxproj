@@ -152,7 +152,7 @@
     <ClCompile Include="util/files.cpp" />
     <ClCompile Include="util/json.cpp" />
     <ClCompile Include="util/logging.cpp" />
-    <ClCompile Include="util/utf8.cpp" />
+    <ClCompile Include="util/text.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -172,7 +172,7 @@
     <ClInclude Include="util/json.h" />
     <ClInclude Include="util/logging.h" />
     <ClInclude Include="util/types.h" />
-    <ClInclude Include="util/utf8.h" />
+    <ClInclude Include="util/text.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

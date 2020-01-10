@@ -9,7 +9,7 @@
 #include "util/hash.h"
 #include "util/json.h"
 #include "util/logging.h"
-#include "util/utf8.h"
+#include "util/text.h"
 
 using namespace std;
 
@@ -71,7 +71,7 @@ void load_settings (int argc, char** argv) {
     if (profile_folder.empty()) {
         profile_folder = exe_relative("profiles/" + profile_name);
     }
-    profile_folder = to_utf8(filesystem::absolute(profile_folder));
+    profile_folder = from_utf16(filesystem::absolute(profile_folder));
     filesystem::create_directories(profile_folder);
     init_log(profile_folder + "/Sequoia.log");
     LOG("Using profile folder:", profile_folder);

@@ -3,23 +3,13 @@
 #include <memory>
 #include <stdexcept>
 
-static char hex_nyb (uint8 nyb) {
-    switch (nyb) {
-    default: return '0' + nyb;
-    case 0xa:
-    case 0xb:
-    case 0xc:
-    case 0xd:
-    case 0xe:
-    case 0xf: return 'A' + nyb - 0xa;
-    }
-}
+#include "text.h"
 
 std::string Bifractor::hex () const {
     std::string r (size*2, 0);
     for (size_t i = 0; i < size; i++) {
-        r[i*2] = hex_nyb(bytes()[i] >> 4);
-        r[i*2+1] = hex_nyb(bytes()[i] & 0xf);
+        r[i*2] = to_hex_digit(bytes()[i] >> 4);
+        r[i*2+1] = to_hex_digit(bytes()[i] & 0xf);
     }
     return r;
 }
