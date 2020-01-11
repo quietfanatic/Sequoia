@@ -88,11 +88,13 @@ void Window::enter_fullscreen () {
     if (fullscreen) return;
     fullscreen = true;
     os_window.enter_fullscreen();
+    webview->put_IsVisible(FALSE);
 }
 
 void Window::leave_fullscreen () {
     if (!fullscreen) return;
     fullscreen = false;
+    webview->put_IsVisible(TRUE);
     os_window.leave_fullscreen();
     if (activity) activity->leave_fullscreen();
 }
