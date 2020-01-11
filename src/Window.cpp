@@ -74,7 +74,7 @@ void Window::resize () {
     auto dpi = GetDpiForWindow(os_window.hwnd);
     AW(dpi);
     double scale = dpi / 96.0;
-    if (!os_window.fullscreen) {
+    if (!fullscreen) {
         bounds.top += uint(toolbar_height * scale);
         double side_width = sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
@@ -84,12 +84,24 @@ void Window::resize () {
     }
 }
 
+void Window::enter_fullscreen () {
+    if (fullscreen) return;
+    fullscreen = true;
+    os_window.enter_fullscreen();
+}
+
+void Window::leave_fullscreen () {
+    if (!fullscreen) return;
+    fullscreen = false;
+    os_window.leave_fullscreen();
+    if (activity) activity->leave_fullscreen();
+}
 
 std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, bool alt) {
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
-            if (activity) activity->toggle_fullscreen();
+            fullscreen ? leave_fullscreen() : enter_fullscreen();
         };
         break;
     case 'L':
@@ -407,7 +419,7 @@ void Window::message_from_shell (json::Value&& message) {
     }
      // Main menu
     case x31_hash("fullscreen"): {
-        if (activity) activity->enter_fullscreen();
+        fullscreen ? leave_fullscreen() : enter_fullscreen();
         break;
     }
     case x31_hash("fix_problems"): {

@@ -13,7 +13,6 @@ namespace json { struct Value; }
 
 struct IWebView2WebView;
 struct IWebView2AcceleratorKeyPressedEventArgs;
-struct OSWindow;
 
 struct Window : Observer {
     int64 id;
@@ -22,18 +21,24 @@ struct Window : Observer {
     HWND webview_hwnd = nullptr;
 
     Activity* activity = nullptr;
-
     OSWindow os_window;
-    Window (int64 id);
 
      // In DIPs
     double sidebar_width = 240;
     double toolbar_height = 28;
     double main_menu_width = 0;
 
+    bool fullscreen = false;
+
+    Window (int64 id);
+
     void resize ();
 
+    void enter_fullscreen ();
+    void leave_fullscreen ();
+
     std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
+    HRESULT on_AcceleratorKeyPressed (IWebView2WebView*, IWebView2AcceleratorKeyPressedEventArgs*);
 
     void Observer_after_commit (
         const std::vector<int64>& updated_tabs,
@@ -46,8 +51,6 @@ struct Window : Observer {
 
     void message_from_shell (json::Value&& message);
     void message_to_shell (json::Value&& message);
-
-    HRESULT on_AcceleratorKeyPressed (IWebView2WebView*, IWebView2AcceleratorKeyPressedEventArgs*);
 
     void claim_activity (Activity*);
 
