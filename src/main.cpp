@@ -8,6 +8,7 @@
 #include <wrl.h>
 
 #include "activities.h"
+#include "data.h"
 #include "data_init.h"
 #include "nursery.h"
 #include "settings.h"
@@ -124,6 +125,11 @@ int WINAPI WinMain (
         load_settings();
         init_db();
         start_browser();
+        if (positional_args.size() >= 1) {
+            int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, positional_args[0]);
+            int64 new_window = create_window(new_tab);
+            (new Window(new_window))->claim_activity(ensure_activity_for_tab(new_tab));
+        }
 
          // Run message loop
         MSG msg;
