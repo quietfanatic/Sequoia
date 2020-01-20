@@ -4,8 +4,14 @@
 #include <wil/com.h>
 #include <wrl.h>
 
+#include "activities.h"
+#include "data.h"
+#include "settings.h"
 #include "util/assert.h"
+#include "util/hash.h"
+#include "util/json.h"
 #include "util/text.h"
+#include "Window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -17,15 +23,46 @@ HWND nursery_hwnd = nullptr;
 WebView* next_webview = nullptr;
 HWND next_hwnd = nullptr;
 
-void init_nursery (const string& edge_user_data_folder) {
-    A(!nursery_hwnd);
-    edge_udf = to_utf16(edge_user_data_folder);
+static auto class_name = L"Sequoia Nursery";
 
-    static auto class_name = L"Sequoia Nursery";
+HWND existing_nursery () {
+    wstring window_title = L"Sequoia Nursery for " + to_utf16(profile_name);
+
+    return FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str());
+}
+
+static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
+    switch (message) {
+    case WM_COPYDATA: {
+        auto message = json::parse((const char*)((COPYDATASTRUCT*)l)->lpData);
+        const string& command = message[0];
+        switch (x31_hash(command)) {
+        case x31_hash("new_window"): {
+            ReplyMessage(0);
+            const string& url = message[1];
+            int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, url);
+            int64 new_window = create_window(new_tab);
+            (new Window(new_window))->claim_activity(ensure_activity_for_tab(new_tab));
+            return 0;
+        }
+        default: return 1;
+        }
+    }
+    }
+    return DefWindowProc(hwnd, message, w, l);
+}
+
+void init_nursery () {
+    A(!nursery_hwnd);
+
+    wstring window_title = L"Sequoia Nursery for " + to_utf16(profile_name);
+
+    edge_udf = to_utf16(profile_folder + "/edge-user-data");
+
     static bool init = []{
         WNDCLASSEXW c {};
         c.cbSize = sizeof(WNDCLASSEX);
-        c.lpfnWndProc = DefWindowProc;
+        c.lpfnWndProc = WndProcStatic;
         c.hInstance = GetModuleHandle(nullptr);
         c.lpszClassName = class_name;
         AW(RegisterClassExW(&c));
@@ -33,7 +70,7 @@ void init_nursery (const string& edge_user_data_folder) {
     }();
     nursery_hwnd = CreateWindowW(
         class_name,
-        L"Sequoia Nursery",
+        window_title.c_str(),
         0,
         0, 0,
         0, 0,
@@ -43,6 +80,11 @@ void init_nursery (const string& edge_user_data_folder) {
         nullptr
     );
     AW(nursery_hwnd);
+
+     // Check for a race condition where two app processes created a window at the same time.
+     // There should only be one nursery window, and it should be the one we just made.
+    A(FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str()) == nursery_hwnd);
+    A(FindWindowExW(HWND_MESSAGE, nursery_hwnd, class_name, window_title.c_str()) == nullptr);
 }
 
 static void create (const function<void(WebView*, HWND)>& then) {

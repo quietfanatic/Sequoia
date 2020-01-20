@@ -6,7 +6,10 @@
 
 #include "util/types.h"
 
-void init_nursery (const std::string& edge_user_data_folder);
+ // If the nursery already exists in another process, returns it
+HWND existing_nursery ();
+
+void init_nursery ();
 
 void new_webview (const std::function<void(WebView*, HWND)>& then);
 

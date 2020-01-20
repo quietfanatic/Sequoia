@@ -155,7 +155,7 @@ Activity::Activity (int64 t) : tab(t) {
 void Activity::message_from_webview(json::Value&& message) {
     const string& command = message[0];
 
-    switch (x31_hash(command.c_str())) {
+    switch (x31_hash(command)) {
     case x31_hash("favicon"): {
         const string& favicon = message[1];
         set_tab_favicon(tab, favicon);

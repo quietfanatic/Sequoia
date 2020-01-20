@@ -13,12 +13,52 @@
 #include "settings.h"
 #include "util/assert.h"
 #include "util/files.h"
+#include "util/json.h"
 #include "util/logging.h"
 #include "util/text.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
+
+std::vector<std::string> positional_args;
+std::vector<std::pair<std::string, std::string>> named_args;
+
+void parse_args (int argc, char** argv) {
+    bool no_more_named = false;
+    for (int i = 1; i < argc; i++) {
+        string arg = argv[i];
+        if (no_more_named) {
+            positional_args.emplace_back(arg);
+        }
+        else if (arg == "--") {
+            no_more_named = true;
+        }
+        else if (arg.size() >= 1 && arg[0] == '-') {
+            size_t start = arg.size() >= 2 && arg[1] == '-' ? 2 : 1;
+            size_t sep;
+            for (sep = start; sep < arg.size(); sep++) {
+                if (arg[sep] == '=' || arg[sep] == ':') {
+                    break;
+                }
+            }
+            string name = arg.substr(start, sep - start);
+            if (sep == arg.size()) {
+                i += 1;
+                if (i == argc) {
+                    throw std::logic_error("Missing value for a named parameter");
+                }
+                named_args.emplace_back(name, argv[i]);
+            }
+            else {
+                named_args.emplace_back(name, arg.substr(sep+1));
+            }
+        }
+        else {
+            positional_args.emplace_back(arg);
+        }
+    }
+}
 
 void start_browser () {
     vector<int64> all_windows = get_all_unclosed_windows();
@@ -63,9 +103,26 @@ int WINAPI WinMain (
     try {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-        load_settings(__argc, __argv);
+        parse_args(__argc, __argv);
+        load_profile();
+
+         // If a process is already running in this profile, send it a message
+         //  instead of starting a new instance.
+        if (HWND nursery = existing_nursery()) {
+            const string& url = positional_args.size() >= 1 ? positional_args[0] : "about:blank";
+            string message = json::stringify(json::array(
+                "new_window", url
+            ));
+            COPYDATASTRUCT cpd {};
+            cpd.cbData = DWORD(message.size() + 1);  // Include NUL terminator
+            cpd.lpData = message.data();
+            SendMessage(nursery, WM_COPYDATA, 0, (LPARAM)&cpd);
+            return 0;
+        }
+
+        init_nursery();
+        load_settings();
         init_db();
-        init_nursery(profile_folder + "/edge-user-data");
         start_browser();
 
          // Run message loop
