@@ -183,7 +183,15 @@ void register_as_browser () {
         set_reg_sz(caps_k + L"\\URLAssociations", scheme, app_name + L"-App");
     }
 
-    set_reg_sz(smi_k + L"\\shell\\open\\command", nullptr, L'"' + exe_path16 + L'"');
-    set_reg_sz(class_k + L"\\shell\\open\\command", nullptr, L'"' + exe_path16 + L"\" -- \"%1\"");
+    wstring command_line = L'"' + exe_path16 + L'"';
+    if (profile_name != "default") {
+        command_line += L" --profile \"" + to_utf16(profile_name) + L"\"";
+    }
+    if (profile_folder_specified) {
+        command_line += L" --profile_folder \"" + to_utf16(profile_folder) + L"\"";
+    }
+
+    set_reg_sz(smi_k + L"\\shell\\open\\command", nullptr, command_line);
+    set_reg_sz(class_k + L"\\shell\\open\\command", nullptr, command_line + L" -- \"%1\"");
     set_reg_sz(L"Software\\RegisteredApplications", (app_class).c_str(), caps_k);
 }

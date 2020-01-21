@@ -14,6 +14,7 @@
 using namespace std;
 
 std::string profile_name = "default";
+bool profile_folder_specified = false;
 std::string profile_folder;
 
 namespace settings {
@@ -36,6 +37,9 @@ void load_profile () {
     }
     else if (profile_name.empty()) {
         show_string_error(__FILE__, __LINE__, "Cannot provide profile-folder argument without also providing profile argument.");
+    }
+    else {
+        profile_folder_specified = true;
     }
     profile_folder = from_utf16(filesystem::absolute(profile_folder));
     filesystem::create_directories(profile_folder);
