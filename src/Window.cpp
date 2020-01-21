@@ -428,6 +428,10 @@ void Window::message_from_shell (json::Value&& message) {
         fix_problems();
         break;
     }
+    case x31_hash("register_as_browser"): {
+        register_as_browser();
+        break;
+    }
     case x31_hash("quit"): {
         quit();
         break;

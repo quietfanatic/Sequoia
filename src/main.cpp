@@ -150,3 +150,40 @@ int WINAPI WinMain (
 void quit () {
     PostQuitMessage(0);
 }
+
+void register_as_browser () {
+     // Might want to add like a commit hash or something?
+#ifdef NDEBUG
+    wstring app_name = L"Sequoia";
+#else
+    wstring app_name = L"Sequoia-Debug";
+#endif
+    wstring app_class = app_name + L"-App";
+    wstring smi_k = L"Software\\Clients\\StartMenuInternet\\" + app_name;
+    wstring caps_k = smi_k + L"\\Capabilities";
+    wstring class_k = L"Software\\Classes\\" + app_class;
+
+    auto set_reg_sz = [](const wstring& subkey, const wchar_t* name, const wstring& value) {
+        AWE(RegSetKeyValueW(
+            HKEY_CURRENT_USER, subkey.c_str(), name,
+            REG_SZ, value.c_str(), DWORD((value.size()+1)*sizeof(value[0]))
+        ));
+    };
+
+    set_reg_sz(caps_k, L"ApplicationName", app_name);
+    set_reg_sz(
+        caps_k, L"ApplicationDescription",
+        L"A browser-like application for tab hoarders."
+    );
+    for (auto& ext : {L".htm", L".html", L".shtml", L".svg", L".xht", L".xhtml"}) {
+        set_reg_sz(caps_k + L"\\FileAssociations", ext, app_name + L"-App");
+    }
+    set_reg_sz(caps_k + L"\\StartMenu", L"StartMenuInternet", app_name);
+    for (auto& scheme : {L"ftp", L"http", L"https"}) {
+        set_reg_sz(caps_k + L"\\URLAssociations", scheme, app_name + L"-App");
+    }
+
+    set_reg_sz(smi_k + L"\\shell\\open\\command", nullptr, L'"' + exe_path16 + L'"');
+    set_reg_sz(class_k + L"\\shell\\open\\command", nullptr, L'"' + exe_path16 + L"\" -- \"%1\"");
+    set_reg_sz(L"Software\\RegisteredApplications", (app_class).c_str(), caps_k);
+}

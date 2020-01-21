@@ -122,6 +122,9 @@ $(document.body,
         $("div", "Fix database problems", {
             click: menu_item("fix_problems"),
         }),
+        $("div", "Register as browser with Windows", {
+            click: menu_item("register_as_browser"),
+        }),
         $("div", "Quit", {
             click: menu_item("quit"),
         }),

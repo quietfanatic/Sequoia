@@ -3,15 +3,25 @@
 #include <fstream>
 #include <windows.h>
 
+#include "text.h"
+
 using namespace std;
 
+const wstring exe_path16 = []{
+    wchar_t exe [MAX_PATH];
+    GetModuleFileNameW(nullptr, exe, MAX_PATH);
+    return wstring(exe);
+}();
+const string exe_path = from_utf16(exe_path16);
+
+const string exe_folder = []{
+    string r = exe_path;
+    size_t i = r.find_last_of(L'\\');
+    return r.substr(0, i);
+}();
+
 string exe_relative (const string& filename) {
-    char exe [MAX_PATH];
-    GetModuleFileNameA(nullptr, exe, MAX_PATH);
-    string path = exe;
-    size_t i = path.find_last_of(L'\\');
-    path.replace(i+1, path.size(), filename);
-    return path;
+    return exe_folder + '/' + filename;
 }
 
 string slurp (const string& filename) {
