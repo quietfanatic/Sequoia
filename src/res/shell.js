@@ -1,174 +1,143 @@
 "use strict";
 
 let host = window.chrome.webview;
-
-let focused_id = 0;
-let showing_sidebar = true;
-let showing_main_menu = false;
-let currently_loading = false;
-
 let $html = document.documentElement;
-let $toolbar;
-let $back, $forward, $reload, $address, $error_indicator, $toggle_sidebar;
-let $sidebar, $toplist, $main_menu;
 
 function handled (event) {
     event.stopPropagation();
     event.preventDefault();
 }
 
-$(document.body,
-    $toolbar = $("div", {id:"toolbar"},
-        $back = $("div", {
-            id: "back",
-            title: "Back",
-            click: e => {
-                host.postMessage(["back"]);
-                handled(e);
-            },
-        }),
-        $forward = $("div", {
-            id: "forward",
-            title: "Forward",
-            click: e => {
-                host.postMessage(["forward"]);
-                handled(e);
-            },
-        }),
-        $reload = $("div", {
-            id: "reload",
-            title: "Reload",
-            click: e => {
-                if (currently_loading) {
-                    host.postMessage(["stop"]);
-                }
-                else {
-                    host.postMessage(["reload"]);
-                }
-                handled(e);
-            },
-        }),
-        $address = $("input", {
-            id: "address",
-            spellcheck: "false",
-            autocapitalize: "off",
-            inputmode: "url",
-            placeholder: "Search or enter web address",
-            keydown: e => {
-                if (e.key == "Enter") {
-                    host.postMessage(["navigate", $address.value]);
-                    handled(e);
-                }
-            },
-        }),
-        $error_indicator = $("div", {
-            id: "error-indicator",
-            title: "An error has occured in the Sequoia shell.\n"
-                 + "Click here to investigate with the DevTools.",
-            click: e => {
-                $error_indicator.classList.remove("has-error");
-                host.postMessage(["investigate_error"]);
-            },
-        }),
-        $toggle_sidebar = $("div", {
-            id: "toggle-sidebar",
-            title: "Hide sidebar",
-            click: e => {
-                showing_sidebar = !showing_sidebar;
-                $html.classList.toggle("hide-sidebar", !showing_sidebar);
-                $toggle_sidebar.title = showing_sidebar ? "Hide sidebar" : "Show sidebar";
-                send_resize();
-                handled(e);
-            },
-        }),
-        $("div", {
-            id: "show-main-menu",
-            title: "Main menu",
-            click: e => {
-                if (showing_main_menu) {
-                    close_main_menu();
-                }
-                else {
-                    open_main_menu();
-                }
-                handled(e);
-            },
-        }),
-    ),
-    $sidebar = $("div", {id:"sidebar"},
-        $("div", {id:"tree"},
-            $toplist = $("div", {class:"list"}),
-            $("div", {id:"new-tab", click:on_new_tab_clicked}),
-        ),
-        $("div", {id:"sidebar-bottom"},
-            $("div", {
-                id: "resize",
-                title: "Resize sidebar",
-                mousedown: on_resize_mousedown
-            }),
-            $("div", {
-                id: "show-closed",
-                title: "Show closed tabs",
-                click: e => {
-                    $html.classList.toggle("show-closed");
-                },
-            }),
-        ),
-    ),
-    $main_menu = $("nav", {id:"main-menu"},
-        $("div", "Enter fullscreen", {
-            click: menu_item("fullscreen"),
-        }),
-        $("div", "Fix database problems", {
-            click: menu_item("fix_problems"),
-        }),
-        $("div", "Register as browser with Windows", {
-            click: menu_item("register_as_browser"),
-        }),
-        $("div", "Quit", {
-            click: menu_item("quit"),
-        }),
-    ),
-);
+///// Toolbar DOM
 
+ // Simple back and forward buttons
+let $back = $("div", {
+    id: "back",
+    title: "Back",
+    click: e => {
+        host.postMessage(["back"]);
+        handled(e);
+    },
+});
+let $forward = $("div", {
+    id: "forward",
+    title: "Forward",
+    click: e => {
+        host.postMessage(["forward"]);
+        handled(e);
+    },
+});
+
+ // Dual purpose reload/stop button
+let currently_loading = false;
+let $reload = $("div", {
+    id: "reload",
+    title: "Reload",
+    click: e => {
+        if (currently_loading) {
+            host.postMessage(["stop"]);
+        }
+        else {
+            host.postMessage(["reload"]);
+        }
+        handled(e);
+    },
+});
+
+ // Address bar is surprisingly simple, at least for now
+let $address = $("input", {
+    id: "address",
+    spellcheck: "false",
+    autocapitalize: "off",
+    inputmode: "url",
+    placeholder: "Search or enter web address",
+    keydown: e => {
+        if (e.key == "Enter") {
+            host.postMessage(["navigate", $address.value]);
+            handled(e);
+        }
+    },
+});
+function set_address (url) {
+    $address.value = (url == "about:blank" ? "" : url);
+}
+
+ // Hopefully this never appears except during development
+let $error_indicator = $("div", {
+    id: "error-indicator",
+    title: "An error has occured in the Sequoia shell.\n"
+         + "Click here to investigate with the DevTools.",
+    click: e => {
+        $error_indicator.classList.remove("has-error");
+        host.postMessage(["investigate_error"]);
+    },
+});
 window.addEventListener("error", e => {
     $error_indicator.classList.add("has-error");
 });
 
-let $tab_destination_marker = $("div", {class:"tab-destination-marker"});
-
-function menu_item (message) {
-    return event => {
-        host.postMessage([message]);
-        close_main_menu();
-        handled(event);
-    };
-}
-
-document.addEventListener("click", e => {
-    let $show_main_menu = event.target.closest("#show-main-menu");
-    if ($show_main_menu) return;
-    close_main_menu();
-}, {capture:true});
-
-window.addEventListener("blur", e => {
-    close_main_menu();
-    handled(e);
+ // Button to show and hide the sidebar.
+ // I don't actually use this much now that I have fullscreen.
+let showing_sidebar = true;
+let $toggle_sidebar = $("div", {
+    id: "toggle-sidebar",
+    title: "Hide sidebar",
+    click: e => {
+        showing_sidebar = !showing_sidebar;
+        $html.classList.toggle("hide-sidebar", !showing_sidebar);
+        $toggle_sidebar.title = showing_sidebar ? "Hide sidebar" : "Show sidebar";
+        send_resize();
+        handled(e);
+    },
 });
 
-function open_main_menu () {
-    if (showing_main_menu) return;
-    showing_main_menu = true;
-    $html.classList.add("show-main-menu");
-    host.postMessage(["show_main_menu", $main_menu.offsetWidth]);
-}
+ // Show/hide the main menu.  Not entirely satisfied.
+let showing_main_menu = false;
+let $toggle_main_menu = $("div", {
+    id: "toggle-main-menu",
+    title: "Main menu",
+    click: e => {
+        if (showing_main_menu) {
+            hide_main_menu();
+        }
+        else {
+            show_main_menu();
+        }
+        handled(e);
+    },
+});
 
-function close_main_menu () {
-    if (!showing_main_menu) return;
-    showing_main_menu = false;
-    $html.classList.remove("show-main-menu");
-    host.postMessage(["hide_main_menu"]);
-}
+ // Put it all together
+let $toolbar = $("div", {id:"toolbar"},
+    $back, $forward, $reload, $address, $error_indicator, $toggle_sidebar, $toggle_main_menu
+);
+
+///// Sidebar DOM
+
+let $toplist = $("div", {class:"list"});
+let $sidebar = $("div", {id:"sidebar"},
+    $("div", {id:"tree"},
+        $toplist,
+        $("div", {id:"new-tab", click: e => {
+            host.postMessage(["new_toplevel_tab"]);
+            handled(e);
+        }})
+    ),
+    $("div", {id:"sidebar-bottom"},
+        $("div", {
+            id: "resize",
+            title: "Resize sidebar",
+            mousedown: on_resize_mousedown
+        }),
+        $("div", {
+            id: "show-closed",
+            title: "Show closed tabs",
+            click: e => {
+                $html.classList.toggle("show-closed");
+            },
+        }),
+    ),
+);
 
 let resizing_sidebar = false;
 let sidebar_resize_origin = 0;
@@ -196,6 +165,61 @@ function on_resize_release (event) {
     document.removeEventListener("mouseup", on_resize_release);
     handled(event);
 }
+
+///// Main menu DOM
+
+let $main_menu = $("nav", {id:"main-menu"},
+    $("div", "Enter fullscreen", {
+        click: menu_item("fullscreen"),
+    }),
+    $("div", "Fix database problems", {
+        click: menu_item("fix_problems"),
+    }),
+    $("div", "Register as browser with Windows", {
+        click: menu_item("register_as_browser"),
+    }),
+    $("div", "Quit", {
+        click: menu_item("quit"),
+    }),
+);
+
+function menu_item (message) {
+    return event => {
+        host.postMessage([message]);
+        hide_main_menu();
+        handled(event);
+    };
+}
+
+function show_main_menu () {
+    if (showing_main_menu) return;
+    showing_main_menu = true;
+    $html.classList.add("show-main-menu");
+    host.postMessage(["show_main_menu", $main_menu.offsetWidth]);
+}
+
+function hide_main_menu () {
+    if (!showing_main_menu) return;
+    showing_main_menu = false;
+    $html.classList.remove("show-main-menu");
+    host.postMessage(["hide_main_menu"]);
+}
+
+ // Hide main menu if you click outside of it
+document.addEventListener("click", e => {
+    hide_main_menu();
+    // Let event propagate
+}, {capture:true});
+
+ // Hide main menu if the shell loses focus
+window.addEventListener("blur", e => {
+    hide_main_menu();
+    handled(e);
+});
+
+///// Tab DOM and behavior
+
+let $tab_destination_marker = $("div", {class:"tab-destination-marker"});
 
 let grabbing_tab = false;
 let moving_tab = false;
@@ -281,11 +305,6 @@ function send_resize () {
     host.postMessage(["resize", x, $toolbar.offsetHeight]);
 }
 
-function on_new_tab_clicked (event) {
-    host.postMessage(["new_toplevel_tab"]);
-    handled(event);
-}
-
  // Prevent autoscroll behavior
 document.addEventListener("mousedown", event => {
     if (event.button == 1) {
@@ -294,6 +313,7 @@ document.addEventListener("mousedown", event => {
 });
 
 let tabs_by_id = {};
+let focused_id = 0;
 
 function close_or_delete_tab (tab) {
     if (tab.$item.classList.contains("closed")) {
@@ -383,9 +403,7 @@ function on_favicon_error (event) {
     event.target.classList.remove("loaded");
 }
 
-function set_address (url) {
-    $address.value = (url == "about:blank" ? "" : url);
-}
+///// Commands from application
 
 let commands = {
     settings (settings) {
@@ -578,5 +596,11 @@ host.addEventListener("message", e=>{
     }
 });
 
+///// Create DOM and finish up
+
+$(document.body,
+    $toolbar, $sidebar, $main_menu
+);
 host.postMessage(["ready"]);
 send_resize();
+

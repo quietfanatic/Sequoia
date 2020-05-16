@@ -58,7 +58,7 @@ body {
     color:inherit;
     font-size:14px;
 }
-#back, #forward, #reload, #error-indicator, #toggle-sidebar, #show-main-menu {
+#back, #forward, #reload, #error-indicator, #toggle-sidebar, #toggle-main-menu {
     height:var(--toolbar-height);
     line-height:var(--toolbar-height);
     width:var(--toolbar-height);
@@ -97,7 +97,7 @@ body {
 html.hide-sidebar #toggle-sidebar::before {
     content:"⭰";
 }
-#show-main-menu::before {
+#toggle-main-menu::before {
     content:"⋯";
 }
 #sidebar {
