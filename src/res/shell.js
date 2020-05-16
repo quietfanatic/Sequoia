@@ -370,16 +370,21 @@ function on_close_clicked (event) {
 }
 
 function expand_tab (tab) {
+    if (!tab) {
+        host.postMessage(["expand", 0]);
+        return;
+    }
+    host.postMessage(["expand", tab.id]);
     tab.$item.classList.add("expanded");
     let depth = 0;
-    let t = tab;
-    while (t = tabs_by_id[t.parent]) {
+    for (let t = tab; t; t = tabs_by_id[t.parent]) {
         depth += 1;
     }
     tab.$list.classList.toggle("alt", depth % 4 >= 2);
     tab.expanded = true;
 }
 function contract_tab (tab) {
+    host.postMessage(["contract", tab.id]);
     tab.$item.classList.remove("expanded");
     tab.expanded = false;
 }
@@ -561,8 +566,8 @@ let commands = {
              // Expand everything above and including the focused tab
             expandUp(tab)
             function expandUp (tab) {
-                if (!tab) return;
                 expand_tab(tab);
+                if (!tab) return;
                 expandUp(tabs_by_id[tab.parent]);
             }
             tab.$tab.scrollIntoViewIfNeeded();

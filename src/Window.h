@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <set>
 #include <vector>
 #include <wil/com.h>
 #include <windows.h>
@@ -19,6 +20,14 @@ struct Window : Observer {
     int64 focused_tab;
     wil::com_ptr<WebView> webview;
     HWND webview_hwnd = nullptr;
+
+     // There are three sets of tabs the window is aware of:
+     //  - Expanded tabs
+     //  - Visible tabs, children of expanded tabs
+     //  - Known tabs, children of visible tabs, grandchildren of expanded tabs
+     // Here we only need to store expanded tabs.
+     // This set will include the root pseudo-tab 0
+    std::set<int64> expanded_tabs;
 
     Activity* activity = nullptr;
     OSWindow os_window;
@@ -44,6 +53,9 @@ struct Window : Observer {
         const std::vector<int64>& updated_tabs,
         const std::vector<int64>& updated_windows
     ) override;
+
+    void expand_tab (int64 tab);
+    void contract_tab (int64 tab);
 
     void send_tabs (const std::vector<int64>& updated_tabs);
     void send_focus ();

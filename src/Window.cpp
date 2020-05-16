@@ -218,12 +218,23 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
     json::Array updates;
     updates.reserve(updated_tabs.size());
     bool do_send_activity = false;
+
     for (auto tab : updated_tabs) {
         auto t = get_tab_data(tab);
+
+         // Only send tab if it is a known tab (child or grandchild of expanded tab)
+        if (!expanded_tabs.count(t->parent)
+            && t->parent && !expanded_tabs.count(get_tab_data(t->parent)->parent)
+        ) {
+            continue;
+        }
+
+         // Sending no tab data tells shell to delete tab
         if (t->deleted) {
             updates.emplace_back(json::array(tab));
             continue;
         }
+
         Activity* activity = activity_for_tab(tab);
         updates.emplace_back(json::array(
             tab,
@@ -238,6 +249,7 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
             t->starred_at,
             t->closed_at
         ));
+
         if (focused_tab == tab) {
             if (t->closed_at) {
                  // If the current tab is closing, find a new tab to focus
@@ -258,6 +270,7 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
             }
         }
     }
+
     message_to_shell(json::array("tabs", updates));
     if (do_send_activity) send_activity();
 };
@@ -295,20 +308,20 @@ void Window::message_from_shell (json::Value&& message) {
                 std::pair{"theme", settings::theme}
             }
         ));
-        if (focused_tab) {
-             // Temporary algorithm until we support expanding and collapsing trees
-             // Select all tabs recursively from the root, so that we don't pick up
-             // children of closed tabs
-            vector<int64> required_tabs = get_all_children(0);
-            for (size_t i = 0; i < required_tabs.size(); i++) {
-                vector<int64> children = get_all_children(required_tabs[i]);
-                for (auto c : children) {
-                    required_tabs.push_back(c);
-                }
+        A(focused_tab);
+         // Focused tab and all its ancestors are expanded.  Send all their
+         //  children.  Grandchildren will be requested later by the shell with
+         //  "expand" commands, including one for root (0).
+        vector<int64> known_tabs;
+        for (int64 tab = focused_tab;; tab = get_tab_data(tab)->parent) {
+            expanded_tabs.emplace(tab);
+            for (auto c : get_all_children(tab)) {
+                known_tabs.emplace_back(c);
             }
-            send_tabs(required_tabs);
-            send_focus();
+            if (!tab) break;
         }
+        send_tabs(known_tabs);
+        send_focus();
         break;
     }
     case x31_hash("resize"): {
@@ -417,6 +430,23 @@ void Window::message_from_shell (json::Value&& message) {
         int64 reference = message[2];
         TabRelation rel = TabRelation(uint(message[3]));
         move_tab(tab, reference, rel);
+        break;
+    }
+    case x31_hash("expand"): {
+        int64 tab = message[1];
+        expanded_tabs.emplace(tab);
+        vector<int64> new_known_tabs;
+        for (auto c : get_all_children(tab)) {
+            for (auto g : get_all_children(c)) {
+                new_known_tabs.emplace_back(g);
+            }
+        }
+        send_tabs(new_known_tabs);
+        break;
+    }
+    case x31_hash("contract"): {
+        int64 tab = message[1];
+        expanded_tabs.erase(tab);
         break;
     }
      // Main menu
