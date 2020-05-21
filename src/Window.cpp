@@ -137,6 +137,17 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
             };
         }
         break;
+    case 'U':
+        if (!shift && ctrl && !alt) {
+            return [this]{
+                if (focused_tab && activity) {
+                    delete activity;
+                    send_tabs(vector{focused_tab});
+                    send_activity();
+                }
+            };
+        }
+        break;
     case 'W':
         if (!shift && ctrl && !alt) return [this]{
             close_tab_with_heritage(focused_tab);
