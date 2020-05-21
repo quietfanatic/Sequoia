@@ -126,6 +126,10 @@ struct Observer {
     ~Observer();
 };
 
+ // Don't do anything but mark the item as updated
+void tab_updated (int64);
+void window_updated (int64);
+
 ///// MISC
 
 void fix_problems ();

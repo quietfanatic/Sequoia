@@ -31,14 +31,14 @@ static std::vector<Observer*> all_observers;
 static std::vector<int64> updated_tabs;
 static std::vector<int64> updated_windows;
 
-static void tab_updated (int64 id) {
+void tab_updated (int64 id) {
     A(id > 0);
     for (auto t : updated_tabs) {
         if (t == id) return;
     }
     updated_tabs.push_back(id);
 }
-static void window_updated (int64 id) {
+void window_updated (int64 id) {
     A(id > 0);
     for (auto w : updated_windows) {
         if (w == id) return;

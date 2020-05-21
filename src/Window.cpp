@@ -405,6 +405,8 @@ void Window::message_from_shell (json::Value&& message) {
             claim_activity(a);
             send_activity();
         }
+        Transaction tr;
+        tab_updated(tab);
         break;
     }
     case x31_hash("new_child"): {
