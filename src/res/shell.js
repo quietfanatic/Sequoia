@@ -322,7 +322,7 @@ function close_or_delete_tab (tab) {
     if (tab.$item.classList.contains("closed")) {
         host.postMessage(["delete", tab.id]);
     }
-    else if (tab.expanded) {
+    else if (tab.child_count && tab.expanded) {
         host.postMessage(["inherit_close", tab.id]);
     }
     else {
@@ -498,6 +498,7 @@ let commands = {
                     position: position,
                     url: url,
                     expanded: false,
+                    child_count: child_count,
                     $item: $item,
                     $tab: $tab,
                     $favicon: $favicon,

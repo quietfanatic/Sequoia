@@ -64,12 +64,14 @@ struct WindowObserver : Observer {
         const vector<int64>& updated_tabs,
         const vector<int64>& updated_windows
     ) override {
-        for (auto& pair : open_windows) {
+         // Copy the map so that windows can delete themselves in update()
+         // TODO: destroy windows here instead
+        auto open_windows_copy = open_windows;
+        for (auto& pair : open_windows_copy) {
             pair.second->update(updated_tabs);
-             // Window may have destroyed itself, so don't do anything more with it.
         }
         for (auto id : updated_windows) {
-            if (!open_windows.count(id)) {
+            if (!open_windows_copy.count(id)) {
                  // Open window doesn't exist for this ID, so make one
                 auto w = new Window (id);
                  // Automatically load focused tab
@@ -449,7 +451,12 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("close"): {
-        close_tab(message[1]);
+        int64 tab = message[1];
+        Transaction tr;
+        close_tab(tab);
+        if (tab == get_window_data(id)->root_tab) {
+            close_window(id);
+        }
         break;
     }
     case x31_hash("inherit_close"): {
