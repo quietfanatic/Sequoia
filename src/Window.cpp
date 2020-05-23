@@ -70,7 +70,7 @@ struct WindowObserver : Observer {
                 it->second->update(updated_tabs);
                  // Window may have destroyed itself, so don't do anything more with it.
             }
-            else {
+            else if (!get_window_data(id)->closed_at) {
                  // Couldn't find existing window for this ID, so it must be new.
                 auto w = new Window (id);
                  // Automatically load focused tab
@@ -136,10 +136,19 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         };
         break;
     case 'N':
-        if (!shift && ctrl && !alt) return [this]{
-            int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
-            int64 new_window = create_window(new_tab);
-        };
+        if (ctrl && !alt) {
+            if (shift) return [this]{
+                Transaction tr;
+                if (auto w = get_last_closed_window()) {
+                    unclose_window(w);
+                }
+            };
+            else return [this]{
+                Transaction tr;
+                int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
+                int64 new_window = create_window(new_tab);
+            };
+        }
         break;
     case 'T':
         if (ctrl && !alt) {
