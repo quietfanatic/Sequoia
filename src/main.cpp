@@ -64,15 +64,15 @@ void parse_args (int argc, char** argv) {
 void start_browser () {
     vector<int64> all_windows = get_all_unclosed_windows();
     if (!all_windows.empty()) {
-        for (auto w : all_windows) {
-            auto data = get_window_data(w);
-            new Window(data->id);
+        for (auto id : all_windows) {
+             // Create directly instead of going through WindowObserver,
+             //  so that focused tabs are not loaded
+            new Window(id);
         }
     }
     else if (int64 w = get_last_closed_window()) {
+         // TODO: make this not load the current focused tab?
         unclose_window(w);
-         // TODO: do this through a WindowFactory observer or something
-        new Window(w);
     }
     else {
          // Otherwise create a new window if none exists
@@ -89,9 +89,7 @@ void start_browser () {
         if (!first_tab) {
             first_tab = create_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/");
         }
-        int64 first_window = create_window(first_tab);
-        auto window = new Window(first_window);
-        window->claim_activity(ensure_activity_for_tab(first_tab));
+        create_window(first_tab);
     }
 }
 
@@ -126,9 +124,9 @@ int WINAPI WinMain (
         init_db();
         start_browser();
         if (positional_args.size() >= 1) {
+            Transaction tr;
             int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, positional_args[0]);
             int64 new_window = create_window(new_tab);
-            (new Window(new_window))->claim_activity(ensure_activity_for_tab(new_tab));
         }
 
          // Run message loop

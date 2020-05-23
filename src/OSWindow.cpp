@@ -1,5 +1,6 @@
 #include "Window.h"
 
+#include "data.h"
 #include "util/assert.h"
 #include "util/logging.h"
 #include "util/text.h"

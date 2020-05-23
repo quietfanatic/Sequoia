@@ -18,8 +18,8 @@ using namespace std::chrono;
 
 ///// Misc
 
-map<int64, TabData> tabs_by_id;
-map<int64, WindowData> windows_by_id;
+static map<int64, TabData> tabs_by_id;
+static map<int64, WindowData> windows_by_id;
 
 static double now () {
     return duration<double>(system_clock::now().time_since_epoch()).count();
@@ -27,7 +27,10 @@ static double now () {
 
 ///// Transactions
 
-static std::vector<Observer*> all_observers;
+static std::vector<Observer*>& all_observers () {
+    static std::vector<Observer*> all_observers;
+    return all_observers;
+}
 static std::vector<int64> updated_tabs;
 static std::vector<int64> updated_windows;
 
@@ -58,7 +61,7 @@ void update_observers () {
     updating = true;
     auto tabs = move(updated_tabs);
     auto windows = move(updated_windows);
-    for (auto o : all_observers) {
+    for (auto o : all_observers()) {
         o->Observer_after_commit(tabs, windows);
     }
     updating = false;
@@ -97,11 +100,11 @@ Transaction::~Transaction () {
     }
 }
 
-Observer::Observer () { all_observers.emplace_back(this); }
+Observer::Observer () { all_observers().emplace_back(this); }
 Observer::~Observer () {
-    for (auto iter = all_observers.begin(); iter != all_observers.end(); iter++) {
+    for (auto iter = all_observers().begin(); iter != all_observers().end(); iter++) {
         if (*iter == this) {
-            all_observers.erase(iter);
+            all_observers().erase(iter);
             break;
         }
     }

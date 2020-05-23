@@ -20,12 +20,12 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-size_t n_windows = 0;
+static std::map<int64, Window*> open_windows;
 
 Window::Window (int64 id) :
     id(id), focused_tab(get_window_data(id)->focused_tab), os_window(this)
 {
-    ++n_windows;
+    open_windows.emplace(id, this);
     new_webview([this](WebView* wv, HWND hwnd){
         webview = wv;
         webview_hwnd = hwnd;
@@ -58,6 +58,28 @@ Window::Window (int64 id) :
         resize();
     });
 };
+
+struct WindowObserver : Observer {
+    void Observer_after_commit (
+        const vector<int64>& updated_tabs,
+        const vector<int64>& updated_windows
+    ) override {
+        for (auto id : updated_windows) {
+            auto it = open_windows.find(id);
+            if (it != open_windows.end()) {
+                it->second->update(updated_tabs);
+                 // Window may have destroyed itself, so don't do anything more with it.
+            }
+            else {
+                 // Couldn't find existing window for this ID, so it must be new.
+                auto w = new Window (id);
+                 // Automatically load focused tab
+                w->claim_activity(ensure_activity_for_tab(w->focused_tab));
+            }
+        }
+    }
+};
+WindowObserver window_observer;
 
 void Window::resize () {
     RECT bounds;
@@ -117,7 +139,6 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         if (!shift && ctrl && !alt) return [this]{
             int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
             int64 new_window = create_window(new_tab);
-            (new Window(new_window))->claim_activity(ensure_activity_for_tab(new_tab));
         };
         break;
     case 'T':
@@ -171,25 +192,20 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     return nullptr;
 }
 
-void Window::Observer_after_commit (
-    const vector<int64>& updated_tabs,
-    const vector<int64>& updated_windows
+void Window::update (
+    const vector<int64>& updated_tabs
 ) {
+    if (get_window_data(id)->closed_at) {
+        LOG("Destroying window", id);
+        AW(DestroyWindow(os_window.hwnd));
+        return;
+    }
+
     send_tabs(updated_tabs);
 
-    for (auto updated_id : updated_windows) {
-        if (updated_id != id) continue;
-
-        if (get_window_data(id)->closed_at) {
-            LOG("Destroying window", id);
-            AW(DestroyWindow(os_window.hwnd));
-            break;
-        }
-
-        int64 old_focus = focused_tab;
-        focused_tab = get_window_data(id)->focused_tab;
-        if (focused_tab == old_focus) break;
-
+    int64 old_focus = focused_tab;
+    focused_tab = get_window_data(id)->focused_tab;
+    if (focused_tab != old_focus) {
         LOG("focus_tab", focused_tab);
         if (focused_tab) {
             set_tab_visited(focused_tab);
@@ -214,8 +230,8 @@ void Window::Observer_after_commit (
             }
         }
         else claim_activity(nullptr);
-        break;
     }
+
     for (auto tab : updated_tabs) {
         if (tab == focused_tab) {
             send_focus();
@@ -530,5 +546,6 @@ HRESULT Window::on_AcceleratorKeyPressed (
 
 Window::~Window () {
     if (activity) activity->claimed_by_window(nullptr);
-    if (--n_windows == 0) quit();
+    open_windows.erase(id);
+    if (open_windows.empty()) quit();
 }
