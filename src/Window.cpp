@@ -327,12 +327,6 @@ void Window::send_activity () {
     ));
 }
 
-static string css_color (uint32 c) {
-    char buf [8];
-    snprintf(buf, 8, "#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c));
-    return buf;
-}
-
 void Window::message_from_shell (json::Value&& message) {
     const string& command = message[0];
 
