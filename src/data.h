@@ -86,26 +86,30 @@ std::pair<int64, Bifractor> make_location (int64 reference, TabRelation rel);
 
 struct WindowData {
     int64 id;
+    int64 root_tab;
     int64 focused_tab;
     double created_at;
     double closed_at;
     WindowData(
         int64 id,
+        int64 root_tab,
         int64 focused_tab,
         double created_at,
         double closed_at
     ) :
         id(id),
+        root_tab(root_tab),
         focused_tab(focused_tab),
         created_at(created_at),
         closed_at(closed_at)
     { }
 };
 
-int64 create_window (int64 focused_tab);
+int64 create_window (int64 root_tab, int64 focused_tab);
 WindowData* get_window_data (int64 id);
 std::vector<int64> get_all_unclosed_windows ();
 int64 get_last_closed_window ();
+void set_window_root_tab (int64 window, int64 tab);
 void set_window_focused_tab (int64 window, int64 tab);
 void close_window (int64 id);
 void unclose_window (int64 id);

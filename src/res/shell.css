@@ -123,12 +123,20 @@ html.hide-sidebar #sidebar {
     background-color:var(--tree-bg-alt);
 }
 
-#tree {
+#toproot-tree, #subroot-tree {
+    display:none;
     flex-grow:1;
     overflow-y:scroll;
     overflow-x:hidden;
     background-color:var(--tree-bg);
 }
+html:not(.root-is-sub) #toproot-tree {
+    display:block;
+}
+html.root-is-sub #subroot-tree {
+    display:block;
+}
+
 #new-tab {
     width:100%;
     height:var(--tree-bottom-padding);

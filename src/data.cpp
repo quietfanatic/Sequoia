@@ -456,14 +456,14 @@ SELECT position FROM tabs WHERE parent = ? ORDER BY position DESC LIMIT 1
 
 ///// WINDOWS
 
-int64 create_window (int64 focused_tab) {
+int64 create_window (int64 root_tab, int64 focused_tab) {
     LOG("create_window", focused_tab);
     Transaction tr;
 
-    static State<>::Ment<int64, double> create {R"(
-INSERT INTO windows (focused_tab, created_at) VALUES (?, ?)
+    static State<>::Ment<int64, int64, double> create {R"(
+INSERT INTO windows (root_tab, focused_tab, created_at) VALUES (?, ?, ?)
     )"};
-    create.run_void(focused_tab, now());
+    create.run_void(root_tab, focused_tab, now());
     int64 id = sqlite3_last_insert_rowid(db);
     window_updated(id);
     return id;
@@ -477,8 +477,8 @@ WindowData* get_window_data (int64 id) {
         return &iter->second;
     }
 
-    static State<int64, int64, double, double>::Ment<int64> get {R"(
-SELECT id, focused_tab, created_at, closed_at FROM windows WHERE id = ?
+    static State<int64, int64, int64, double, double>::Ment<int64> get {R"(
+SELECT id, root_tab, focused_tab, created_at, closed_at FROM windows WHERE id = ?
     )"};
     auto res = windows_by_id.emplace(id, make_from_tuple<WindowData>(get.run_single(id)));
     return &res.first->second;
@@ -502,6 +502,18 @@ SELECT id FROM windows WHERE closed_at IS NOT NULL ORDER BY closed_at DESC LIMIT
     return get.run_or(0);
 }
 
+void set_window_root_tab (int64 window, int64 tab) {
+    LOG("set_window_root_tab", window, tab);
+    Transaction tr;
+
+    get_window_data(window)->root_tab = tab;
+    static State<>::Ment<int64, int64> set {R"(
+UPDATE windows SET root_tab = ? WHERE id = ?
+    )"};
+    set.run_void(tab, window);
+    window_updated(window);
+}
+
 void set_window_focused_tab (int64 window, int64 tab) {
     LOG("set_window_focused_tab", window, tab);
     Transaction tr;
@@ -512,15 +524,6 @@ UPDATE windows SET focused_tab = ? WHERE id = ?
     )"};
     set.run_void(tab, window);
     window_updated(window);
-}
-
-int64 get_window_focused_tab (int64 window) {
-    LOG("get_window_focused_tab", window);
-
-    static State<int64>::Ment<int64> get {R"(
-SELECT focused_tab FROM windows WHERE id = ?
-    )"};
-    return get.run_single(window);
 }
 
 void set_window_closed_at (int64 window, optional<double> closed_at) {

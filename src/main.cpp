@@ -89,7 +89,7 @@ void start_browser () {
         if (!first_tab) {
             first_tab = create_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/");
         }
-        create_window(first_tab);
+        create_window(0, first_tab);
     }
 }
 
@@ -126,7 +126,7 @@ int WINAPI WinMain (
         if (positional_args.size() >= 1) {
             Transaction tr;
             int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, positional_args[0]);
-            int64 new_window = create_window(new_tab);
+            int64 new_window = create_window(new_tab, new_tab);
         }
 
          // Run message loop

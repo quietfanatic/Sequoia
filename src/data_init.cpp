@@ -62,7 +62,11 @@ void init_db () {
         case 3: {
             string sql = slurp(exe_relative("res/migrate-3-4.sql"));
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
+            [[fallthrough]];
         }
+        case 4:
+            string sql = slurp(exe_relative("res/migrate-4-5.sql"));
+            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
         }
         LOG("Migration complete.");
     }

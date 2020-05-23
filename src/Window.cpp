@@ -64,14 +64,13 @@ struct WindowObserver : Observer {
         const vector<int64>& updated_tabs,
         const vector<int64>& updated_windows
     ) override {
+        for (auto& pair : open_windows) {
+            pair.second->update(updated_tabs);
+             // Window may have destroyed itself, so don't do anything more with it.
+        }
         for (auto id : updated_windows) {
-            auto it = open_windows.find(id);
-            if (it != open_windows.end()) {
-                it->second->update(updated_tabs);
-                 // Window may have destroyed itself, so don't do anything more with it.
-            }
-            else if (!get_window_data(id)->closed_at) {
-                 // Couldn't find existing window for this ID, so it must be new.
+            if (!open_windows.count(id)) {
+                 // Open window doesn't exist for this ID, so make one
                 auto w = new Window (id);
                  // Automatically load focused tab
                 w->claim_activity(ensure_activity_for_tab(w->focused_tab));
@@ -146,7 +145,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
             else return [this]{
                 Transaction tr;
                 int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
-                int64 new_window = create_window(new_tab);
+                int64 new_window = create_window(new_tab, new_tab);
             };
         }
         break;
@@ -168,15 +167,13 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         }
         break;
     case 'U':
-        if (!shift && ctrl && !alt) {
-            return [this]{
-                if (focused_tab && activity) {
-                    delete activity;
-                    send_tabs(vector{focused_tab});
-                    send_activity();
-                }
-            };
-        }
+        if (!shift && ctrl && !alt) return [this]{
+            if (focused_tab && activity) {
+                delete activity;
+                send_tabs(vector{focused_tab});
+                send_activity();
+            }
+        };
         break;
     case 'W':
         if (!shift && ctrl && !alt) return [this]{
@@ -249,21 +246,29 @@ void Window::update (
     }
 }
 
+void Window::send_root () {
+    message_to_shell(json::array("root", get_window_data(id)->root_tab));
+}
+
 void Window::send_tabs (const vector<int64>& updated_tabs) {
     if (updated_tabs.empty()) return;
     json::Array updates;
     updates.reserve(updated_tabs.size());
     bool do_send_activity = false;
 
+    LOG("expanded_tabs.size()", expanded_tabs.size());
+
     for (auto tab : updated_tabs) {
         auto t = get_tab_data(tab);
+        auto grandparent = t->parent ? get_tab_data(t->parent)->parent : 0;
 
-         // Only send tab if it is a known tab (child or grandchild of expanded tab)
-        if (!expanded_tabs.count(t->parent)
-            && t->parent && !expanded_tabs.count(get_tab_data(t->parent)->parent)
+        if (expanded_tabs.count(tab)
+         || expanded_tabs.count(t->parent)
+         || expanded_tabs.count(grandparent)
         ) {
-            continue;
+             // Only send tab if it is a known tab (child or grandchild of expanded tab)
         }
+        else continue;
 
          // Sending no tab data tells shell to delete tab
         if (t->deleted) {
@@ -341,15 +346,16 @@ void Window::message_from_shell (json::Value&& message) {
         A(focused_tab);
          // Focused tab and all its ancestors are expanded.  Send all their
          //  children.  Grandchildren will be requested later by the shell with
-         //  "expand" commands, including one for root (0).
-        vector<int64> known_tabs;
+         //  "expand" commands, including one for the root.
+        vector<int64> known_tabs {focused_tab};
         for (int64 tab = focused_tab;; tab = get_tab_data(tab)->parent) {
             expanded_tabs.emplace(tab);
             for (auto c : get_all_children(tab)) {
                 known_tabs.emplace_back(c);
             }
-            if (!tab) break;
+            if (tab == get_window_data(id)->root_tab) break;
         }
+        send_root();
         send_tabs(known_tabs);
         send_focus();
         break;

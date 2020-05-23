@@ -41,8 +41,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
             ReplyMessage(0);
             const string& url = message[1];
             int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, url);
-            int64 new_window = create_window(new_tab);
-            (new Window(new_window))->claim_activity(ensure_activity_for_tab(new_tab));
+            int64 new_window = create_window(new_tab, new_tab);
             return 0;
         }
         default: return 1;

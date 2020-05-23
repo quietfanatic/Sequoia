@@ -1,4 +1,4 @@
-PRAGMA user_version = 4;
+PRAGMA user_version = 5;
 
 ----- TABS
 
@@ -48,11 +48,6 @@ CREATE TABLE windows (
     id INTEGER PRIMARY KEY,  -- AUTOINCREMENT
     focused_tab INTEGER NOT NULL,
     created_at REAL NOT NULL,
-    closed_at REAL
+    closed_at REAL,
+    root_tab INTEGER NOT NULL DEFAULT 0  -- 0 means global root
 );
-
-CREATE TABLE expanded_tabs (
-    window_id INTEGER,
-    tab_id INTEGER,
-    PRIMARY KEY (window_id, tab_id)
-) WITHOUT ROWID;

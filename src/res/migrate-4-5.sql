@@ -1,0 +1,3 @@
+PRAGMA user_version = 5;
+DROP TABLE IF EXISTS expanded_tabs;
+ALTER TABLE windows ADD COLUMN root_tab INTEGER NOT NULL DEFAULT 0;

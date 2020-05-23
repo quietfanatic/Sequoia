@@ -115,14 +115,16 @@ let $toolbar = $("div", {id:"toolbar"},
 ///// Sidebar DOM
 
 let $toplist = $("div", {class:"list"});
+let $subroot_tree = $("div", {id:"subroot-tree"});
 let $sidebar = $("div", {id:"sidebar"},
-    $("div", {id:"tree"},
+    $("div", {id:"toproot-tree"},
         $toplist,
         $("div", {id:"new-tab", click: e => {
             host.postMessage(["new_toplevel_tab"]);
             handled(e);
         }})
     ),
+    $subroot_tree,
     $("div", {id:"sidebar-bottom"},
         $("div", {
             id: "resize",
@@ -313,6 +315,7 @@ document.addEventListener("mousedown", event => {
 });
 
 let tabs_by_id = {};
+let root_id = 0;
 let focused_id = 0;
 
 function close_or_delete_tab (tab) {
@@ -421,6 +424,13 @@ let commands = {
             }
             $html.classList.add("theme-" + settings.theme);
         }
+    },
+    root (id) {
+        root_id = id;
+        $html.classList.toggle("root-is-sub", id != 0);
+        $($subroot_tree, []);
+         // Further processing will be done in the tabs command
+         // TODO: merge this, tabs, and focus into one command
     },
     tabs (updates) {
         for (let [
@@ -536,20 +546,25 @@ let commands = {
             let tab = tabs_by_id[id];
             if (!tab) continue;  // Must have been deleted
             if (tab.$item.isConnected) continue;
-            let $parent_list = tab.parent == 0 ? $toplist : tabs_by_id[tab.parent].$list;
-             // Insert sorted by position.
-            for (let $child_item of $parent_list.childNodes) {
-                let child = tabs_by_id[+$child_item.id];
-                if (tab.position < child.position) {
-                    $parent_list.insertBefore(tab.$item, $child_item);
-                    break;
+            if (id == root_id) {
+                $($subroot_tree, tab.$item)
+            }
+            else {
+                let $parent_list = tab.parent == 0 ? $toplist : tabs_by_id[tab.parent].$list;
+                 // Insert sorted by position.
+                for (let $child_item of $parent_list.childNodes) {
+                    let child = tabs_by_id[+$child_item.id];
+                    if (tab.position < child.position) {
+                        $parent_list.insertBefore(tab.$item, $child_item);
+                        break;
+                    }
                 }
-            }
-            if (!tab.$item.isConnected) {
-                $parent_list.appendChild(tab.$item);
-            }
-            if (updates.length == 1) {
-                tab.$tab.scrollIntoViewIfNeeded();
+                if (!tab.$item.isConnected) {
+                    $parent_list.appendChild(tab.$item);
+                }
+                if (updates.length == 1) {
+                    tab.$tab.scrollIntoViewIfNeeded();
+                }
             }
         }
     },
@@ -567,7 +582,7 @@ let commands = {
             expandUp(tab)
             function expandUp (tab) {
                 expand_tab(tab);
-                if (!tab) return;
+                if (!tab || tab.id == root_id) return;
                 expandUp(tabs_by_id[tab.parent]);
             }
             tab.$tab.scrollIntoViewIfNeeded();

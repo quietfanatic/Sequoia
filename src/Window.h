@@ -25,7 +25,7 @@ struct Window {
      //  - Visible tabs, children of expanded tabs
      //  - Known tabs, children of visible tabs, grandchildren of expanded tabs
      // Here we only need to store expanded tabs.
-     // This set will include the root pseudo-tab 0
+     // This set will include the root tab, including if it's the pseudo-tab 0
     std::set<int64> expanded_tabs;
 
     Activity* activity = nullptr;
@@ -55,6 +55,7 @@ struct Window {
     void expand_tab (int64 tab);
     void contract_tab (int64 tab);
 
+    void send_root ();
     void send_tabs (const std::vector<int64>& updated_tabs);
     void send_focus ();
     void send_activity ();

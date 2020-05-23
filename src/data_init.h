@@ -2,7 +2,7 @@
 
 #include <sqlite3.h>
 
-constexpr int CURRENT_SCHEMA_VERSION = 4;
+constexpr int CURRENT_SCHEMA_VERSION = 5;
 
 extern sqlite3* db;
 
