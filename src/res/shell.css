@@ -58,7 +58,7 @@ body {
     color:inherit;
     font-size:14px;
 }
-#back, #forward, #reload, #error-indicator, #toggle-sidebar, #toggle-main-menu {
+#back, #forward, #reload, #stop, #error-indicator, #toggle-sidebar, #toggle-main-menu {
     height:var(--toolbar-height);
     line-height:var(--toolbar-height);
     width:var(--toolbar-height);
@@ -78,14 +78,15 @@ body {
 #reload::before {
     content:"⭮";
 }
-#reload.loading::before {
+#stop::before {
     content:"✕";
 }
-#error-indicator {
+html.currently-loading #reload,
+html:not(.currently-loading) #stop {
     display:none;
 }
-#error-indicator.has-error {
-    display:block;
+#error-indicator:not(.has-error) {
+    display:none;
 }
 #error-indicator::before {
     color:red;
@@ -124,17 +125,14 @@ html.hide-sidebar #sidebar {
 }
 
 #toproot-tree, #subroot-tree {
-    display:none;
     flex-grow:1;
     overflow-y:scroll;
     overflow-x:hidden;
     background-color:var(--tree-bg);
 }
-html:not(.root-is-sub) #toproot-tree {
-    display:block;
-}
-html.root-is-sub #subroot-tree {
-    display:block;
+html.root-is-sub #toproot-tree,
+html:not(.root-is-sub) #subroot-tree {
+    display:none;
 }
 
 #new-tab {
@@ -284,11 +282,10 @@ html:not(.show-closed) .item.closed {
     display:none;
 }
 .item > .list {
-    display:none;
     padding-left:var(--tab-indent);
 }
-.item.expanded > .list {
-    display:block;
+.item:not(.expanded) > .list {
+    display:none;
 }
 #main-menu {
     position:absolute;

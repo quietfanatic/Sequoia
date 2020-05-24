@@ -23,18 +23,20 @@ let $forward = $("div", {
     },
 });
 
- // Dual purpose reload/stop button
-let currently_loading = false;
+ // Reload and stop buttons.  Only one will be shown at a time.
 let $reload = $("div", {
     id: "reload",
     title: "Reload",
     click: e => {
-        if (currently_loading) {
-            host.postMessage(["stop"]);
-        }
-        else {
-            host.postMessage(["reload"]);
-        }
+        host.postMessage(["reload"]);
+        handled(e);
+    },
+});
+let $stop = $("div", {
+    id: "stop",
+    title: "Stop",
+    click: e => {
+        host.postMessage(["stop"]);
         handled(e);
     },
 });
@@ -104,7 +106,7 @@ let $toggle_main_menu = $("div", {
 
  // Put it all together
 let $toolbar = $("div", {id:"toolbar"},
-    $back, $forward, $reload, $address, $error_indicator, $toggle_sidebar, $toggle_main_menu
+    $back, $forward, $reload, $stop, $address, $error_indicator, $toggle_sidebar, $toggle_main_menu
 );
 
 ///// Sidebar DOM
@@ -533,10 +535,9 @@ let commands = {
                 $back.classList.toggle("disabled", !can_go_back);
                 $forward.classList.toggle("disabled", !can_go_forward);
                 $reload.classList.toggle("disabled", loading === undefined)
-                $reload.classList.toggle("loading", loading);
-                $reload.title = loading ? "Stop" : "Reload";
+                $stop.classList.toggle("disabled", loading !== undefined && !loading)
+                $html.classList.toggle("currently-loading", loading);
                 set_address(tab.url);
-                currently_loading = loading;
             }
         }
 
