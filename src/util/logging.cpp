@@ -16,6 +16,11 @@ void init_log (const std::string& filename) {
     logstream = new ofstream (filename);
 }
 
-double now () {
+static double now () {
     return duration<double>(steady_clock::now().time_since_epoch()).count();
+}
+
+uint64 logging_timestamp () {
+    static double start = now();
+    return uint64((now() - start) * 1000);
 }
