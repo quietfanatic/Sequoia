@@ -23,7 +23,7 @@ using namespace std;
 static std::map<int64, Window*> open_windows;
 
 Window::Window (int64 id) :
-    id(id), old_focused_tab(get_window_data(id)->focused_tab), os_window(this)
+    id(id), os_window(this)
 {
     open_windows.emplace(id, this);
     new_webview([this](WebView* wv, HWND hwnd){

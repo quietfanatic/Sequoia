@@ -28,7 +28,7 @@ struct Window : Observer {
      // This set will include the root tab, including if it's the pseudo-tab 0
     std::set<int64> expanded_tabs;
 
-    int64 old_focused_tab;
+    int64 old_focused_tab = 0;
 
     Activity* activity = nullptr;
     OSWindow os_window;
