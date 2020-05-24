@@ -518,7 +518,7 @@ let commands = {
                 tab.$item.classList.remove("parent");
             }
 
-            tab.$tab.classList.toggle("loaded", load_state);
+            tab.$tab.classList.toggle("loaded", !!load_state);
             tab.$tab.classList.toggle("visited", visited_at > 0);
             tab.$tab.classList.toggle("starred", starred_at > 0);
             tab.$item.classList.toggle("closed", closed_at > 0);
