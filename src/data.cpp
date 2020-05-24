@@ -319,6 +319,21 @@ void close_tab (int64 id) {
     set_tab_closed_at(id, now());
     change_child_count(data->parent, -1 - data->child_count);
     prune_closed_tabs(20, 15*60);
+
+     // If any windows are focusing this tab, have them move their focus
+    int64 successor = id;
+    for (auto w : get_all_unclosed_windows()) {
+        if (get_window_data(w)->focused_tab == id) {
+            while (get_tab_data(successor)->closed_at) {
+                auto s = get_next_unclosed_tab(successor);
+                if (!s) s = get_tab_data(successor)->parent;
+                if (!s) s = get_prev_unclosed_tab(successor);
+                if (!s) s = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
+                successor = s;
+            }
+            set_window_focused_tab(w, successor);
+        }
+    }
 }
 
 void close_tab_with_heritage (int64 id) {

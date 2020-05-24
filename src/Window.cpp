@@ -222,13 +222,13 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
         auto t = get_tab_data(tab);
         auto grandparent = t->parent ? get_tab_data(t->parent)->parent : 0;
 
-        if (expanded_tabs.count(tab)
-         || expanded_tabs.count(t->parent)
-         || expanded_tabs.count(grandparent)
+         // Only send tab if it is a known tab (child or grandchild of expanded tab)
+        if (!expanded_tabs.count(tab)
+         && !expanded_tabs.count(t->parent)
+         && !expanded_tabs.count(grandparent)
         ) {
-             // Only send tab if it is a known tab (child or grandchild of expanded tab)
+            continue;
         }
-        else continue;
 
          // Sending no tab data tells shell to delete tab
         if (t->deleted) {
@@ -267,22 +267,6 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
                 t->starred_at,
                 t->closed_at
             ));
-        }
-
-         // TODO: do this in data
-        if (data->focused_tab == tab && t->closed_at) {
-             // If the current tab is closing, find a new tab to focus
-            LOG("Finding successor", tab);
-            Transaction tr;
-            int64 successor;
-            while (t->closed_at) {
-                successor = get_next_unclosed_tab(tab);
-                if (!successor) successor = t->parent;
-                if (!successor) successor = get_prev_unclosed_tab(tab);
-                if (!successor) successor = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
-                t = get_tab_data(successor);
-            }
-            set_window_focused_tab(id, successor);
         }
     }
 
