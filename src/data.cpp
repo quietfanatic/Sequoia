@@ -35,6 +35,7 @@ static std::vector<int64> updated_tabs;
 static std::vector<int64> updated_windows;
 
 void tab_updated (int64 id) {
+    Transaction tr;
     A(id > 0);
     for (auto t : updated_tabs) {
         if (t == id) return;
@@ -42,6 +43,7 @@ void tab_updated (int64 id) {
     updated_tabs.push_back(id);
 }
 void window_updated (int64 id) {
+    Transaction tr;
     A(id > 0);
     for (auto w : updated_windows) {
         if (w == id) return;

@@ -318,6 +318,15 @@ let tabs_by_id = {};
 let root_id = 0;
 let focused_id = 0;
 
+function focus_tab (tab) {
+    if (focused_id != tab.id) {
+        host.postMessage(["focus", tab.id]);
+    }
+    if (!tab.loaded) {
+        host.postMessage(["load", tab.id]);
+    }
+}
+
 function close_or_delete_tab (tab) {
     if (tab.$item.classList.contains("closed")) {
         host.postMessage(["delete", tab.id]);
@@ -334,12 +343,7 @@ function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
     let tab = tabs_by_id[+$item.id];
     if (event.button == 0) {
-        if (focused_id != tab.id) {
-            host.postMessage(["focus", tab.id]);
-        }
-        else if (!tab.loaded) {
-            host.postMessage(["load", tab.id]);
-        }
+        focus_tab(tab);
         tab.$tab.focus();
     }
     else if (event.button == 1) {
@@ -425,17 +429,13 @@ let commands = {
             $html.classList.add("theme-" + settings.theme);
         }
     },
-    root (id) {
-        root_id = id;
-        $html.classList.toggle("root-is-sub", id != 0);
-        $($subroot_tree, []);
-         // Further processing will be done in the tabs command
-         // TODO: merge this, tabs, and focus into one command
-    },
-    tabs (updates) {
+    update (new_root, new_focus, updates) {
+         // Create or change updated tabs
         for (let [
-            id, parent, position, child_count, url, title, favicon, loaded, visited_at, starred_at, closed_at
+            id, parent, position, child_count, url, title, favicon,
+            visited_at, starred_at, closed_at, loading, can_go_back, can_go_forward
         ] of updates) {
+             // Only [id] will be sent for a deleted tab
             if (parent === undefined) {
                 let tab = tabs_by_id[id];
                 if (tab) {
@@ -529,7 +529,8 @@ let commands = {
                 tab.$child_count.innerText = "";
                 tab.$item.classList.remove("parent");
             }
-            tab.$tab.classList.toggle("loaded", loaded);
+
+            tab.$tab.classList.toggle("loaded", loading !== undefined);
             tab.$tab.classList.toggle("visited", visited_at > 0);
             tab.$tab.classList.toggle("starred", starred_at > 0);
             tab.$item.classList.toggle("closed", closed_at > 0);
@@ -540,12 +541,39 @@ let commands = {
                 tab.$favicon.removeAttribute("src");
                 tab.$favicon.classList.remove("loaded");
             }
+
+             // Update toolbar buttons for active tab
+            if (id == new_focus) {
+                $back.classList.toggle("disabled", !can_go_back);
+                $forward.classList.toggle("disabled", !can_go_forward);
+                $reload.classList.toggle("disabled", loading === undefined)
+                $reload.classList.toggle("loading", loading);
+                $reload.title = loading ? "Stop" : "Reload";
+                currently_loading = loading;
+            }
         }
+
+        if (root_id != new_root) {
+            $html.classList.toggle("root-is-sub", !!new_root);
+             // If the root has changed, force reinsertion of the affected $items
+            let old_tab = tabs_by_id[root_id];
+            if (old_tab) {
+                old_tab.$item.remove();
+                updates.push([root_id]);
+            }
+            let new_tab = tabs_by_id[new_root];
+            if (new_tab) {
+                new_tab.$item.remove();
+                updates.push([new_root]);
+            }
+            root_id = new_root;
+        }
+
          // Wait until we're done updating to insert moved tabs, to make sure
-         //   parent tabs have been delivered.
+         //  parent tabs have been delivered.
         for (let [id] of updates) {
             let tab = tabs_by_id[id];
-            if (!tab) continue;  // Must have been deleted
+            if (!tab) continue;  // Must have been deleted or something
             if (tab.$item.isConnected) continue;
             if (id == root_id) {
                 $($subroot_tree, tab.$item)
@@ -563,38 +591,37 @@ let commands = {
                 if (!tab.$item.isConnected) {
                     $parent_list.appendChild(tab.$item);
                 }
+                 // TODO: investigate why this doesn't work right
                 if (updates.length == 1) {
                     tab.$tab.scrollIntoViewIfNeeded();
                 }
             }
         }
-    },
-    focus (id) {
-        let old_tab = tabs_by_id[focused_id];
-        if (old_tab) {
-            old_tab.$tab.classList.remove("focused");
-        }
-        focused_id = id;
-        let tab = tabs_by_id[id];
-        if (tab) {
-            tab.$tab.classList.add("focused");
-            set_address(tab.url);
-             // Expand everything above and including the focused tab
-            expandUp(tab)
-            function expandUp (tab) {
-                expand_tab(tab);
-                if (!tab || tab.id == root_id) return;
-                expandUp(tabs_by_id[tab.parent]);
+
+        if (new_focus != focused_id) {
+            let old_focused_tab = tabs_by_id[focused_id];
+            if (old_focused_tab) {
+                old_focused_tab.$tab.classList.remove("focused");
             }
-            tab.$tab.scrollIntoViewIfNeeded();
+            focused_id = new_focus;
+            let focused_tab = tabs_by_id[focused_id];
+            if (focused_tab) {
+                focused_tab.$tab.classList.add("focused");
+                set_address(focused_tab.url);
+                 // Expand everything above and including the focused tab
+                expandUp(focused_tab)
+                function expandUp (tab) {
+                    expand_tab(tab);
+                    if (!tab || tab.id == root_id) return;
+                    expandUp(tabs_by_id[tab.parent]);
+                }
+                focused_tab.$tab.scrollIntoViewIfNeeded();
+                 // TODO: Should we do this on the C++ side?
+                if (!focused_tab.loaded) {
+                    host.postMessage(["load", focused_tab.id]);
+                }
+            }
         }
-    },
-    activity (can_go_back, can_go_forward, loading) {
-        $back.classList.toggle("disabled", !can_go_back);
-        $forward.classList.toggle("disabled", !can_go_forward);
-        currently_loading = loading;
-        $reload.classList.toggle("loading", loading);
-        $reload.title = currently_loading ? "Stop" : "Reload";
     },
     select_location () {
         $address.select();

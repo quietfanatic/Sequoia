@@ -23,7 +23,7 @@ using namespace std;
 static std::map<int64, Window*> open_windows;
 
 Window::Window (int64 id) :
-    id(id), focused_tab(get_window_data(id)->focused_tab), os_window(this)
+    id(id), old_focused_tab(get_window_data(id)->focused_tab), os_window(this)
 {
     open_windows.emplace(id, this);
     new_webview([this](WebView* wv, HWND hwnd){
@@ -71,7 +71,7 @@ struct WindowFactory : Observer {
             if (!data->closed_at && !open_windows.count(id)) {
                 auto w = new Window (id);
                  // Automatically load focused tab
-                w->claim_activity(ensure_activity_for_tab(w->focused_tab));
+                w->claim_activity(ensure_activity_for_tab(data->focused_tab));
             }
         }
     }
@@ -159,34 +159,37 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
             };
             else return [this]{
                 Transaction tr;
-                int64 new_tab = create_tab(focused_tab, TabRelation::LAST_CHILD, "about:blank");
+                int64 new_tab = create_tab(
+                    get_window_data(id)->focused_tab,
+                    TabRelation::LAST_CHILD,
+                    "about:blank"
+                );
                 set_window_focused_tab(id, new_tab);
             };
         }
         break;
     case 'U':
         if (!shift && ctrl && !alt) return [this]{
-            if (focused_tab && activity) {
+            if (activity) {
                 delete activity;
-                send_tabs(vector{focused_tab});
-                send_activity();
+                tab_updated(get_window_data(id)->focused_tab);
             }
         };
         break;
     case 'W':
         if (!shift && ctrl && !alt) return [this]{
-            close_tab_with_heritage(focused_tab);
+            close_tab_with_heritage(get_window_data(id)->focused_tab);
         };
         break;
     case VK_TAB:
         if (ctrl && !alt) {
             if (shift) return [this]{
-                if (int64 prev = get_prev_unclosed_tab(focused_tab)) {
+                if (int64 prev = get_prev_unclosed_tab(get_window_data(id)->focused_tab)) {
                     set_window_focused_tab(id, prev);
                 }
             };
             else return [this]{
-                if (int64 next = get_next_unclosed_tab(focused_tab)) {
+                if (int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab)) {
                     set_window_focused_tab(id, next);
                 }
             };
@@ -206,56 +209,14 @@ void Window::Observer_after_commit (
         return;
     }
 
-    send_tabs(updated_tabs);
-
-    int64 old_focus = focused_tab;
-    focused_tab = get_window_data(id)->focused_tab;
-    if (focused_tab != old_focus) {
-        LOG("focus_tab", focused_tab);
-        if (focused_tab) {
-            set_tab_visited(focused_tab);
-            send_focus();
-            claim_activity(ensure_activity_for_tab(focused_tab));
-            if (get_tab_data(focused_tab)->url != "about:blank") {
-                if (activity->webview) {
-                    AH(activity->webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
-                }
-            }
-            else {
-                if (webview) {
-                    message_to_shell(json::array("select_location"));
-                    webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
-                }
-            }
-            send_activity();
-
-            if (old_focus && get_next_unclosed_tab(old_focus) == focused_tab) {
-                int64 next = get_next_unclosed_tab(focused_tab);
-                if (next) ensure_activity_for_tab(next);
-            }
-        }
-        else claim_activity(nullptr);
-    }
-
-    for (auto tab : updated_tabs) {
-        if (tab == focused_tab) {
-            send_focus();
-            break;
-        }
-    }
+    send_update(updated_tabs);
 }
 
-void Window::send_root () {
-    message_to_shell(json::array("root", get_window_data(id)->root_tab));
-}
+void Window::send_update (const std::vector<int64>& updated_tabs) {
+    auto data = get_window_data(id);
 
-void Window::send_tabs (const vector<int64>& updated_tabs) {
-    if (updated_tabs.empty()) return;
     json::Array updates;
     updates.reserve(updated_tabs.size());
-    bool do_send_activity = false;
-
-    LOG("expanded_tabs.size()", expanded_tabs.size());
 
     for (auto tab : updated_tabs) {
         auto t = get_tab_data(tab);
@@ -276,58 +237,66 @@ void Window::send_tabs (const vector<int64>& updated_tabs) {
         }
 
         Activity* activity = activity_for_tab(tab);
-        updates.emplace_back(json::array(
-            tab,
-            t->parent,
-            t->position.hex(),
-            t->child_count,
-            t->url,
-            t->title,
-            t->favicon,
-            !!activity,
-            t->visited_at,
-            t->starred_at,
-            t->closed_at
-        ));
+        if (activity) {
+            updates.emplace_back(json::array(
+                tab,
+                t->parent,
+                t->position.hex(),
+                t->child_count,
+                t->url,
+                t->title,
+                t->favicon,
+                t->visited_at,
+                t->starred_at,
+                t->closed_at,
+                activity->currently_loading,
+                activity->can_go_back,
+                activity->can_go_forward
+            ));
+        }
+        else {
+            updates.emplace_back(json::array(
+                tab,
+                t->parent,
+                t->position.hex(),
+                t->child_count,
+                t->url,
+                t->title,
+                t->favicon,
+                t->visited_at,
+                t->starred_at,
+                t->closed_at
+            ));
+        }
 
-        if (focused_tab == tab) {
-            if (t->closed_at) {
-                 // If the current tab is closing, find a new tab to focus
-                LOG("Finding successor", tab);
-                Transaction tr;
-                int64 successor;
-                while (t->closed_at) {
-                    successor = get_next_unclosed_tab(tab);
-                    if (!successor) successor = t->parent;
-                    if (!successor) successor = get_prev_unclosed_tab(tab);
-                    if (!successor) successor = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
-                    t = get_tab_data(successor);
-                }
-                set_window_focused_tab(id, successor);
+         // TODO: do this in data
+        if (data->focused_tab == tab && t->closed_at) {
+             // If the current tab is closing, find a new tab to focus
+            LOG("Finding successor", tab);
+            Transaction tr;
+            int64 successor;
+            while (t->closed_at) {
+                successor = get_next_unclosed_tab(tab);
+                if (!successor) successor = t->parent;
+                if (!successor) successor = get_prev_unclosed_tab(tab);
+                if (!successor) successor = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
+                t = get_tab_data(successor);
             }
-            else {
-                do_send_activity = true;
-            }
+            set_window_focused_tab(id, successor);
         }
     }
 
-    message_to_shell(json::array("tabs", updates));
-    if (do_send_activity) send_activity();
-};
+    if (data->focused_tab != old_focused_tab) {
+        old_focused_tab = data->focused_tab;
+        const string& title = get_tab_data(data->focused_tab)->title;
+        os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
+    }
 
-void Window::send_focus () {
-    const string& title = get_tab_data(focused_tab)->title;
-    os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
-    message_to_shell(json::array("focus", focused_tab));
-}
-
-void Window::send_activity () {
-    if (!activity) return;
     message_to_shell(json::array(
-        "activity",
-        activity->can_go_back,
-        activity->can_go_forward,
-        activity->currently_loading
+        "update",
+        data->root_tab,
+        data->focused_tab,
+        updates
     ));
 }
 
@@ -342,21 +311,19 @@ void Window::message_from_shell (json::Value&& message) {
                 std::pair{"theme", settings::theme}
             }
         ));
-        A(focused_tab);
+        auto data = get_window_data(id);
          // Focused tab and all its ancestors are expanded.  Send all their
          //  children.  Grandchildren will be requested later by the shell with
          //  "expand" commands, including one for the root.
-        vector<int64> known_tabs {focused_tab};
-        for (int64 tab = focused_tab;; tab = get_tab_data(tab)->parent) {
+        vector<int64> known_tabs {data->focused_tab};
+        for (int64 tab = data->focused_tab;; tab = get_tab_data(tab)->parent) {
             expanded_tabs.emplace(tab);
             for (auto c : get_all_children(tab)) {
                 known_tabs.emplace_back(c);
             }
-            if (tab == get_window_data(id)->root_tab) break;
+            if (tab == data->root_tab) break;
         }
-        send_root();
-        send_tabs(known_tabs);
-        send_focus();
+        send_update(known_tabs);
         break;
     }
     case x31_hash("resize"): {
@@ -425,11 +392,9 @@ void Window::message_from_shell (json::Value&& message) {
     case x31_hash("load"): {
         int64 tab = message[1];
         Activity* a = ensure_activity_for_tab(tab);
-        if (tab == focused_tab) {
+        if (tab == get_window_data(id)->focused_tab) {
             claim_activity(a);
-            send_activity();
         }
-        Transaction tr;
         tab_updated(tab);
         break;
     }
@@ -483,7 +448,7 @@ void Window::message_from_shell (json::Value&& message) {
                 new_known_tabs.emplace_back(g);
             }
         }
-        send_tabs(new_known_tabs);
+        send_update(new_known_tabs);
         break;
     }
     case x31_hash("contract"): {

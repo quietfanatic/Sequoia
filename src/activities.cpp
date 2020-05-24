@@ -46,7 +46,7 @@ Activity::Activity (int64 t) : tab(t) {
                 IWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
             currently_loading = true;
-            if (window) window->send_activity();
+            tab_updated(tab);
             return S_OK;
         }).Get(), nullptr));
 
@@ -95,7 +95,7 @@ Activity::Activity (int64 t) : tab(t) {
                 IWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
             currently_loading = false;
-            if (window) window->send_activity();
+            tab_updated(tab);
             return S_OK;
         }).Get(), nullptr));
 

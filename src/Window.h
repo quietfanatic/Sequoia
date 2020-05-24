@@ -17,7 +17,6 @@ struct IWebView2AcceleratorKeyPressedEventArgs;
 
 struct Window : Observer {
     int64 id;
-    int64 focused_tab;
     wil::com_ptr<WebView> webview;
     HWND webview_hwnd = nullptr;
 
@@ -28,6 +27,8 @@ struct Window : Observer {
      // Here we only need to store expanded tabs.
      // This set will include the root tab, including if it's the pseudo-tab 0
     std::set<int64> expanded_tabs;
+
+    int64 old_focused_tab;
 
     Activity* activity = nullptr;
     OSWindow os_window;
@@ -57,10 +58,7 @@ struct Window : Observer {
     void expand_tab (int64 tab);
     void contract_tab (int64 tab);
 
-    void send_root ();
-    void send_tabs (const std::vector<int64>& updated_tabs);
-    void send_focus ();
-    void send_activity ();
+    void send_update (const std::vector<int64>& updated_tabs);
 
     void message_from_shell (json::Value&& message);
     void message_to_shell (json::Value&& message);
