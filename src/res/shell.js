@@ -221,6 +221,66 @@ window.addEventListener("blur", e => {
 
 ///// Tab DOM and behavior
 
+function create_tab (id) {
+    let $favicon = $("img", {
+        class: "favicon",
+        load: on_favicon_load,
+        error: on_favicon_error,
+    });
+    let $title = $("div", {class:"title"});
+    let $child_count = $("div", {class:"child-count"});
+    let $tab = $("div",
+        {
+            class: "tab",
+            title: "",
+            tabIndex: "0",
+            click: on_tab_clicked,
+            auxclick: on_tab_clicked,
+            mousedown: on_tab_mousedown,
+        },
+        $("div", {
+            class: "expand",
+            click: on_expand_clicked,
+        }),
+        $favicon,
+        $title,
+        $child_count,
+        $("div", {
+            class: "close",
+            click: on_close_clicked,
+        }),
+        $("div", {
+            class: "new-child",
+            click: on_new_child_clicked,
+        }),
+        $("div", {
+            class: "star",
+            click: on_star_clicked,
+        }),
+    );
+    let $list = $("div", {class:"list"});
+
+    let $item = $("div", {
+        id: id,
+        class: "item",
+    }, $tab, $list);
+
+    return {
+        id: id,
+        parent: 0,
+        position: "",
+        url: "",
+        expanded: false,
+        child_count: 0,
+        $item: $item,
+        $tab: $tab,
+        $favicon: $favicon,
+        $title: $title,
+        $child_count: $child_count,
+        $list: $list,
+    };
+}
+
 let $tab_destination_marker = $("div", {class:"tab-destination-marker"});
 
 let grabbing_tab = false;
@@ -429,6 +489,7 @@ let commands = {
             $html.classList.add("theme-" + settings.theme);
         }
     },
+
     update (new_root, new_focus, updates) {
          // Create or change updated tabs
         for (let [
@@ -444,83 +505,28 @@ let commands = {
                 delete tabs_by_id[id];
                 continue;
             }
+
+            let tab = tabs_by_id[id];
+            if (!tab) {
+                tab = tabs_by_id[id] = create_tab(id);
+            }
+
+            if (parent != tab.parent || position != tab.position) {
+                 // If tab's location was changed, take it out of the DOM.
+                 // It'll be reinserted later.
+                tab.$item.remove();
+            }
+            tab.parent = parent;
+            tab.position = position;
+            tab.url = url;
+            tab.$title.innerText = title ? title : url;
+
             let tooltip = title;
             if (url) tooltip += "\n" + url;
             if (child_count > 1) tooltip += "\n(" + child_count + ")";
+            tab.$tab.title = tooltip;
 
-            if (!title) title = url;
-
-            let tab = tabs_by_id[id];
-            if (!tab) {  // Create new tab
-                let $item, $tab, $favicon, $title, $child_count, $list;
-                $item = $("div", {
-                    id: id,
-                    class: "item",
-                }, [
-                    $tab = $("div", {
-                        class: "tab",
-                        title: tooltip,
-                        tabIndex: "0",
-                        click: on_tab_clicked,
-                        auxclick: on_tab_clicked,
-                        mousedown: on_tab_mousedown,
-                    }, [
-                        $("div", {
-                            class: "expand",
-                            click: on_expand_clicked,
-                        }),
-                        $favicon = $("img", {
-                            class:"favicon",
-                            load: on_favicon_load,
-                            error: on_favicon_error,
-                        }),
-                        $title = $("div", {class:"title"}, title),
-                        $child_count = $("div", {class:"child-count"}),
-                        $("div", {
-                            class: "close",
-                            click: on_close_clicked,
-                        }),
-                        $("div", {
-                            class: "new-child",
-                            click: on_new_child_clicked,
-                        }),
-                        $("div", {
-                            class: "star",
-                            click: on_star_clicked,
-                        }),
-                    ]),
-                    $list = $("div", {class:"list"}),
-                ]);
-
-                tab = tabs_by_id[id] = {
-                    id: id,
-                    parent: parent,
-                    position: position,
-                    url: url,
-                    expanded: false,
-                    child_count: child_count,
-                    $item: $item,
-                    $tab: $tab,
-                    $favicon: $favicon,
-                    $title: $title,
-                    $child_count: $child_count,
-                    $list: $list,
-                };
-            }
-            else {  // Update existing tab
-                if (parent != tab.parent || position != tab.position) {
-                    tab.$item.remove();
-                }
-                tab.parent = parent;
-                tab.position = position;
-                tab.url = url;
-                tab.$tab.setAttribute("title", tooltip);
-                tab.$title.innerText = title;
-                if (focused_id == id) {
-                    set_address(tab.url);
-                }
-            }
-
+            tab.child_count = child_count;
             if (child_count) {
                 tab.$child_count.innerText = "(" + child_count + ")";
                 tab.$item.classList.add("parent");
@@ -542,13 +548,14 @@ let commands = {
                 tab.$favicon.classList.remove("loaded");
             }
 
-             // Update toolbar buttons for active tab
+             // Update toolbar state for active tab
             if (id == new_focus) {
                 $back.classList.toggle("disabled", !can_go_back);
                 $forward.classList.toggle("disabled", !can_go_forward);
                 $reload.classList.toggle("disabled", loading === undefined)
                 $reload.classList.toggle("loading", loading);
                 $reload.title = loading ? "Stop" : "Reload";
+                set_address(tab.url);
                 currently_loading = loading;
             }
         }
@@ -570,7 +577,7 @@ let commands = {
         }
 
          // Wait until we're done updating to insert moved tabs, to make sure
-         //  parent tabs have been delivered.
+         //  parent tabs have been created.
         for (let [id] of updates) {
             let tab = tabs_by_id[id];
             if (!tab) continue;  // Must have been deleted or something
@@ -623,6 +630,7 @@ let commands = {
             }
         }
     },
+
     select_location () {
         $address.select();
         $address.focus();
@@ -635,7 +643,7 @@ host.addEventListener("message", e=>{
         return;
     }
     let command = e.data.shift();
-    console.log(command, e.data);
+    //console.log(command, e.data);
     if (command in commands) {
         commands[command].apply(undefined, e.data)
     }
