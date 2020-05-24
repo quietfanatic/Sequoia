@@ -3,11 +3,6 @@
 let host = window.chrome.webview;
 let $html = document.documentElement;
 
-function handled (event) {
-    event.stopPropagation();
-    event.preventDefault();
-}
-
 ///// Toolbar DOM
 
  // Simple back and forward buttons
@@ -221,6 +216,10 @@ window.addEventListener("blur", e => {
 
 ///// Tab DOM and behavior
 
+let tabs_by_id = {};
+let root_id = 0;
+let focused_id = 0;
+
 function create_tab (id) {
     let $favicon = $("img", {
         class: "favicon",
@@ -280,6 +279,101 @@ function create_tab (id) {
         $list: $list,
     };
 }
+
+function close_or_delete_tab (tab) {
+    if (tab.$item.classList.contains("closed")) {
+        host.postMessage(["delete", tab.id]);
+    }
+    else if (tab.child_count && tab.expanded) {
+        host.postMessage(["inherit_close", tab.id]);
+    }
+    else {
+        host.postMessage(["close", tab.id]);
+    }
+}
+
+function on_tab_clicked (event) {
+    let $item = event.target.closest('.item');
+    let tab = tabs_by_id[+$item.id];
+    if (event.button == 0) {
+        if (focused_id != tab.id) {
+            host.postMessage(["focus", tab.id]);
+        }
+        if (!tab.loaded) {
+            host.postMessage(["load", tab.id]);
+        }
+        tab.$tab.focus();
+    }
+    else if (event.button == 1) {
+        close_or_delete_tab(tab);
+    }
+    handled(event);
+}
+
+function on_new_child_clicked (event) {
+    let $item = event.target.closest('.item');
+    host.postMessage(["new_child", +$item.id]);
+    handled(event);
+}
+
+function on_star_clicked (event) {
+    let $item = event.target.closest('.item');
+    let id = +$item.id;
+    if (tabs_by_id[id].$tab.classList.contains("starred")) {
+        host.postMessage(["unstar", id]);
+    }
+    else {
+        host.postMessage(["star", id]);
+    }
+    handled(event);
+}
+
+function on_close_clicked (event) {
+    let $item = event.target.closest('.item');
+    close_or_delete_tab(tabs_by_id[+$item.id]);
+    handled(event);
+}
+
+function expand_tab (tab) {
+    if (!tab) {
+        host.postMessage(["expand", 0]);
+        return;
+    }
+    host.postMessage(["expand", tab.id]);
+    tab.$item.classList.add("expanded");
+    let depth = 0;
+    for (let t = tab; t; t = tabs_by_id[t.parent]) {
+        depth += 1;
+    }
+    tab.$list.classList.toggle("alt", depth % 4 >= 2);
+    tab.expanded = true;
+}
+function contract_tab (tab) {
+    host.postMessage(["contract", tab.id]);
+    tab.$item.classList.remove("expanded");
+    tab.expanded = false;
+}
+function on_expand_clicked (event) {
+    let $item = event.target.closest('.item');
+    let tab = tabs_by_id[+$item.id];
+    if (tab.expanded) {
+        contract_tab(tab);
+    }
+    else {
+        expand_tab(tab);
+    }
+    handled(event);
+}
+
+function on_favicon_load (event) {
+    event.target.classList.add("loaded");
+}
+
+function on_favicon_error (event) {
+    event.target.classList.remove("loaded");
+}
+
+///// Tab dragging and moving
 
 let $tab_destination_marker = $("div", {class:"tab-destination-marker"});
 
@@ -359,120 +453,6 @@ function on_tab_release (event) {
         }
     }
     handled(event);
-}
-
-function send_resize () {
-    let x = showing_sidebar ? $sidebar.offsetWidth : 0;
-    let y = $toolbar.offsetHeight;
-    host.postMessage(["resize", x, $toolbar.offsetHeight]);
-}
-
- // Prevent autoscroll behavior
-document.addEventListener("mousedown", event => {
-    if (event.button == 1) {
-        handled(event);
-    }
-});
-
-let tabs_by_id = {};
-let root_id = 0;
-let focused_id = 0;
-
-function focus_tab (tab) {
-    if (focused_id != tab.id) {
-        host.postMessage(["focus", tab.id]);
-    }
-    if (!tab.loaded) {
-        host.postMessage(["load", tab.id]);
-    }
-}
-
-function close_or_delete_tab (tab) {
-    if (tab.$item.classList.contains("closed")) {
-        host.postMessage(["delete", tab.id]);
-    }
-    else if (tab.child_count && tab.expanded) {
-        host.postMessage(["inherit_close", tab.id]);
-    }
-    else {
-        host.postMessage(["close", tab.id]);
-    }
-}
-
-function on_tab_clicked (event) {
-    let $item = event.target.closest('.item');
-    let tab = tabs_by_id[+$item.id];
-    if (event.button == 0) {
-        focus_tab(tab);
-        tab.$tab.focus();
-    }
-    else if (event.button == 1) {
-        close_or_delete_tab(tab);
-    }
-    handled(event);
-}
-
-function on_new_child_clicked (event) {
-    let $item = event.target.closest('.item');
-    host.postMessage(["new_child", +$item.id]);
-    handled(event);
-}
-
-function on_star_clicked (event) {
-    let $item = event.target.closest('.item');
-    let id = +$item.id;
-    if (tabs_by_id[id].$tab.classList.contains("starred")) {
-        host.postMessage(["unstar", id]);
-    }
-    else {
-        host.postMessage(["star", id]);
-    }
-    handled(event);
-}
-
-function on_close_clicked (event) {
-    let $item = event.target.closest('.item');
-    close_or_delete_tab(tabs_by_id[+$item.id]);
-    handled(event);
-}
-
-function expand_tab (tab) {
-    if (!tab) {
-        host.postMessage(["expand", 0]);
-        return;
-    }
-    host.postMessage(["expand", tab.id]);
-    tab.$item.classList.add("expanded");
-    let depth = 0;
-    for (let t = tab; t; t = tabs_by_id[t.parent]) {
-        depth += 1;
-    }
-    tab.$list.classList.toggle("alt", depth % 4 >= 2);
-    tab.expanded = true;
-}
-function contract_tab (tab) {
-    host.postMessage(["contract", tab.id]);
-    tab.$item.classList.remove("expanded");
-    tab.expanded = false;
-}
-function on_expand_clicked (event) {
-    let $item = event.target.closest('.item');
-    let tab = tabs_by_id[+$item.id];
-    if (tab.expanded) {
-        contract_tab(tab);
-    }
-    else {
-        expand_tab(tab);
-    }
-    handled(event);
-}
-
-function on_favicon_load (event) {
-    event.target.classList.add("loaded");
-}
-
-function on_favicon_error (event) {
-    event.target.classList.remove("loaded");
 }
 
 ///// Commands from application
@@ -649,6 +629,26 @@ host.addEventListener("message", e=>{
     }
     else {
         console.log("Shell received unknown message: ", command);
+    }
+});
+
+///// Misc
+
+function handled (event) {
+    event.stopPropagation();
+    event.preventDefault();
+}
+
+function send_resize () {
+    let x = showing_sidebar ? $sidebar.offsetWidth : 0;
+    let y = $toolbar.offsetHeight;
+    host.postMessage(["resize", x, $toolbar.offsetHeight]);
+}
+
+ // Prevent autoscroll behavior
+document.addEventListener("mousedown", event => {
+    if (event.button == 1) {
+        handled(event);
     }
 });
 
