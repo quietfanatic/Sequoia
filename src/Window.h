@@ -6,6 +6,7 @@
 #include <wil/com.h>
 #include <windows.h>
 
+#include "data.h"
 #include "OSWindow.h"
 #include "util/types.h"
 
@@ -14,7 +15,7 @@ namespace json { struct Value; }
 struct IWebView2WebView;
 struct IWebView2AcceleratorKeyPressedEventArgs;
 
-struct Window {
+struct Window : Observer {
     int64 id;
     int64 focused_tab;
     wil::com_ptr<WebView> webview;
@@ -48,8 +49,9 @@ struct Window {
     std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
     HRESULT on_AcceleratorKeyPressed (IWebView2WebView*, IWebView2AcceleratorKeyPressedEventArgs*);
 
-    void update (
-        const std::vector<int64>& updated_tabs
+    void Observer_after_commit (
+        const std::vector<int64>& updated_tabs,
+        const std::vector<int64>& updated_windows
     );
 
     void expand_tab (int64 tab);

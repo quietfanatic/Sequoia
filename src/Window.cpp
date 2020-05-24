@@ -59,20 +59,16 @@ Window::Window (int64 id) :
     });
 };
 
-struct WindowObserver : Observer {
+ // An Observer just for creating new windows.
+ // Windows do most of the Observing, but they can't create themselves.
+struct WindowFactory : Observer {
     void Observer_after_commit (
         const vector<int64>& updated_tabs,
         const vector<int64>& updated_windows
     ) override {
-         // Copy the map so that windows can delete themselves in update()
-         // TODO: destroy windows here instead
-        auto open_windows_copy = open_windows;
-        for (auto& pair : open_windows_copy) {
-            pair.second->update(updated_tabs);
-        }
         for (auto id : updated_windows) {
-            if (!open_windows_copy.count(id)) {
-                 // Open window doesn't exist for this ID, so make one
+            auto data = get_window_data(id);
+            if (!data->closed_at && !open_windows.count(id)) {
                 auto w = new Window (id);
                  // Automatically load focused tab
                 w->claim_activity(ensure_activity_for_tab(w->focused_tab));
@@ -80,7 +76,7 @@ struct WindowObserver : Observer {
         }
     }
 };
-WindowObserver window_observer;
+static WindowFactory window_factory;
 
 void Window::resize () {
     RECT bounds;
@@ -200,8 +196,9 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     return nullptr;
 }
 
-void Window::update (
-    const vector<int64>& updated_tabs
+void Window::Observer_after_commit (
+    const vector<int64>& updated_tabs,
+    const vector<int64>& updated_windows
 ) {
     if (get_window_data(id)->closed_at) {
         LOG("Destroying window", id);

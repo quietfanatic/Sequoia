@@ -61,7 +61,9 @@ void update_observers () {
     updating = true;
     auto tabs = move(updated_tabs);
     auto windows = move(updated_windows);
-    for (auto o : all_observers()) {
+     // Copy the list because an observer can destroy itself
+    auto observers_copy = all_observers();
+    for (auto o : observers_copy) {
         o->Observer_after_commit(tabs, windows);
     }
     updating = false;
