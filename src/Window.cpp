@@ -27,12 +27,12 @@ Window::Window (int64 id) :
 {
     open_windows.emplace(id, this);
     new_webview([this](WebView* wv, HWND hwnd){
-        webview = wv;
-        webview_hwnd = hwnd;
-        SetParent(webview_hwnd, os_window.hwnd);
-        webview->put_IsVisible(TRUE);
+        shell = wv;
+        shell_hwnd = hwnd;
+        SetParent(shell_hwnd, os_window.hwnd);
+        shell->put_IsVisible(TRUE);
 
-        webview->add_WebMessageReceived(
+        shell->add_WebMessageReceived(
             Callback<IWebView2WebMessageReceivedEventHandler>(
                 [this](
                     IWebView2WebView* sender,
@@ -47,13 +47,13 @@ Window::Window (int64 id) :
             return S_OK;
         }).Get(), nullptr);
 
-        webview->add_AcceleratorKeyPressed(
+        shell->add_AcceleratorKeyPressed(
             Callback<IWebView2AcceleratorKeyPressedEventHandler>(
                 this, &Window::on_AcceleratorKeyPressed
             ).Get(), nullptr
         );
 
-        webview->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
+        shell->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
 
         resize();
     });
@@ -81,11 +81,11 @@ static WindowFactory window_factory;
 void Window::resize () {
     RECT bounds;
     GetClientRect(os_window.hwnd, &bounds);
-    if (webview) {
-        webview->put_Bounds(bounds);
+    if (shell) {
+        shell->put_Bounds(bounds);
          // Put shell behind the page
         SetWindowPos(
-            webview_hwnd, HWND_BOTTOM,
+            shell_hwnd, HWND_BOTTOM,
             0, 0, 0, 0,
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
         );
@@ -107,13 +107,13 @@ void Window::enter_fullscreen () {
     if (fullscreen) return;
     fullscreen = true;
     os_window.enter_fullscreen();
-    webview->put_IsVisible(FALSE);
+    shell->put_IsVisible(FALSE);
 }
 
 void Window::leave_fullscreen () {
     if (!fullscreen) return;
     fullscreen = false;
-    webview->put_IsVisible(TRUE);
+    shell->put_IsVisible(TRUE);
     os_window.leave_fullscreen();
     if (activity) activity->leave_fullscreen();
 }
@@ -127,9 +127,9 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         break;
     case 'L':
         if (!shift && ctrl && !alt) return [this]{
-            if (!webview) return;
+            if (!shell) return;
             message_to_shell(json::array("select_location"));
-            webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+            shell->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
         };
         break;
     case 'N':
@@ -346,7 +346,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("investigate_error"): {
-        webview->OpenDevToolsWindow();
+        shell->OpenDevToolsWindow();
         break;
     }
     case x31_hash("show_main_menu"): {
@@ -464,10 +464,10 @@ void Window::message_from_shell (json::Value&& message) {
 }
 
 void Window::message_to_shell (json::Value&& message) {
-    if (!webview) return;
+    if (!shell) return;
     auto s = json::stringify(message);
     LOG("message_to_shell", s);
-    webview->PostWebMessageAsJson(to_utf16(s).c_str());
+    shell->PostWebMessageAsJson(to_utf16(s).c_str());
 }
 
 void Window::claim_activity (Activity* a) {

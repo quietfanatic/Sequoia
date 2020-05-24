@@ -17,8 +17,8 @@ struct IWebView2AcceleratorKeyPressedEventArgs;
 
 struct Window : Observer {
     int64 id;
-    wil::com_ptr<WebView> webview;
-    HWND webview_hwnd = nullptr;
+    wil::com_ptr<WebView> shell;
+    HWND shell_hwnd = nullptr;
 
      // There are three sets of tabs the window is aware of:
      //  - Expanded tabs
