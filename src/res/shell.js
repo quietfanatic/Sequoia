@@ -476,7 +476,7 @@ let commands = {
          // Create or change updated tabs
         for (let [
             id, parent, position, child_count, url, title, favicon,
-            visited_at, starred_at, closed_at, loading, can_go_back, can_go_forward
+            visited_at, starred_at, closed_at, load_state, can_go_back, can_go_forward
         ] of updates) {
              // Only [id] will be sent for a deleted tab
             if (parent === undefined) {
@@ -518,7 +518,7 @@ let commands = {
                 tab.$item.classList.remove("parent");
             }
 
-            tab.$tab.classList.toggle("loaded", loading !== undefined);
+            tab.$tab.classList.toggle("loaded", load_state);
             tab.$tab.classList.toggle("visited", visited_at > 0);
             tab.$tab.classList.toggle("starred", starred_at > 0);
             tab.$item.classList.toggle("closed", closed_at > 0);
@@ -534,9 +534,9 @@ let commands = {
             if (id == new_focus) {
                 $back.classList.toggle("disabled", !can_go_back);
                 $forward.classList.toggle("disabled", !can_go_forward);
-                $reload.classList.toggle("disabled", loading === undefined)
-                $stop.classList.toggle("disabled", loading !== undefined && !loading)
-                $html.classList.toggle("currently-loading", loading);
+                $reload.classList.toggle("disabled", !load_state)
+                $stop.classList.toggle("disabled", load_state != 1)
+                $html.classList.toggle("currently-loading", load_state == 1);
                 set_address(tab.url);
             }
         }

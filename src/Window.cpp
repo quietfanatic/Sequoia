@@ -249,9 +249,9 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
                 t->visited_at,
                 t->starred_at,
                 t->closed_at,
-                activity->currently_loading,
-                activity->can_go_back,
-                activity->can_go_forward
+                activity->currently_loading ? 1 : 2,
+                activity->can_go_back ? 1 : 0,
+                activity->can_go_forward ? 1 : 0
             ));
         }
         else {
