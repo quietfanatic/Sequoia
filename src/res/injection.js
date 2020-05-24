@@ -9,6 +9,7 @@ delete chrome.webview;
 let JSON_stringify = JSON.stringify;
 
 function host_post (message) {
+     // Go to extra lengths to prevent websites from busting JSON with monkey-typing
     let old_Array_toJSON = Array.prototype.toJSON;
     delete Array.prototype.toJSON;
     let old_String_toJSON = String.prototype.toJSON;
@@ -27,6 +28,7 @@ function host_post (message) {
     JSON.stringify = old_JSON_stringify;
 }
 
+ // Sniff and send favicon for this page
 window.addEventListener("DOMContentLoaded", event=>{
     let $icons = document.querySelectorAll("link[rel~=icon][href]");
     if ($icons.length > 0) {
@@ -43,12 +45,13 @@ window.addEventListener("DOMContentLoaded", event=>{
 let $last_a = null;
 let last_timeStamp = 0.0;
 
+ // Middle click a link to open a new child tab
 window.addEventListener("auxclick", event=>{
     if (event.button != 1) return;
     let $a = event.target.closest("[href]");
     if ($a === null) return;
 
-     // Double-click to immediately switch
+     // Double-middle-click to immediately switch
     if ($a == $last_a && event.timeStamp < last_timeStamp + 400) {
         host_post(["switch_to_new_child"]);
         $last_a = null;
@@ -57,18 +60,19 @@ window.addEventListener("auxclick", event=>{
         $last_a = $a;
         last_timeStamp = event.timeStamp;
 
+         // Some heuristics to guess the page's title without loading it
         let title = $a.getAttribute("title");
         if (!title) {
             let $img = $a.querySelector("img");
             if ($img) {
                 title = $img.alt;
             }
-            if (!title) {
-                title = $a.innerText.substring(0, 120);
-                if (!title) {
-                    title = $a.href;
-                }
-            }
+        }
+        if (!title) {
+            title = $a.innerText.substring(0, 120);
+        }
+        if (!title) {
+            title = $a.href;
         }
         title = title.trim().replace(/\n/g, "  ");
 
