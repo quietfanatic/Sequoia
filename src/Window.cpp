@@ -172,7 +172,6 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         if (!shift && ctrl && !alt) return [this]{
             if (activity) {
                 delete activity;
-                tab_updated(get_window_data(id)->focused_tab);
             }
         };
         break;
@@ -379,7 +378,6 @@ void Window::message_from_shell (json::Value&& message) {
         if (tab == get_window_data(id)->focused_tab) {
             claim_activity(a);
         }
-        tab_updated(tab);
         break;
     }
     case x31_hash("new_child"): {

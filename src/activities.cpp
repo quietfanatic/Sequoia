@@ -149,6 +149,7 @@ Activity::Activity (int64 t) : tab(t) {
         }).Get(), nullptr));
 
         navigate_url_or_search(get_tab_data(tab)->url);
+        set_tab_visited(tab);
     });
 }
 
@@ -247,6 +248,7 @@ Activity::~Activity () {
     activities_by_tab.erase(tab);
     if (window) window->activity = nullptr;
     webview->Close();
+    tab_updated(tab);
 }
 
 Activity* activity_for_tab (int64 id) {
