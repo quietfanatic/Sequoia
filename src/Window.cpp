@@ -155,6 +155,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
                 if (tab) {
                     unclose_tab(tab);
                     set_window_focused_tab(id, tab);
+                    claim_activity(ensure_activity_for_tab(tab));
                 }
             };
             else return [this]{
@@ -165,6 +166,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
                     "about:blank"
                 );
                 set_window_focused_tab(id, new_tab);
+                claim_activity(ensure_activity_for_tab(new_tab));
             };
         }
         break;
@@ -366,6 +368,7 @@ void Window::message_from_shell (json::Value&& message) {
         Transaction tr;
         int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
+        claim_activity(ensure_activity_for_tab(new_tab));
         break;
     }
      // Tab actions
@@ -388,6 +391,7 @@ void Window::message_from_shell (json::Value&& message) {
         Transaction tr;
         int64 new_tab = create_tab(message[1], TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
+        claim_activity(ensure_activity_for_tab(new_tab));
         break;
     }
     case x31_hash("star"): {
