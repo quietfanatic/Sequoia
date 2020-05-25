@@ -598,7 +598,12 @@ let commands = {
                     if (!tab || tab.id == root_id) return;
                     expandUp(tabs_by_id[tab.parent]);
                 }
+
                 focused_tab.$tab.scrollIntoViewIfNeeded();
+                if (focused_tab.url == "about:blank") {
+                    $address.select();
+                    $address.focus();
+                }
             }
         }
     },
