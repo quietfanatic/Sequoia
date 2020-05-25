@@ -298,12 +298,7 @@ function on_tab_clicked (event) {
     let $item = event.target.closest('.item');
     let tab = tabs_by_id[+$item.id];
     if (event.button == 0) {
-        if (focused_id != tab.id) {
-            host.postMessage(["focus", tab.id]);
-        }
-        if (!tab.loaded) {
-            host.postMessage(["load", tab.id]);
-        }
+        host.postMessage(["focus", tab.id]);
         tab.$tab.focus();
     }
     else if (event.button == 1) {
@@ -604,10 +599,6 @@ let commands = {
                     expandUp(tabs_by_id[tab.parent]);
                 }
                 focused_tab.$tab.scrollIntoViewIfNeeded();
-                 // TODO: Should we do this on the C++ side?
-                if (!focused_tab.loaded) {
-                    host.postMessage(["load", focused_tab.id]);
-                }
             }
         }
     },

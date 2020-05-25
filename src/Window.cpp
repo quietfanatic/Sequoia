@@ -370,13 +370,13 @@ void Window::message_from_shell (json::Value&& message) {
         Transaction tr;
         unclose_tab(tab);
         set_window_focused_tab(id, tab);
-        break;
-    }
-    case x31_hash("load"): {
-        int64 tab = message[1];
-        Activity* a = ensure_activity_for_tab(tab);
-        if (tab == get_window_data(id)->focused_tab) {
-            claim_activity(a);
+         // Load this tab and, if traversing up or down, the next one
+        claim_activity(ensure_activity_for_tab(tab));
+        auto prev_tab = get_prev_unclosed_tab(tab);
+        auto next_tab = get_next_unclosed_tab(tab);
+        if (prev_tab && next_tab) {
+            if (old_focused_tab == prev_tab) ensure_activity_for_tab(next_tab);
+            else if (old_focused_tab == next_tab) ensure_activity_for_tab(prev_tab);
         }
         break;
     }
