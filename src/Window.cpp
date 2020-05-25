@@ -217,6 +217,9 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
     json::Array updates;
     updates.reserve(updated_tabs.size());
 
+    bool focused_tab_changed = data->focused_tab != old_focused_tab;
+    old_focused_tab = data->focused_tab;
+
     for (auto tab : updated_tabs) {
         auto t = get_tab_data(tab);
         auto grandparent = t->parent ? get_tab_data(t->parent)->parent : 0;
@@ -267,10 +270,11 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
                 t->closed_at
             ));
         }
+
+        if (tab == data->focused_tab) focused_tab_changed = true;
     }
 
-    if (data->focused_tab != old_focused_tab) {
-        old_focused_tab = data->focused_tab;
+    if (focused_tab_changed) {
         const string& title = get_tab_data(data->focused_tab)->title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
     }
