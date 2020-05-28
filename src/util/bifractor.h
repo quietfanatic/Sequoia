@@ -6,6 +6,7 @@
  //   halfway point. Lower biases will make the result closer to the left side, so that
  //   if you expect to bisect in one direction contiually, the byte string doesn't get
  //   quite as long.
+ // It is an error to try to bisect equal Bifractors.
 
 #pragma once
 

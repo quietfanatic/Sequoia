@@ -72,7 +72,7 @@ struct WindowFactory : Observer {
         const vector<int64>& updated_tabs,
         const vector<int64>& updated_windows
     ) override {
-        for (auto id : updated_windows) {
+        for (int64 id : updated_windows) {
             auto data = get_window_data(id);
             if (!data->closed_at && !open_windows.count(id)) {
                 auto w = new Window (id);
@@ -178,7 +178,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         if (ctrl && !alt) {
             if (shift) return [this]{
                 Transaction tr;
-                if (auto w = get_last_closed_window()) {
+                if (int64 w = get_last_closed_window()) {
                     unclose_window(w);
                 }
             };
@@ -257,7 +257,7 @@ void Window::message_from_shell (json::Value&& message) {
         vector<int64> known_tabs {data->focused_tab};
         for (int64 tab = data->focused_tab;; tab = get_tab_data(tab)->parent) {
             expanded_tabs.emplace(tab);
-            for (auto c : get_all_children(tab)) {
+            for (int64 c : get_all_children(tab)) {
                 known_tabs.emplace_back(c);
             }
             if (tab == data->root_tab) break;
@@ -377,8 +377,8 @@ void Window::message_from_shell (json::Value&& message) {
         int64 tab = message[1];
         expanded_tabs.emplace(tab);
         vector<int64> new_known_tabs;
-        for (auto c : get_all_children(tab)) {
-            for (auto g : get_all_children(c)) {
+        for (int64 c : get_all_children(tab)) {
+            for (int64 g : get_all_children(c)) {
                 new_known_tabs.emplace_back(g);
             }
         }
@@ -456,9 +456,9 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
     bool focused_tab_changed = data->focused_tab != old_focused_tab;
     old_focused_tab = data->focused_tab;
 
-    for (auto tab : updated_tabs) {
+    for (int64 tab : updated_tabs) {
         auto t = get_tab_data(tab);
-        auto grandparent = t->parent ? get_tab_data(t->parent)->parent : 0;
+        int64 grandparent = t->parent ? get_tab_data(t->parent)->parent : 0;
 
          // Only send tab if it is a known tab (child or grandchild of expanded tab)
         if (!expanded_tabs.count(tab)

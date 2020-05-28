@@ -3,6 +3,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "assert.h"
 #include "text.h"
 
 std::string Bifractor::hex () const {
@@ -15,6 +16,7 @@ std::string Bifractor::hex () const {
 }
 
 Bifractor::Bifractor (const Bifractor& a, const Bifractor& b, uint bias) {
+    A(a != b);
     size_t max_size = (a.size > b.size ? a.size : b.size) + 1;
 
     std::unique_ptr<uint8[]> buf {new uint8 [max_size]};

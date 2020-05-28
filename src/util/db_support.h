@@ -1,4 +1,5 @@
-#pragma once
+#
+// It is an error to try to bisect equal Bifractors.pragma once
 
 #include <optional>
 #include <tuple>
@@ -174,7 +175,7 @@ struct Ment : Statement {
         return std::move(r);
     }
 
-    std::optional<Result> run_optional (const Params&... params, const Result& def) {
+    std::optional<Result> run_optional (const Params&... params) {
         bind(params...);
         step();
         if (done()) {
