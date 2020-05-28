@@ -252,13 +252,15 @@ void Window::message_from_shell (json::Value&& message) {
         ));
         auto data = get_window_data(id);
          // Focused tab and all its ancestors are expanded.  Send all their
-         //  children.  Grandchildren will be requested later by the shell with
-         //  "expand" commands, including one for the root.
+         //  children and grandchildren.
         vector<int64> known_tabs {data->focused_tab};
         for (int64 tab = data->focused_tab;; tab = get_tab_data(tab)->parent) {
             expanded_tabs.emplace(tab);
             for (int64 c : get_all_children(tab)) {
                 known_tabs.emplace_back(c);
+                for (int64 g : get_all_children(c)) {
+                    known_tabs.emplace_back(g);
+                }
             }
             if (tab == data->root_tab) break;
         }
