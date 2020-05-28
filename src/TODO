@@ -1,21 +1,22 @@
 [ ] Think of more todos
-[ ] Tab moving
-[ ] Fix child counts
+[✓] Tab moving
+[✓] Fix child counts
 [ ] Add unvisited child counts
-[ ] Bookmarking (favoriting?  starring?  Maybe even tagging?)
+[✓] Bookmarking (favoriting?  starring?  Maybe even tagging?)
 [ ] Global settings
-[ ] Keyboard shortcuts
+[✓] Keyboard shortcuts
 [ ] Site-specific settings
 [ ] Content blocking
 [✓] Profile folders
-[ ] Database versioning
+[✓] Database versioning
 [ ] HTML menu
-[ ] Reload/stop button
+[✓] Reload/stop button
 [ ] Improve error handling
-[ ] security for messages from webpage
-[ ] new tab buttons
+[ ] security for messages from webpage -- What does this mean???
+[✓] new tab buttons
 [✓] Reorganize window/shell relationships (OSWindow/Window)
 [✓] Destruct statements
 [ ] Clear favicon when navigating (to different origin?)
 [ ] Cache favicons
-[ ] Accept URL on command line (send it to existing process)
+[✓] Accept URL on command line (send it to existing process)
+[ ] Figure out how to improve bookmarking?
