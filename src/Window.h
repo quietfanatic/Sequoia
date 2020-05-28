@@ -40,31 +40,26 @@ struct Window : Observer {
 
     bool fullscreen = false;
 
-    Window (int64 id);
-
+    void claim_activity (Activity*);
     void resize ();
-
     void enter_fullscreen ();
     void leave_fullscreen ();
 
-    std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
+     // Controller functions
     HRESULT on_AcceleratorKeyPressed (IWebView2WebView*, IWebView2AcceleratorKeyPressedEventArgs*);
+    std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
+    void message_from_shell (json::Value&& message);
+    void focus_tab (int64 tab);
 
+     // View functions
     void Observer_after_commit (
         const std::vector<int64>& updated_tabs,
         const std::vector<int64>& updated_windows
     );
-
-    void expand_tab (int64 tab);
-    void contract_tab (int64 tab);
-
     void send_update (const std::vector<int64>& updated_tabs);
-
-    void message_from_shell (json::Value&& message);
     void message_to_shell (json::Value&& message);
 
-    void claim_activity (Activity*);
-
+    Window (int64 id);
     ~Window();
 };
 
