@@ -28,7 +28,8 @@ Activity::Activity (int64 t) : tab(t) {
     A(!activities_by_tab.contains(t));
     activities_by_tab.emplace(t, this);
 
-    new_webview([this](WebView* wv, HWND hwnd){
+    new_webview([this](WebViewController* wvc, WebView* wv, HWND hwnd){
+        controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
 
@@ -36,14 +37,14 @@ Activity::Activity (int64 t) : tab(t) {
         if (window) {
             window->resize();
             if (get_tab_data(tab)->url != "about:blank") {
-                AH(webview->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
+                AH(controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
             }
         }
 
         AH(webview->add_NavigationStarting(
-            Callback<IWebView2NavigationStartingEventHandler>([this](
-                IWebView2WebView* sender,
-                IWebView2NavigationStartingEventArgs* args) -> HRESULT
+            Callback<ICoreWebView2NavigationStartingEventHandler>([this](
+                ICoreWebView2* sender,
+                ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
             currently_loading = true;
             tab_updated(tab);
@@ -51,10 +52,11 @@ Activity::Activity (int64 t) : tab(t) {
         }).Get(), nullptr));
 
         AH(webview->add_DocumentTitleChanged(
-            Callback<IWebView2DocumentTitleChangedEventHandler>(
-                [this](IWebView2WebView* sender, IUnknown* args) -> HRESULT
+            Callback<ICoreWebView2DocumentTitleChangedEventHandler>(
+                [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-             // See below regarding about:blank
+             // WebView2 tends to have spurious navigations to about:blank, so don't
+             // save the title in that case.
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
             if (wcscmp(source.get(), L"about:blank") != 0) {
@@ -65,10 +67,9 @@ Activity::Activity (int64 t) : tab(t) {
             return S_OK;
         }).Get(), nullptr));
 
-        AH(webview->add_DocumentStateChanged(
-            Callback<IWebView2DocumentStateChangedEventHandler>([this](
-                IWebView2WebView* sender,
-                IWebView2DocumentStateChangedEventArgs* args) -> HRESULT
+        AH(webview->add_HistoryChanged(
+            Callback<ICoreWebView2HistoryChangedEventHandler>(
+                [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
             BOOL back;
             webview->get_CanGoBack(&back);
@@ -78,6 +79,14 @@ Activity::Activity (int64 t) : tab(t) {
             webview->get_CanGoForward(&forward);
             can_go_forward = forward;
 
+            return S_OK;
+        }).Get(), nullptr));
+
+        AH(webview->add_SourceChanged(
+            Callback<ICoreWebView2SourceChangedEventHandler>([this](
+                ICoreWebView2* sender,
+                ICoreWebView2SourceChangedEventArgs* args) -> HRESULT
+        {
              // WebView2 tends to have spurious navigations to about:blank, so don't
              // save the url in that case.
             wil::unique_cotaskmem_string source;
@@ -90,20 +99,21 @@ Activity::Activity (int64 t) : tab(t) {
         }).Get(), nullptr));
 
         AH(webview->add_NavigationCompleted(
-            Callback<IWebView2NavigationCompletedEventHandler>([this](
-                IWebView2WebView* sender,
-                IWebView2NavigationCompletedEventArgs* args) -> HRESULT
+            Callback<ICoreWebView2NavigationCompletedEventHandler>([this](
+                ICoreWebView2* sender,
+                ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
             currently_loading = false;
             tab_updated(tab);
             return S_OK;
         }).Get(), nullptr));
 
-         // This doesn't work for middle-clicking links yet
+         // This doesn't work for middle-clicking links
+         // TODO: How true is that now?  Investigate when this is called.
         AH(webview->add_NewWindowRequested(
-            Callback<IWebView2NewWindowRequestedEventHandler>([this](
-                IWebView2WebView* sender,
-                IWebView2NewWindowRequestedEventArgs* args) -> HRESULT
+            Callback<ICoreWebView2NewWindowRequestedEventHandler>([this](
+                ICoreWebView2* sender,
+                ICoreWebView2NewWindowRequestedEventArgs* args) -> HRESULT
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
@@ -117,10 +127,10 @@ Activity::Activity (int64 t) : tab(t) {
         AH(webview->AddScriptToExecuteOnDocumentCreated(injection.c_str(), nullptr));
 
         AH(webview->add_WebMessageReceived(
-            Callback<IWebView2WebMessageReceivedEventHandler>(
+            Callback<ICoreWebView2WebMessageReceivedEventHandler>(
                 [this](
-                    IWebView2WebView* sender,
-                    IWebView2WebMessageReceivedEventArgs* args
+                    ICoreWebView2* sender,
+                    ICoreWebView2WebMessageReceivedEventArgs* args
                 )
         {
             wil::unique_cotaskmem_string raw;
@@ -129,11 +139,11 @@ Activity::Activity (int64 t) : tab(t) {
             return S_OK;
         }).Get(), nullptr));
 
-        AH(webview->add_AcceleratorKeyPressed(
-            Callback<IWebView2AcceleratorKeyPressedEventHandler>(
+        AH(controller->add_AcceleratorKeyPressed(
+            Callback<ICoreWebView2AcceleratorKeyPressedEventHandler>(
                 [this](
-                    IWebView2WebView* sender,
-                    IWebView2AcceleratorKeyPressedEventArgs* args
+                    ICoreWebView2Controller* sender,
+                    ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
             if (!window) return S_OK;
@@ -141,8 +151,8 @@ Activity::Activity (int64 t) : tab(t) {
         }).Get(), nullptr));
 
         AH(webview->add_ContainsFullScreenElementChanged(
-            Callback<IWebView2ContainsFullScreenElementChangedEventHandler>(
-                [this](IWebView2WebView5* sender, IUnknown* args) -> HRESULT
+            Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
+                [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
             is_fullscreen() ? window->enter_fullscreen() : window->leave_fullscreen();
             return S_OK;
@@ -182,22 +192,20 @@ void Activity::message_from_webview(json::Value&& message) {
 
 void Activity::claimed_by_window (Window* w) {
     window = w;
-    if (webview) {
+    if (controller) {
         if (window) {
-            AH(webview->put_IsVisible(TRUE));
+            AH(controller->put_IsVisible(TRUE));
             SetParent(webview_hwnd, window->os_window.hwnd);
         }
         else {
-            AH(webview->put_IsVisible(FALSE));
+            AH(controller->put_IsVisible(FALSE));
             SetParent(webview_hwnd, HWND_MESSAGE);
         }
     }
 }
 
 void Activity::resize (RECT bounds) {
-    if (webview) {
-        webview->put_Bounds(bounds);
-    }
+    if (controller) controller->put_Bounds(bounds);
 }
 
 bool Activity::navigate_url (const string& address) {
@@ -247,7 +255,7 @@ Activity::~Activity () {
     LOG("delete Activity", this);
     activities_by_tab.erase(tab);
     if (window) window->activity = nullptr;
-    webview->Close();
+    if (controller) controller->Close();
     tab_updated(tab);
 }
 

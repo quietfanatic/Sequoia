@@ -26,17 +26,18 @@ Window::Window (int64 id) :
     id(id), os_window(this)
 {
     open_windows.emplace(id, this);
-    new_webview([this](WebView* wv, HWND hwnd){
+    new_webview([this](WebViewController* wvc, WebView* wv, HWND hwnd){
+        shell_controller = wvc;
         shell = wv;
         shell_hwnd = hwnd;
         SetParent(shell_hwnd, os_window.hwnd);
-        shell->put_IsVisible(TRUE);
+        shell_controller->put_IsVisible(TRUE);
 
         shell->add_WebMessageReceived(
-            Callback<IWebView2WebMessageReceivedEventHandler>(
+            Callback<ICoreWebView2WebMessageReceivedEventHandler>(
                 [this](
-                    IWebView2WebView* sender,
-                    IWebView2WebMessageReceivedEventArgs* args
+                    ICoreWebView2* sender,
+                    ICoreWebView2WebMessageReceivedEventArgs* args
                 )
         {
             wil::unique_cotaskmem_string raw16;
@@ -47,8 +48,8 @@ Window::Window (int64 id) :
             return S_OK;
         }).Get(), nullptr);
 
-        shell->add_AcceleratorKeyPressed(
-            Callback<IWebView2AcceleratorKeyPressedEventHandler>(
+        shell_controller->add_AcceleratorKeyPressed(
+            Callback<ICoreWebView2AcceleratorKeyPressedEventHandler>(
                 this, &Window::on_AcceleratorKeyPressed
             ).Get(), nullptr
         );
@@ -97,8 +98,8 @@ void Window::claim_activity (Activity* a) {
 void Window::resize () {
     RECT bounds;
     GetClientRect(os_window.hwnd, &bounds);
-    if (shell) {
-        shell->put_Bounds(bounds);
+    if (shell_controller) {
+        shell_controller->put_Bounds(bounds);
          // Put shell behind the page
         SetWindowPos(
             shell_hwnd, HWND_BOTTOM,
@@ -123,25 +124,26 @@ void Window::enter_fullscreen () {
     if (fullscreen) return;
     fullscreen = true;
     os_window.enter_fullscreen();
-    shell->put_IsVisible(FALSE);
+    shell_controller->put_IsVisible(FALSE);
 }
 
 void Window::leave_fullscreen () {
     if (!fullscreen) return;
     fullscreen = false;
-    shell->put_IsVisible(TRUE);
+    shell_controller->put_IsVisible(TRUE);
     os_window.leave_fullscreen();
     if (activity) activity->leave_fullscreen();
 }
 
 HRESULT Window::on_AcceleratorKeyPressed (
-    IWebView2WebView* sender,
-    IWebView2AcceleratorKeyPressedEventArgs* args
+    ICoreWebView2Controller* sender,
+    ICoreWebView2AcceleratorKeyPressedEventArgs* args
 ) {
-    WEBVIEW2_KEY_EVENT_TYPE type; AH(args->get_KeyEventType(&type));
-    switch (type) {
-    case WEBVIEW2_KEY_EVENT_TYPE_KEY_DOWN: break;
-    case WEBVIEW2_KEY_EVENT_TYPE_SYSTEM_KEY_DOWN: break;
+    COREWEBVIEW2_KEY_EVENT_KIND kind;
+    AH(args->get_KeyEventKind(&kind));
+    switch (kind) {
+    case COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN: break;
+    case COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN: break;
     default: return S_OK;
     }
     UINT key; AH(args->get_VirtualKey(&key));
@@ -153,7 +155,7 @@ HRESULT Window::on_AcceleratorKeyPressed (
         GetKeyState(VK_MENU) < 0
     );
     if (handle) {
-        AH(args->Handle(TRUE));
+        AH(args->put_Handled(TRUE));
         bool repeated = l & (1 << 30);
         if (!repeated) handle();
     }
@@ -171,7 +173,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         if (!shift && ctrl && !alt) return [this]{
             if (!shell) return;
             message_to_shell(json::array("select_location"));
-            shell->MoveFocus(WEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+            shell_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
         };
         break;
     case 'N':

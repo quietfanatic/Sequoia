@@ -20,3 +20,5 @@
 [ ] Cache favicons
 [✓] Accept URL on command line (send it to existing process)
 [ ] Figure out how to improve bookmarking?
+[ ] NewBrowserVersionAvailable
+

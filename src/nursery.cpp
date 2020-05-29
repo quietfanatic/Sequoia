@@ -1,7 +1,7 @@
 #include "nursery.h"
 
+#include <wil/com.h>  // For some reason WebView2.h errors if this isn't included first???
 #include <WebView2.h>
-#include <wil/com.h>
 #include <wrl.h>
 
 #include "activities.h"
@@ -17,10 +17,11 @@ using namespace Microsoft::WRL;
 using namespace std;
 
 wstring edge_udf;
-static wil::com_ptr<IWebView2Environment> environment;
+static wil::com_ptr<ICoreWebView2Environment> environment;
 HWND nursery_hwnd = nullptr;
 
-WebView* next_webview = nullptr;
+wil::com_ptr<WebViewController> next_controller = nullptr;
+wil::com_ptr<WebView> next_webview = nullptr;
 HWND next_hwnd = nullptr;
 
 static auto class_name = L"Sequoia Nursery";
@@ -86,38 +87,38 @@ void init_nursery () {
     A(FindWindowExW(HWND_MESSAGE, nursery_hwnd, class_name, window_title.c_str()) == nullptr);
 }
 
-static void create (const function<void(WebView*, HWND)>& then) {
-    AH(environment->CreateWebView(nursery_hwnd,
-        Callback<IWebView2CreateWebViewCompletedHandler>(
-            [then](HRESULT hr, IWebView2WebView* wv) -> HRESULT
+static void create (const function<void(WebViewController*, WebView*, HWND)>& then) {
+    AH(environment->CreateCoreWebView2Controller(nursery_hwnd,
+        Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
+            [then](HRESULT hr, ICoreWebView2Controller* controller) -> HRESULT
    {
         AH(hr);
-        WebView* webview;
-        AH(wv->QueryInterface(IID_PPV_ARGS(&webview)));
         HWND hwnd = GetWindow(nursery_hwnd, GW_CHILD);
         AW(hwnd);
         SetParent(hwnd, HWND_MESSAGE);
-        then(webview, hwnd);
+
+        WebView* webview;
+        controller->get_CoreWebView2(&webview);
+        then(controller, webview, hwnd);
         return S_OK;
     }).Get()));
 }
 
 static void queue () {
-    create([](WebView* wv, HWND hwnd){
-        next_webview = wv;
+    create([](WebViewController* controller, WebView* webview, HWND hwnd){
+        next_controller = controller;
+        next_webview = webview;
         next_hwnd = hwnd;
-         // Force the webview to fully initialize
-        AH(next_webview->ExecuteScript(L"", nullptr));
     });
 }
 
-void new_webview (const function<void(WebView*, HWND)>& then) {
+void new_webview (const function<void(WebViewController*, WebView*, HWND)>& then) {
     A(nursery_hwnd);
     if (!environment) {
-        AH(CreateWebView2EnvironmentWithDetails(
+        AH(CreateCoreWebView2EnvironmentWithDetails(
             nullptr, edge_udf.c_str(), nullptr,
-            Callback<IWebView2CreateWebView2EnvironmentCompletedHandler>(
-                [then](HRESULT hr, IWebView2Environment* env) -> HRESULT
+            Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
+                [then](HRESULT hr, ICoreWebView2Environment* env) -> HRESULT
         {
             AH(hr);
             environment = env;
@@ -126,10 +127,10 @@ void new_webview (const function<void(WebView*, HWND)>& then) {
             return S_OK;
         }).Get()));
     }
-    else if (next_webview) {
-        auto wv = next_webview;
-        next_webview = nullptr;
-        then(wv, next_hwnd);
+    else if (next_controller) {
+        auto controller = std::move(next_controller);
+        auto webview = std::move(next_webview);
+        then(controller.get(), webview.get(), next_hwnd);
         queue();
     }
     else {

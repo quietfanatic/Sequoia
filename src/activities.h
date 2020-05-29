@@ -13,6 +13,7 @@ struct Activity {
     int64 tab;
     Window* window = nullptr;
 
+    wil::com_ptr<WebViewController> controller;
     wil::com_ptr<WebView> webview;
     HWND webview_hwnd = nullptr;
     bool can_go_back = false;

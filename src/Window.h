@@ -12,11 +12,11 @@
 
 namespace json { struct Value; }
 
-struct IWebView2WebView;
-struct IWebView2AcceleratorKeyPressedEventArgs;
+struct ICoreWebView2AcceleratorKeyPressedEventArgs;
 
 struct Window : Observer {
     int64 id;
+    wil::com_ptr<WebViewController> shell_controller;
     wil::com_ptr<WebView> shell;
     HWND shell_hwnd = nullptr;
 
@@ -46,7 +46,7 @@ struct Window : Observer {
     void leave_fullscreen ();
 
      // Controller functions
-    HRESULT on_AcceleratorKeyPressed (IWebView2WebView*, IWebView2AcceleratorKeyPressedEventArgs*);
+    HRESULT on_AcceleratorKeyPressed (ICoreWebView2Controller*, ICoreWebView2AcceleratorKeyPressedEventArgs*);
     std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
     void message_from_shell (json::Value&& message);
     void focus_tab (int64 tab);

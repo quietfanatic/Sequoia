@@ -12,6 +12,8 @@ using uint32 = uint32_t;
 using uint64 = uint64_t;
 using uint = unsigned int;
 
-struct IWebView2WebView5;
-using WebView = IWebView2WebView5;
+struct ICoreWebView2;
+using WebView = ICoreWebView2;
+struct ICoreWebView2Controller;
+using WebViewController = ICoreWebView2Controller;
 
