@@ -352,10 +352,6 @@ void Window::message_from_shell (json::Value&& message) {
         if (tab == get_window_data(id)->root_tab) {
             close_window(id);
         }
-        else {
-            int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab);
-            if (next) focus_tab(next);
-        }
         close_tab(tab);
         break;
     }

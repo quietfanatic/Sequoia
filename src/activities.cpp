@@ -222,6 +222,7 @@ void Activity::navigate_search (const string& search) {
 }
 
 void Activity::navigate_url_or_search (const string& address) {
+    LOG("navigate_url_or_search", address);
     if (webview) {
         if (navigate_url(address)) return;
         if (address.find(' ') != string::npos
