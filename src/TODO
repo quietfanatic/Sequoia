@@ -12,7 +12,7 @@
 [ ] HTML menu
 [✓] Reload/stop button
 [ ] Improve error handling
-[ ] security for messages from webpage -- What does this mean???
+[ ] security nonce for messages from webpage -- Is this actually necessary?
 [✓] new tab buttons
 [✓] Reorganize window/shell relationships (OSWindow/Window)
 [✓] Destruct statements
@@ -21,4 +21,4 @@
 [✓] Accept URL on command line (send it to existing process)
 [ ] Figure out how to improve bookmarking?
 [ ] NewBrowserVersionAvailable
-
+[ ] Remember expanded tabs

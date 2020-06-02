@@ -182,6 +182,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
                 Transaction tr;
                 if (int64 w = get_last_closed_window()) {
                     unclose_window(w);
+                    unclose_tab(get_window_data(w)->focused_tab);
                 }
             };
             else return [this]{
