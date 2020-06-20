@@ -256,9 +256,10 @@ void Window::message_from_shell (json::Value&& message) {
         auto data = get_window_data(id);
          // Focused tab and all its ancestors are expanded.  Send all their
          //  children and grandchildren.
-        vector<int64> known_tabs {data->focused_tab};
+        vector<int64> known_tabs;
         for (int64 tab = data->focused_tab;; tab = get_tab_data(tab)->parent) {
             expanded_tabs.emplace(tab);
+            known_tabs.emplace_back(tab);
             for (int64 c : get_all_children(tab)) {
                 known_tabs.emplace_back(c);
                 for (int64 g : get_all_children(c)) {
@@ -458,6 +459,7 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
     old_focused_tab = data->focused_tab;
 
     for (int64 tab : updated_tabs) {
+        if (!tab) continue;
         auto t = get_tab_data(tab);
         int64 grandparent = t->parent ? get_tab_data(t->parent)->parent : 0;
 
