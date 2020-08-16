@@ -266,7 +266,7 @@ void Window::message_from_shell (json::Value&& message) {
                     known_tabs.emplace_back(g);
                 }
             }
-            if (tab == data->root_tab) break;
+            if (tab == data->root_tab || !tab) break;
         }
         send_update(known_tabs);
         break;
