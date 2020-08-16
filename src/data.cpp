@@ -12,6 +12,7 @@
 #include "util/hash.h"
 #include "util/logging.h"
 #include "util/text.h"
+#include "Window.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -315,7 +316,6 @@ void close_tab (int64 id) {
     auto data = get_tab_data(id);
     if (data->closed_at) return;
 
-    delete activity_for_tab(id);
     set_tab_closed_at(id, now());
     change_child_count(data->parent, -1 - data->child_count);
     prune_closed_tabs(20, 15*60);
@@ -331,9 +331,17 @@ void close_tab (int64 id) {
                 if (!s) s = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
                 successor = s;
             }
+             // Auto load successor if closed tab was loaded
+             // TODO: Apply preloading here?
+            if (auto activity = activity_for_tab(id)) {
+                if (activity->window && activity->window->id == w) {
+                    activity->window->claim_activity(ensure_activity_for_tab(successor));
+                }
+            }
             set_window_focused_tab(w, successor);
         }
     }
+    delete activity_for_tab(id);
 }
 
 void close_tab_with_heritage (int64 id) {
