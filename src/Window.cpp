@@ -269,6 +269,7 @@ void Window::message_from_shell (json::Value&& message) {
             if (tab == data->root_tab || !tab) break;
         }
         send_update(known_tabs);
+        shell_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
         break;
     }
     case x31_hash("resize"): {
