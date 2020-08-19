@@ -122,6 +122,7 @@ void Window::resize () {
 
 void Window::enter_fullscreen () {
     if (fullscreen) return;
+    if (!activity) return;
     fullscreen = true;
     os_window.enter_fullscreen();
     shell_controller->put_IsVisible(FALSE);
@@ -512,6 +513,8 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
         }
 
         if (tab == data->focused_tab) focused_tab_changed = true;
+
+        if (!activity) leave_fullscreen();
     }
 
     if (focused_tab_changed) {
