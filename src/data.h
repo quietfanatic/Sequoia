@@ -64,6 +64,7 @@ int64 get_prev_unclosed_tab (int64 id);  // Returns 0 if there is none.
 int64 get_next_unclosed_tab (int64 id);
 std::vector<int64> get_all_children (int64 parent);
 std::vector<int64> get_all_unclosed_children (int64 parent);
+std::vector<int64> get_last_visited_tabs (int n_tabs);
 void set_tab_url (int64 id, const std::string& url);
 void set_tab_title (int64 id, const std::string& title);
 void set_tab_favicon (int64 id, const std::string& favicon);

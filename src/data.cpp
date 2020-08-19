@@ -189,6 +189,15 @@ SELECT id FROM tabs WHERE parent = ? AND closed_at IS NULL ORDER BY position
     return get.run(parent);
 }
 
+std::vector<int64> get_last_visited_tabs (int n_tabs) {
+     // TODO: create index
+    LOG("get_last_visited_tabs", n_tabs);
+    static State<int64>::Ment<int64> get {R"(
+SELECT id FROM tabs WHERE closed_at IS NULL ORDER BY visited_at DESC LIMIT ?
+    )"};
+    return get.run(n_tabs);
+}
+
 string get_tab_url (int64 id) {
     return get_tab_data(id)->url;
 }

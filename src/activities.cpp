@@ -161,6 +161,36 @@ Activity::Activity (int64 t) : tab(t) {
         navigate_url_or_search(get_tab_data(tab)->url);
         set_tab_visited(tab);
     });
+
+     // Delete old activities
+     // TODO: configurable values
+    if (activities_by_tab.size() > 100) {
+        set<int64> keep_loaded;
+         // Don't unload tabs focused by any windows
+        for (auto w : get_all_unclosed_windows()) {
+            keep_loaded.emplace(get_window_data(w)->focused_tab);
+        }
+         // Keep last n loaded tabs regardless
+        for (auto t : get_last_visited_tabs(10)) {
+            keep_loaded.emplace(t);
+        }
+         // Find last unstarred tab or last starred tab
+        int64 victim_id = 0;
+        TabData* victim_dat = nullptr;
+        for (auto p : activities_by_tab) {
+            if (keep_loaded.contains(p.first)) continue;
+            auto dat = get_tab_data(p.first);
+            if (!victim_id
+                || !dat->starred_at && victim_dat->starred_at
+                || dat->visited_at < victim_dat->visited_at
+            ) {
+                victim_id = p.first;
+                victim_dat = dat;
+            }
+        }
+        A(victim_id != tab);
+        delete activity_for_tab(victim_id);
+    }
 }
 
 void Activity::message_from_webview(json::Value&& message) {
