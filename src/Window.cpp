@@ -239,6 +239,13 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
             };
         }
         break;
+    case VK_ESCAPE:
+        if (!shift && !ctrl && !alt) {
+            if (fullscreen) return [this]{
+                leave_fullscreen();
+            };
+        }
+        break;
     }
     return nullptr;
 }
