@@ -246,6 +246,22 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
             };
         }
         break;
+    case VK_UP:
+        if (!shift && ctrl && !alt) {
+            return [this]{
+                int64 prev = get_prev_unclosed_tab(get_window_data(id)->focused_tab);
+                if (prev) focus_tab(prev);
+            };
+        }
+        break;
+    case VK_DOWN:
+        if (!shift && ctrl && !alt) {
+            return [this]{
+                int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab);
+                if (next) focus_tab(next);
+            };
+        }
+        break;
     }
     return nullptr;
 }
@@ -277,7 +293,6 @@ void Window::message_from_shell (json::Value&& message) {
             if (tab == data->root_tab || !tab) break;
         }
         send_update(known_tabs);
-        shell_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
         break;
     }
     case x31_hash("resize"): {
@@ -520,14 +535,20 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
         }
 
         if (tab == data->focused_tab) focused_tab_changed = true;
-
-        if (!activity) leave_fullscreen();
     }
 
     if (focused_tab_changed) {
         const string& title = get_tab_data(data->focused_tab)->title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
+        if (auto activity = activity_for_tab(data->focused_tab)) {
+            activity->controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+        }
+        else {
+            shell_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+        }
     }
+
+    if (!activity_for_tab(data->focused_tab)) leave_fullscreen();
 
     message_to_shell(json::array(
         "update",
