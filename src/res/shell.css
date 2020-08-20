@@ -27,6 +27,7 @@ html {
     --tree-bg-alt:#888888;
     --tree-fg:#ffffff;
     --tab-destination-marker:#ffffff;
+    --body-bg:#444444;
 }
 html.moving-tab * {
     cursor:move !important;
@@ -36,6 +37,7 @@ body {
     height:100%;
     margin:0;
     overflow:hidden;
+    background-color:var(--body-bg);
 }
 #toolbar {
     position:absolute;
