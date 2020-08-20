@@ -164,8 +164,10 @@ Activity::Activity (int64 t) : tab(t) {
 
      // Delete old activities
      // TODO: configurable values
-    if (activities_by_tab.size() > 100) {
+    while (activities_by_tab.size() > 100) {
         set<int64> keep_loaded;
+         // Don't unload self!
+        keep_loaded.emplace(tab);
          // Don't unload tabs focused by any windows
         for (auto w : get_all_unclosed_windows()) {
             keep_loaded.emplace(get_window_data(w)->focused_tab);
@@ -180,6 +182,7 @@ Activity::Activity (int64 t) : tab(t) {
         for (auto p : activities_by_tab) {
             if (keep_loaded.contains(p.first)) continue;
             auto dat = get_tab_data(p.first);
+            if (dat->visited_at == 0) continue;
             if (!victim_id
                 || !dat->starred_at && victim_dat->starred_at
                 || dat->visited_at < victim_dat->visited_at
@@ -188,7 +191,6 @@ Activity::Activity (int64 t) : tab(t) {
                 victim_dat = dat;
             }
         }
-        A(victim_id != tab);
         delete activity_for_tab(victim_id);
     }
 }
