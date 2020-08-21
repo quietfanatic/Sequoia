@@ -41,6 +41,7 @@ struct Window : Observer {
     bool fullscreen = false;
 
     void claim_activity (Activity*);
+    void hidden ();
     void resize ();
     void enter_fullscreen ();
     void leave_fullscreen ();
@@ -51,11 +52,12 @@ struct Window : Observer {
     void message_from_shell (json::Value&& message);
     void focus_tab (int64 tab);
 
-     // View functions
     void Observer_after_commit (
         const std::vector<int64>& updated_tabs,
         const std::vector<int64>& updated_windows
     );
+
+     // View functions
     void send_update (const std::vector<int64>& updated_tabs);
     void message_to_shell (json::Value&& message);
 

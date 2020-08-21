@@ -95,7 +95,20 @@ void Window::claim_activity (Activity* a) {
     resize();
 }
 
+void Window::hidden () {
+    LOG("Window::hidden");
+    if (activity && activity->controller) {
+        activity->controller->put_IsVisible(FALSE);
+    }
+    if (shell_controller) shell_controller->put_IsVisible(TRUE);
+}
+
 void Window::resize () {
+    if (activity && activity->controller) {
+        activity->controller->put_IsVisible(TRUE);
+    }
+    if (shell_controller) shell_controller->put_IsVisible(TRUE);
+
     RECT bounds;
     GetClientRect(os_window.hwnd, &bounds);
     if (shell_controller) {
@@ -280,6 +293,7 @@ void Window::message_from_shell (json::Value&& message) {
         auto data = get_window_data(id);
          // Focused tab and all its ancestors are expanded.  Send all their
          //  children and grandchildren.
+         // TODO: initialize expanded tabs in constructor
         vector<int64> known_tabs;
         for (int64 tab = data->focused_tab;; tab = get_tab_data(tab)->parent) {
             expanded_tabs.emplace(tab);
