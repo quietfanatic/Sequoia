@@ -164,7 +164,7 @@ Activity::Activity (int64 t) : tab(t) {
 
      // Delete old activities
      // TODO: configurable values
-    while (activities_by_tab.size() > 100) {
+    while (activities_by_tab.size() > 80) {
         set<int64> keep_loaded;
          // Don't unload self!
         keep_loaded.emplace(tab);
@@ -173,7 +173,7 @@ Activity::Activity (int64 t) : tab(t) {
             keep_loaded.emplace(get_window_data(w)->focused_tab);
         }
          // Keep last n loaded tabs regardless
-        for (auto t : get_last_visited_tabs(10)) {
+        for (auto t : get_last_visited_tabs(20)) {
             keep_loaded.emplace(t);
         }
          // Find last unstarred tab or last starred tab
@@ -182,6 +182,7 @@ Activity::Activity (int64 t) : tab(t) {
         for (auto p : activities_by_tab) {
             if (keep_loaded.contains(p.first)) continue;
             auto dat = get_tab_data(p.first);
+             // Not yet visited?  Not quite sure why this would happen.
             if (dat->visited_at == 0) continue;
             if (!victim_id
                 || !dat->starred_at && victim_dat->starred_at

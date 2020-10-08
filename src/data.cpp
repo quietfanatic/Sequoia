@@ -559,6 +559,7 @@ void set_window_focused_tab (int64 window, int64 tab) {
 UPDATE windows SET focused_tab = ? WHERE id = ?
     )"};
     set.run_void(tab, window);
+    set_tab_visited(tab);
     window_updated(window);
 }
 
