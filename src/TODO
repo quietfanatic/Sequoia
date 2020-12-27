@@ -22,3 +22,13 @@
 [ ] Figure out how to improve bookmarking?
 [ ] NewBrowserVersionAvailable
 [ ] Remember expanded tabs
+[ ] Change to graph model
+    [ ] How do urls map to page identities?
+[ ] More tab opening/duplicating modifiers
+[ ] Multiple tab selection
+[ ] Tab search or special functionality tabs
+[ ] Remove/change location bar?
+[ ] Integrate back/forward into general undo model
+[ ] Fix location bar focus on new tab bug
+[ ] Auto-expand sidebar
+[ ] Feedback when clicking link
