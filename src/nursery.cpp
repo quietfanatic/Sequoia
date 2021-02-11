@@ -115,7 +115,7 @@ static void queue () {
 void new_webview (const function<void(WebViewController*, WebView*, HWND)>& then) {
     A(nursery_hwnd);
     if (!environment) {
-        AH(CreateCoreWebView2EnvironmentWithDetails(
+        AH(CreateCoreWebView2EnvironmentWithOptions(
             nullptr, edge_udf.c_str(), nullptr,
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
                 [then](HRESULT hr, ICoreWebView2Environment* env) -> HRESULT

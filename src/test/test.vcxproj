@@ -130,6 +130,7 @@
     <ClCompile Include="../util/assert.cpp" />
     <ClCompile Include="../util/bifractor.cpp" />
     <ClCompile Include="../util/json.cpp" />
+    <ClCompile Include="../util/text.cpp" />
     <ClCompile Include="bifractor_test.cpp" />
     <ClCompile Include="json_test.cpp" />
     <ClCompile Include="test_main.cpp" />
@@ -139,6 +140,7 @@
     <ClInclude Include="../util/assert.h" />
     <ClInclude Include="../util/bifractor.h" />
     <ClInclude Include="../util/json.h" />
+    <ClInclude Include="../util/text.h" />
     <ClInclude Include="tap.h" />
     <ClInclude Include="tests.h" />
   </ItemGroup>
