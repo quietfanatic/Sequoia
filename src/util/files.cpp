@@ -26,6 +26,9 @@ string exe_relative (const string& filename) {
 
 string slurp (const string& filename) {
     ifstream file (filename, ios::ate | ios::binary);
+    if (!file.is_open()) {
+        throw std::logic_error("Failure opening a file, but I don't know why because C++ IO is terrible.");
+    }
     size_t len = file.tellg();
     file.seekg(0, ios::beg);
     string r (len, 0);

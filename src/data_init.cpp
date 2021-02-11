@@ -73,7 +73,9 @@ void init_db () {
     else {
          // Create new database
         Transaction tr;
-        string schema = slurp(exe_relative("res/schema-4.sql"));
+        string schema = slurp(exe_relative(
+            "res/schema-" + std::to_string(CURRENT_SCHEMA_VERSION) + ".sql"
+        ));
         LOG("Creating database...");
         AS(sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));
         LOG("Creation complete.");
