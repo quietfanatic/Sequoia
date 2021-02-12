@@ -2,6 +2,7 @@
 
 #include <wil/com.h>  // For some reason WebView2.h errors if this isn't included first???
 #include <WebView2.h>
+#include <WebView2ExperimentalEnvironmentOptions.h>
 #include <wrl.h>
 
 #include "activities.h"
@@ -115,6 +116,8 @@ static void queue () {
 void new_webview (const function<void(WebViewController*, WebView*, HWND)>& then) {
     A(nursery_hwnd);
     if (!environment) {
+        auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
+        AH(options->put_AllowSingleSignOnUsingOSPrimaryAccount(TRUE));
         AH(CreateCoreWebView2EnvironmentWithOptions(
             nullptr, edge_udf.c_str(), nullptr,
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(

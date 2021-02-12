@@ -32,6 +32,7 @@ Activity::Activity (int64 t) : tab(t) {
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
+        wil::com_ptr<ICoreWebView2Settings> settings;
 
         claimed_by_window(window);
         if (window) {
