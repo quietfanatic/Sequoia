@@ -348,12 +348,12 @@ void Window::message_from_shell (json::Value&& message) {
         shell->OpenDevToolsWindow();
         break;
     }
-    case x31_hash("show_main_menu"): {
+    case x31_hash("show_menu"): {
         main_menu_width = uint(message[1]);
         resize();
         break;
     }
-    case x31_hash("hide_main_menu"): {
+    case x31_hash("hide_menu"): {
         main_menu_width = 0;
         resize();
         break;

@@ -289,7 +289,7 @@ html:not(.show-closed) .item.closed {
 .item:not(.expanded) > .list {
     display:none;
 }
-#main-menu {
+#main-menu, #context-menu {
     position:absolute;
     right:0;
     top:var(--toolbar-height);
@@ -302,7 +302,7 @@ html:not(.show-closed) .item.closed {
     flex-direction:column;
     visibility:hidden;
 }
-#main-menu > div {
+#main-menu > div, #context-menu > div {
     box-sizing:border-box;
     margin-left:12px;
     padding:4px;
@@ -310,7 +310,8 @@ html:not(.show-closed) .item.closed {
     font-size:12px;
     cursor:default;
 }
-html.show-main-menu #main-menu {
+html.show-main-menu #main-menu,
+html.show-context-menu #context-menu {
     visibility:visible;
 }
 .tab-destination-marker {

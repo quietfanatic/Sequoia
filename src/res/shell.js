@@ -180,6 +180,8 @@ let $main_menu = $("nav", {id:"main-menu"},
     $("div", "Quit", {
         click: menu_item("quit"),
     }),
+     // Don't hide menu when clicking it.
+    {click: e=>{ handled(e); }},
 );
 
 function menu_item (message) {
@@ -194,27 +196,78 @@ function show_main_menu () {
     if (showing_main_menu) return;
     showing_main_menu = true;
     $html.classList.add("show-main-menu");
-    host.postMessage(["show_main_menu", $main_menu.offsetWidth]);
+    host.postMessage(["show_menu", $main_menu.offsetWidth]);
 }
 
 function hide_main_menu () {
     if (!showing_main_menu) return;
     showing_main_menu = false;
     $html.classList.remove("show-main-menu");
-    host.postMessage(["hide_main_menu"]);
+    host.postMessage(["hide_menu"]);
 }
 
- // Hide main menu if you click outside of it
-document.addEventListener("click", e => {
-    hide_main_menu();
-    // Let event propagate
-}, {capture:true});
+ // Hide menus if you click outside of them
+//document.addEventListener("click", e => {
+//    hide_main_menu();
+//    hide_context_menu();
+//    // Let event propagate
+//}, {capture:true});
 
- // Hide main menu if the shell loses focus
+ // Hide menus if the shell loses focus
 window.addEventListener("blur", e => {
     hide_main_menu();
-    handled(e);
-});
+    hide_context_menu();
+    // Let event propogate
+}, {capture:true});
+
+///// Context Menu DOM
+
+let showing_context_menu_for = null;
+
+let $context_menu = $("nav", {id:"context-menu"},
+    $("div", "Close", {
+        click: context_menu_item("close"),
+    }),
+    $("div", {id:"context-back"}, "Back", {
+        click: context_menu_item("back"),
+    }),
+    $("div", {id:"context-forward"}, "Forward", {
+        click: context_menu_item("forward"),
+    }),
+    $("div", {id:"context-reload"}, "Reload", {
+        click: context_menu_item("reload"),
+    }),
+    $("div", {id:"context-stop"}, "Stop", {
+        click: context_menu_item("stop"),
+    }),
+    $("div", "New Child", {
+        click: context_menu_item("new_child"),
+    }),
+     // Don't hide menu when clicking it.
+    {click: e=>{ handled(e); }},
+);
+
+function show_context_menu (id) {
+    if (showing_context_menu_for == id) return;
+    showing_context_menu_for = id;
+    $html.classList.add("show-context-menu");
+    host.postMessage(["show_menu", $context_menu.offsetWidth]);
+}
+
+function hide_context_menu () {
+    if (!showing_context_menu_for) return;
+    showing_context_menu_for = null;
+    $html.classList.remove("show-context-menu");
+    host.postMessage(["hide_menu"]);
+}
+
+function context_menu_item (message) {
+    return event => {
+        host.postMessage([message, showing_context_menu_for]);
+        hide_context_menu();
+        handled(event);
+    };
+}
 
 ///// Tab DOM and behavior
 
@@ -303,6 +356,9 @@ function on_tab_clicked (event) {
     }
     else if (event.button == 1) {
         close_or_delete_tab(tab);
+    }
+    else if (event.button == 2) {
+        show_context_menu(+$item.id);
     }
     handled(event);
 }
@@ -652,7 +708,7 @@ document.addEventListener("mousedown", event => {
 ///// Create DOM and finish up
 
 $(document.body,
-    $toolbar, $sidebar, $main_menu
+    $toolbar, $sidebar, $main_menu, $context_menu
 );
 host.postMessage(["ready"]);
 send_resize();
