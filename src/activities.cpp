@@ -233,6 +233,17 @@ void Activity::claimed_by_window (Window* w) {
         }
         else {
             AH(controller->put_IsVisible(FALSE));
+            auto wv3 = webview.try_query<ICoreWebView2_3>();
+            A(!!wv3);
+            if (wv3) {
+                AH(wv3->TrySuspend(Callback<ICoreWebView2TrySuspendCompletedHandler>(
+                    [this](HRESULT hr, BOOL success){
+                        AH(hr);
+                        LOG("Suspend tab", tab, success);
+                        return S_OK;
+                    }
+                ).Get()));
+            }
             SetParent(webview_hwnd, HWND_MESSAGE);
         }
     }
