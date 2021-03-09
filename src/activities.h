@@ -31,6 +31,7 @@ struct Activity {
 
     void claimed_by_window (Window*);
     void message_from_webview (json::Value&& message);
+    void message_to_webview (json::Value&& message);
 
     bool is_fullscreen ();
     void leave_fullscreen ();

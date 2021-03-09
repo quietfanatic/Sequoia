@@ -177,6 +177,9 @@ let $main_menu = $("nav", {id:"main-menu"},
     $("div", "Register as browser with Windows", {
         click: menu_item("register_as_browser"),
     }),
+    $("div", "Open selected links in tabs", {
+        click: menu_item("open_selected_links"),
+    }),
     $("div", "Quit", {
         click: menu_item("quit"),
     }),

@@ -212,6 +212,16 @@ void Activity::message_from_webview(json::Value&& message) {
         last_created_new_child = create_tab(tab, TabRelation::LAST_CHILD, url, title);
         break;
     }
+    case x31_hash("new_children"): {
+        last_created_new_child = 0;
+        const json::Array& children = message[1];
+        for (auto& child : children) {
+            const string& url = child[0];
+            const string& title = child[1];
+            create_tab(tab, TabRelation::LAST_CHILD, url, title);
+        }
+        break;
+    }
     case x31_hash("switch_to_new_child"): {
         if (last_created_new_child && window) {
             set_window_focused_tab(window->id, last_created_new_child);
@@ -222,6 +232,13 @@ void Activity::message_from_webview(json::Value&& message) {
         throw logic_error("Unknown message name");
     }
     }
+}
+
+void Activity::message_to_webview (json::Value&& message) {
+    if (!webview) return;
+    auto s = json::stringify(message);
+    LOG("message_to_webview", s);
+    AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
 void Activity::claimed_by_window (Window* w) {

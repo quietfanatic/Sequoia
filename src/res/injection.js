@@ -3,8 +3,50 @@
 
 let host = chrome.webview;
 if (host === undefined) return;  // Probably in an iframe
- // Prevent page from abusing this
-delete chrome.webview;
+ // TODO: figure out how to prevent webpage from abusing this
+//delete chrome.webview;
+
+ // Some heuristics to guess the page's title without loading it
+function get_link_title ($link) {
+    let title = $link.getAttribute("title");
+    if (!title) {
+        let $img = $link.querySelector("img");
+        if ($img) {
+            title = $img.alt;
+        }
+    }
+    if (!title) {
+        title = $link.innerText.substring(0, 120);
+    }
+    if (!title) {
+        title = $link.href;
+    }
+    return title.trim().replace(/\n/g, "  ");
+}
+
+host.addEventListener("message", e=>{
+    console.log(e);
+    if (e.data.length < 1) {
+        return;
+    }
+    if (e.data[0] == "open_selected_links") {
+        let selection = window.getSelection();
+        let links = document.links;
+        let info = [];
+        for (let i = 0; i < selection.rangeCount; i++) {
+            let range = selection.getRangeAt(i);
+            for (let $link of links) {
+                if ($link.hasAttribute("href")) {
+                    if (range.intersectsNode($link)) {
+                        info.push([$link.href, get_link_title($link)]);
+                    }
+                }
+            }
+        }
+        console.log(info);
+        host.postMessage(["new_children", info]);
+    }
+});
 
 let JSON_stringify = JSON.stringify;
 
@@ -60,23 +102,7 @@ window.addEventListener("auxclick", event=>{
         $last_a = $a;
         last_timeStamp = event.timeStamp;
 
-         // Some heuristics to guess the page's title without loading it
-        let title = $a.getAttribute("title");
-        if (!title) {
-            let $img = $a.querySelector("img");
-            if ($img) {
-                title = $img.alt;
-            }
-        }
-        if (!title) {
-            title = $a.innerText.substring(0, 120);
-        }
-        if (!title) {
-            title = $a.href;
-        }
-        title = title.trim().replace(/\n/g, "  ");
-
-        host_post(["new_child_tab", $a.href, title]);
+        host_post(["new_child_tab", $a.href, get_link_title($a)]);
     }
 
     event.stopPropagation();

@@ -443,6 +443,12 @@ void Window::message_from_shell (json::Value&& message) {
         register_as_browser();
         break;
     }
+    case x31_hash("open_selected_links"): {
+        if (activity) {
+            activity->message_to_webview(json::array("open_selected_links"));
+        }
+        break;
+    }
     case x31_hash("quit"): {
         quit();
         break;
