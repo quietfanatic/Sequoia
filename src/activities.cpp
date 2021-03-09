@@ -215,6 +215,7 @@ void Activity::message_from_webview(json::Value&& message) {
     case x31_hash("new_children"): {
         last_created_new_child = 0;
         const json::Array& children = message[1];
+        Transaction tr;
         for (auto& child : children) {
             const string& url = child[0];
             const string& title = child[1];
