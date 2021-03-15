@@ -92,8 +92,14 @@ Activity::Activity (int64 t) : tab(t) {
              // save the url in that case.
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
-            if (wcscmp(source.get(), L"about:blank") != 0) {
+            if (wcscmp(source.get(), L"") != 0
+             && wcscmp(source.get(), L"about:blank") != 0
+            ) {
+                navigated_url = "";
                 set_tab_url(tab, from_utf16(source.get()));
+            }
+            else {
+                set_tab_url(tab, navigated_url);
             }
 
             return S_OK;
@@ -273,7 +279,10 @@ void Activity::resize (RECT bounds) {
 
 bool Activity::navigate_url (const string& address) {
     auto hr = webview->Navigate(to_utf16(address).c_str());
-    if (SUCCEEDED(hr)) return true;
+    if (SUCCEEDED(hr)) {
+        navigated_url = address;
+        return true;
+    }
     if (hr != E_INVALIDARG) AH(hr);
     return false;
 }

@@ -21,6 +21,8 @@ struct Activity {
     bool currently_loading = false;
 
     int64 last_created_new_child = 0;
+     // Workaround for special URLs not surviving a round-trip the navigation
+    std::string navigated_url;
 
     Activity(int64 tab);
 
