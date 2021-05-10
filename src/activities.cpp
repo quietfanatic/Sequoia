@@ -212,10 +212,34 @@ void Activity::message_from_webview(json::Value&& message) {
         set_tab_favicon(tab, favicon);
         break;
     }
-    case x31_hash("new_child_tab"): {
+    case x31_hash("click_link"): {
         const string& url = message[1];
         const string& title = message[2];
-        last_created_new_child = create_tab(tab, TabRelation::LAST_CHILD, url, title);
+        int button = message[3];
+        bool double_click = message[4];
+        bool shift = message[5];
+        bool alt = message[6];
+        bool ctrl = message[7];
+        if (button == 1) {
+            if (double_click) {
+                if (last_created_new_child && window) {
+                     // TODO: figure out why the new tab doesn't get loaded
+                    set_window_focused_tab(window->id, last_created_new_child);
+                }
+            }
+            else if (alt && shift) {
+                last_created_new_child = create_tab(tab, TabRelation::BEFORE, url, title);
+            }
+            else if (alt) {
+                last_created_new_child = create_tab(tab, TabRelation::AFTER, url, title);
+            }
+            else if (shift) {
+                last_created_new_child = create_tab(tab, TabRelation::FIRST_CHILD, url, title);
+            }
+            else {
+                last_created_new_child = create_tab(tab, TabRelation::LAST_CHILD, url, title);
+            }
+        }
         break;
     }
     case x31_hash("new_children"): {
@@ -226,12 +250,6 @@ void Activity::message_from_webview(json::Value&& message) {
             const string& url = child[0];
             const string& title = child[1];
             create_tab(tab, TabRelation::LAST_CHILD, url, title);
-        }
-        break;
-    }
-    case x31_hash("switch_to_new_child"): {
-        if (last_created_new_child && window) {
-            set_window_focused_tab(window->id, last_created_new_child);
         }
         break;
     }
