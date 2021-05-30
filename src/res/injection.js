@@ -2,7 +2,9 @@
 (()=>{
 
 let host = chrome.webview;
-if (host === undefined) return;  // Probably in an iframe
+ // This used to be the case in iframes, but is not any more.
+ // I don't know what could cause it now, but we'll keep the check just in case.
+if (host === undefined) return;
  // TODO: Figure out how to prevent webpage from abusing chrome.webview
  //  If we delete this, host.addEventListener("message", ...) stops working.
  // TODO: File a bug report with WebView2?
@@ -33,18 +35,20 @@ function host_post (message) {
 }
 
  // On page load, figure out and send this page's favicon.
-window.addEventListener("DOMContentLoaded", event=>{
-    let $icons = document.querySelectorAll("link[rel~=icon][href]");
-    if ($icons.length > 0) {
-        host_post(["favicon", $icons[$icons.length-1].href]);
-    }
-    else if (location.protocol == "http:" || location.protocol == "https:") {
-        host_post(["favicon", location.origin + "/favicon.ico"]);
-    }
-    else {
-        host_post(["favicon", ""]);
-    }
-});
+if (window.self == window.top) {
+    window.addEventListener("DOMContentLoaded", event=>{
+        let $icons = document.querySelectorAll("link[rel~=icon][href]");
+        if ($icons.length > 0) {
+            host_post(["favicon", $icons[$icons.length-1].href]);
+        }
+        else if (location.protocol == "http:" || location.protocol == "https:") {
+            host_post(["favicon", location.origin + "/favicon.ico"]);
+        }
+        else {
+            host_post(["favicon", ""]);
+        }
+    });
+}
 
  // Some heuristics to guess a page's title without loading it
 function get_link_title ($link) {
@@ -97,6 +101,8 @@ window.addEventListener("click", click_link);
 window.addEventListener("auxclick", click_link);
 
  // Respond to request from shell to open multiple links at once
+ // TODO: this probably won't work in iframes with the current setup, so maybe
+ // trigger the event from here by middle-clicking one of the selected links.
 host.addEventListener("message", e=>{
     console.log(e);
     if (e.data.length < 1) {
