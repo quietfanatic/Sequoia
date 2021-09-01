@@ -4,27 +4,27 @@
 #include <wil/com.h>
 #include <windows.h>
 
+#include "data.h"
 #include "util/types.h"
 
 struct Window;
 namespace json { struct Value; }
 
 struct Activity {
-    int64 tab;
+    PageData page;
     Window* window = nullptr;
 
-    wil::com_ptr<WebViewController> controller;
-    wil::com_ptr<WebView> webview;
+    wil::com_ptr<ICoreWebView2Controller> controller;
+    wil::com_ptr<ICoreWebView2> webview;
     HWND webview_hwnd = nullptr;
     bool can_go_back = false;
     bool can_go_forward = false;
     bool currently_loading = false;
 
-    int64 last_created_new_child = 0;
      // Workaround for special URLs not surviving a round-trip the navigation
     std::string navigated_url;
 
-    Activity(int64 tab);
+    Activity (PageData&&);
 
     void resize (RECT available);
     bool navigate_url (const std::string& url);
@@ -41,5 +41,5 @@ struct Activity {
     ~Activity();
 };
 
-Activity* activity_for_tab (int64 id);
-Activity* ensure_activity_for_tab (int64 id);
+Activity* activity_for_page (PageID id);
+Activity* ensure_activity_for_page (PageID id);

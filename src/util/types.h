@@ -13,7 +13,4 @@ using uint64 = uint64_t;
 using uint = unsigned int;
 
 struct ICoreWebView2;
-using WebView = ICoreWebView2;
 struct ICoreWebView2Controller;
-using WebViewController = ICoreWebView2Controller;
-

@@ -1,6 +1,6 @@
 #include "nursery.h"
 
-#include <wil/com.h>  // For some reason WebView2.h errors if this isn't included first???
+#include <wil/com.h>  // For some reason ICoreWebView22.h errors if this isn't included first???
 #include <WebView2.h>
 #include <WebView2ExperimentalEnvironmentOptions.h>
 #include <wrl.h>
@@ -21,8 +21,8 @@ wstring edge_udf;
 static wil::com_ptr<ICoreWebView2Environment> environment;
 HWND nursery_hwnd = nullptr;
 
-wil::com_ptr<WebViewController> next_controller = nullptr;
-wil::com_ptr<WebView> next_webview = nullptr;
+wil::com_ptr<ICoreWebView2Controller> next_controller = nullptr;
+wil::com_ptr<ICoreWebView2> next_webview = nullptr;
 HWND next_hwnd = nullptr;
 
 static auto class_name = L"Sequoia Nursery";
@@ -41,9 +41,13 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         switch (x31_hash(command)) {
         case x31_hash("new_window"): {
             ReplyMessage(0);
-            const string& url = message[1];
-            int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, url);
-            int64 new_window = create_window(new_tab, new_tab);
+            Transaction tr;
+            PageData page;
+            page.url = string(message[1]);
+            page.save();
+            ViewData view;
+            view.root_page = page;
+            view.save();
             return 0;
         }
         default: return 1;
@@ -54,7 +58,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
 }
 
 void init_nursery () {
-    A(!nursery_hwnd);
+    AA(!nursery_hwnd);
 
     wstring window_title = L"Sequoia Nursery for " + to_utf16(profile_name);
 
@@ -84,11 +88,11 @@ void init_nursery () {
 
      // Check for a race condition where two app processes created a window at the same time.
      // There should only be one nursery window, and it should be the one we just made.
-    A(FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str()) == nursery_hwnd);
-    A(FindWindowExW(HWND_MESSAGE, nursery_hwnd, class_name, window_title.c_str()) == nullptr);
+    AA(FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str()) == nursery_hwnd);
+    AA(FindWindowExW(HWND_MESSAGE, nursery_hwnd, class_name, window_title.c_str()) == nullptr);
 }
 
-static void create (const function<void(WebViewController*, WebView*, HWND)>& then) {
+static void create (const function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then) {
     AH(environment->CreateCoreWebView2Controller(nursery_hwnd,
         Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
             [then](HRESULT hr, ICoreWebView2Controller* controller) -> HRESULT
@@ -98,7 +102,7 @@ static void create (const function<void(WebViewController*, WebView*, HWND)>& th
         AW(hwnd);
         SetParent(hwnd, HWND_MESSAGE);
 
-        WebView* webview;
+        ICoreWebView2* webview;
         controller->get_CoreWebView2(&webview);
         then(controller, webview, hwnd);
         return S_OK;
@@ -106,15 +110,15 @@ static void create (const function<void(WebViewController*, WebView*, HWND)>& th
 }
 
 static void queue () {
-    create([](WebViewController* controller, WebView* webview, HWND hwnd){
+    create([](ICoreWebView2Controller* controller, ICoreWebView2* webview, HWND hwnd){
         next_controller = controller;
         next_webview = webview;
         next_hwnd = hwnd;
     });
 }
 
-void new_webview (const function<void(WebViewController*, WebView*, HWND)>& then) {
-    A(nursery_hwnd);
+void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then) {
+    AA(nursery_hwnd);
     if (!environment) {
         auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
         AH(options->put_AllowSingleSignOnUsingOSPrimaryAccount(TRUE));

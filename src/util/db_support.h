@@ -14,6 +14,12 @@
  // Kinda cheating but whatever
 extern sqlite3* db;
 
+ // getting awkward
+template <class T>
+constexpr bool is_optional = false;
+template <class T>
+constexpr bool is_optional<std::optional<T>> = true;
+
 struct Statement {
     sqlite3_stmt* handle;
     int result_code = 0;
@@ -56,25 +62,40 @@ struct Statement {
             AS(sqlite3_bind_null(handle, index));
         }
     }
+    template <class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
+    void bind_param (int index, T v) {
+        bind_param(index, std::underlying_type_t<T>{v});
+    }
 
     void step () {
-        A(result_code != SQLITE_DONE);
+        AA(result_code != SQLITE_DONE);
         result_code = sqlite3_step(handle);
         if (result_code != SQLITE_ROW && result_code != SQLITE_DONE) AS(1);
     }
 
-    // Assume int for all other types
+     // Since there are no typed parameters, we have to use specialization
+     //  instead of overloading for read_column, which is a little more awkward.
     template <class T>
     T read_column (int index) {
-        return T(sqlite3_column_int64(handle, index));
-    }
-    template <>
-    float read_column<float> (int index) {
-        return float(sqlite3_column_double(handle, index));
-    }
-    template <>
-    double read_column<double> (int index) {
-        return sqlite3_column_double(handle, index);
+        if constexpr (std::is_enum_v<T>) {
+             // Who though having {} warn about narrowing conversions was a good idea
+            return T{std::underlying_type_t<T>(sqlite3_column_int64(handle, index))};
+        }
+        else if constexpr (std::is_floating_point_v<T>) {
+            return T(sqlite3_column_double(handle, index));
+        }
+        else if constexpr (is_optional<T>) {
+            if (sqlite3_column_type(handle, index) == SQLITE_NULL) {
+                return std::nullopt;
+            }
+            else {
+                return read_column<T::value_type>(index);
+            }
+        }
+        else {
+             // Assume integer convertibility.
+            return T(sqlite3_column_int64(handle, index));
+        }
     }
     template <>
     std::string read_column<std::string> (int index) {
@@ -148,7 +169,7 @@ struct Ment : Statement {
         std::vector<Result> r;
         bind(params...);
         step();
-        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        AA(sqlite3_column_count(handle) == sizeof...(Cols));
         while (!done()) {
             r.emplace_back(read());
             step();
@@ -160,17 +181,17 @@ struct Ment : Statement {
     void run_void (const Params&... params) {
         bind(params...);
         step();
-        A(done());
+        AA(done());
         reset();
     }
 
     Result run_single (const Params&... params) {
         bind(params...);
         step();
-        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        AA(sqlite3_column_count(handle) == sizeof...(Cols));
         Result r = read();
         step();
-        A(done());
+        AA(done());
         reset();
         return std::move(r);
     }
@@ -182,10 +203,10 @@ struct Ment : Statement {
             reset();
             return std::nullopt;
         }
-        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        AA(sqlite3_column_count(handle) == sizeof...(Cols));
         Result r = read();
         step();
-        A(done());
+        AA(done());
         reset();
         return std::move(r);
     }
@@ -197,10 +218,10 @@ struct Ment : Statement {
             reset();
             return def;
         }
-        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        AA(sqlite3_column_count(handle) == sizeof...(Cols));
         Result r = read();
         step();
-        A(done());
+        AA(done());
         reset();
         return std::move(r);
     }

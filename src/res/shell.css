@@ -126,25 +126,11 @@ html.hide-sidebar #sidebar {
     background-color:var(--tree-bg-alt);
 }
 
-#toproot-tree, #subroot-tree {
+#tree {
     flex-grow:1;
     overflow-y:scroll;
     overflow-x:hidden;
     background-color:var(--tree-bg);
-}
-html.root-is-sub #toproot-tree,
-html:not(.root-is-sub) #subroot-tree {
-    display:none;
-}
-
-#new-tab {
-    width:100%;
-    height:var(--tree-bottom-padding);
-    text-align:center;
-    color:var(--tree-fg);
-}
-#new-tab::before {
-    content:"🞢";
 }
 
 #sidebar-bottom {

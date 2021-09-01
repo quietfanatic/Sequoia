@@ -14,7 +14,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
     case WM_SIZE:
         switch (w) {
         case SIZE_MINIMIZED:
-            window->hidden();
+            window->on_hidden();
         default:
             window->resize();
         }
@@ -39,7 +39,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         break;
     }
     case WM_CLOSE:
-        close_window(window->id);
+        window->close();
         return 0;
     case WM_DESTROY:
          // Prevent activity's HWND from being destroyed.

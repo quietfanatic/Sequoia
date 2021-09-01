@@ -62,34 +62,30 @@ void parse_args (int argc, char** argv) {
 }
 
 void start_browser () {
-    vector<int64> all_windows = get_all_unclosed_windows();
-    if (!all_windows.empty()) {
-        for (auto id : all_windows) {
-             // Create directly instead of going through WindowObserver,
+    vector<ViewID> views = get_open_views();
+    if (!views.empty()) {
+        for (ViewID v : views) {
+            ViewData view = v.load();
+            if (view.closed_at) continue;
+             // Create directly instead of going through WindowUpdater,
              //  so that focused tabs are not loaded
-            new Window(id);
+            new Window(move(view));
         }
     }
-    else if (int64 w = get_last_closed_window()) {
-         // TODO: make this not load the current focused tab?
-        unclose_window(w);
+    else if (ViewID v = get_last_closed_view()) {
+        ViewData view = v.load();
+        view.closed_at = 0;
+        view.save();  // Should spawn a Window
     }
     else {
          // Otherwise create a new window if none exists
-        int64 first_tab = 0;
         Transaction tr;
-        vector<int64> top_level_tabs = get_all_children(0);
-        for (auto tab : top_level_tabs) {
-            auto data = get_tab_data(tab);
-            if (!data->closed_at) {
-                first_tab = tab;
-                break;
-            }
-        }
-        if (!first_tab) {
-            first_tab = create_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/");
-        }
-        create_window(0, first_tab);
+        PageData page;
+        page.url = "about:blank";
+        page.save();
+        ViewData view2;
+        view2.root_page = page.id;
+        view2.save();
     }
 }
 
@@ -107,6 +103,7 @@ int WINAPI WinMain (
 
          // If a process is already running in this profile, send it a message
          //  instead of starting a new instance.
+         // TODO: Is there a race condition here?
         if (HWND nursery = existing_nursery()) {
             const string& url = positional_args.size() >= 1 ? positional_args[0] : "about:blank";
             string message = json::stringify(json::array(
@@ -123,10 +120,16 @@ int WINAPI WinMain (
         load_settings();
         init_db();
         start_browser();
+
+         // TODO: allow multiple urls to open in same window
         if (positional_args.size() >= 1) {
             Transaction tr;
-            int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, positional_args[0]);
-            int64 new_window = create_window(new_tab, new_tab);
+            PageData page;
+            page.url = positional_args[0];
+            page.save();
+            ViewData view;
+            view.root_page = page.id;
+            view.save();
         }
 
          // Run message loop

@@ -3,117 +3,123 @@
 #include <string>
 #include <vector>
 
+#include "util/assert.h"
 #include "util/bifractor.h"
 #include "util/types.h"
 
-///// TABS
-
-enum class TabRelation {
-    BEFORE,
-    AFTER,
-    FIRST_CHILD,
-    LAST_CHILD
-};
-
-struct TabData {
-    int64 parent;
-    Bifractor position;
-    int64 child_count;
-    std::string url;
-    std::string title;
-    std::string favicon;
-    double created_at;
-    double visited_at;
-    double starred_at;
-    double closed_at;
-    bool deleted = false;
-    TabData(
-        int64 parent,
-        const Bifractor& position,
-        int64 child_count,
-        const std::string& url,
-        const std::string& title,
-        const std::string& favicon,
-        double created_at,
-        double visited_at,
-        double starred_at,
-        double closed_at
-    ) :
-        parent(parent),
-        position(position),
-        child_count(child_count),
-        url(url),
-        title(title),
-        favicon(favicon),
-        created_at(created_at),
-        visited_at(visited_at),
-        starred_at(starred_at),
-        closed_at(closed_at)
-    { }
-};
-
-int64 create_tab (
-    int64 reference,
-    TabRelation rel,
-    const std::string& url,
-    const std::string& title = ""
-);
-
-TabData* get_tab_data (int64 id);
-int64 get_prev_unclosed_tab (int64 id);  // Returns 0 if there is none.
-int64 get_next_unclosed_tab (int64 id);
-std::vector<int64> get_all_children (int64 parent);
-std::vector<int64> get_all_unclosed_children (int64 parent);
-std::vector<int64> get_last_visited_tabs (int n_tabs);
-void set_tab_url (int64 id, const std::string& url);
-void set_tab_title (int64 id, const std::string& title);
-void set_tab_favicon (int64 id, const std::string& favicon);
-void set_tab_visited (int64 id);
-void star_tab (int64 id);
-void unstar_tab (int64 id);
-int64 get_last_closed_tab ();
-void close_tab (int64 id);
-void close_tab_with_heritage (int64 id);
-void unclose_tab (int64 id);
-void delete_tab_and_children (int64 id);
- // Will prune tabs that are more than more_than *and* older than older_than.
- // (Will always keep at least more_than tabs and all tabs younger than older_than).
-void prune_closed_tabs (int64 more_than, double older_than);
-void move_tab (int64 id, int64 parent, const Bifractor& position);
-void move_tab (int64 id, int64 reference, TabRelation rel);
-std::pair<int64, Bifractor> make_location (int64 reference, TabRelation rel);
-
-///// WINDOWS
-
-struct WindowData {
+template <class T>
+struct IDHandle {
     int64 id;
-    int64 root_tab;
-    int64 focused_tab;
-    double created_at;
-    double closed_at;
-    WindowData(
-        int64 id,
-        int64 root_tab,
-        int64 focused_tab,
-        double created_at,
-        double closed_at
-    ) :
-        id(id),
-        root_tab(root_tab),
-        focused_tab(focused_tab),
-        created_at(created_at),
-        closed_at(closed_at)
-    { }
+
+    explicit IDHandle (int64 id = 0) : id(id) { }
+    IDHandle (const T& data) : id(data.id) { AA(id); }
+    operator int64 () const { return id; }
+
+    T load () const { T data; data.id = *this; data.load(); return data; }
 };
 
-int64 create_window (int64 root_tab, int64 focused_tab);
-WindowData* get_window_data (int64 id);
-std::vector<int64> get_all_unclosed_windows ();
-int64 get_last_closed_window ();
-void set_window_root_tab (int64 window, int64 tab);
-void set_window_focused_tab (int64 window, int64 tab);
-void close_window (int64 id);
-void unclose_window (int64 id);
+///// PAGES
+
+ // I don't know who defined DELETE as a macro but I'm mad
+enum class Method : int8 {
+    Get,
+    Post,
+    Put,
+    Delete,
+    Unknown = -1
+};
+
+struct PageData;
+using PageID = IDHandle<PageData>;
+struct PageData {
+    PageID id;
+    std::string url;
+    Method method = Method::Get;
+    int64 group = 0; // NYI
+    std::string favicon_url;
+    double visited_at = 0;
+    std::string title;
+    bool exists = true;
+
+    void load ();  // Populate *this with row from database
+    void save ();  // Write *this to database
+    void updated ();  // Send to Observers without saving
+};
+
+std::vector<PageID> get_pages_with_url (const std::string& url);
+
+///// LINKS
+
+struct LinkData;
+using LinkID = IDHandle<LinkData>;
+struct LinkData {
+    LinkID id;
+    PageID opener_page;
+    PageID from_page;
+    PageID to_page;
+    Bifractor position;
+    std::string title = 0;
+    double trashed_at = 0;
+    double created_at = 0;
+    bool exists = true;
+
+    void load ();
+    void save ();
+    void updated ();
+
+     // These modify *this but do not save it
+    void move_before (LinkID next_link);
+    void move_after (LinkID prev_link);
+    void move_first_child (PageID from_page);
+    void move_last_child (PageID from_page);
+};
+
+std::vector<LinkID> get_links_from_page (PageID page);
+std::vector<LinkID> get_links_to_page (PageID page);
+LinkID get_last_trashed_link ();
+
+///// TAGS
+
+// TODO
+
+///// GROUPS
+
+// TODO
+
+///// VIEWS
+
+struct ViewData;
+using ViewID = IDHandle<ViewData>;
+struct ViewData {
+    ViewID id;
+    PageID root_page;
+    LinkID focused_link;
+    double closed_at = 0;
+    double trashed_at = 0;
+    bool exists = true;
+
+    void load ();
+    void save ();
+    void updated ();
+};
+
+std::vector<ViewID> get_open_views ();
+ // Returns 0 if none
+ViewID get_last_closed_view ();
+
+///// VIEWLINKS
+
+struct ViewLinkData {
+    ViewID view;
+    LinkID link;
+    bool exists = true;
+
+    void load ();
+    void save ();
+    void updated ();
+};
+
+std::vector<LinkID> get_view_link_links_with_view (ViewID);
 
 ///// TRANSACTIONS
 
@@ -122,20 +128,25 @@ struct Transaction {
     ~Transaction ();
 };
 
+struct Update {
+    std::vector<PageID> pages;
+    std::vector<LinkID> links;
+    std::vector<ViewID> views;
+    std::vector<std::pair<ViewID, LinkID>> view_links;
+};
+
 struct Observer {
-    virtual void Observer_after_commit (
-        const std::vector<int64>& updated_tabs,
-        const std::vector<int64>& updated_windows
-    ) = 0;
+    virtual void Observer_after_commit (const Update&) = 0;
     Observer();
     ~Observer();
 };
 
- // Don't do anything but mark the item as updated
-void tab_updated (int64);
-void window_updated (int64);
-
 ///// MISC
 
-void fix_problems ();
+namespace std {
+    template <class T>
+    struct hash<IDHandle<T>> {
+        std::size_t operator () (IDHandle<T> v) const { return std::hash<int64>{}(v.id); }
+    };
+}
 

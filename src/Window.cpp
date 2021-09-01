@@ -1,6 +1,7 @@
 #include "Window.h"
 
-#include <map>
+#include <unordered_map>
+#include <unordered_set>
 #include <stdexcept>
 #include <WebView2.h>
 #include <wrl.h>
@@ -16,17 +17,24 @@
 #include "util/json.h"
 #include "util/logging.h"
 #include "util/text.h"
+#include "util/time.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
 
-static std::map<int64, Window*> open_windows;
+///// WINDOW STUFF
 
-Window::Window (int64 id) :
-    id(id), os_window(this)
+static std::unordered_map<ViewID, Window*> open_windows;
+
+Window::Window (ViewData&& view) :
+    view(move(view)), os_window(this)
 {
-    open_windows.emplace(id, this);
-    new_webview([this](WebViewController* wvc, WebView* wv, HWND hwnd){
+    for (LinkID l : get_view_link_links_with_view(view)) {
+        expanded_links.emplace(l);
+    }
+    open_windows.emplace(view.id, this);
+     // TODO: Fix possible use-after-free of this
+    new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         shell_controller = wvc;
         shell = wv;
         shell_hwnd = hwnd;
@@ -62,28 +70,9 @@ Window::Window (int64 id) :
 
 Window::~Window () {
     if (activity) activity->claimed_by_window(nullptr);
-    open_windows.erase(id);
+    open_windows.erase(view.id);
     if (open_windows.empty()) quit();
 }
-
- // An Observer just for creating new windows.
- // Windows do most of the Observing, but they can't create themselves.
-struct WindowFactory : Observer {
-    void Observer_after_commit (
-        const vector<int64>& updated_tabs,
-        const vector<int64>& updated_windows
-    ) override {
-        for (int64 id : updated_windows) {
-            auto data = get_window_data(id);
-            if (!data->closed_at && !open_windows.count(id)) {
-                auto w = new Window (id);
-                 // Automatically load focused tab
-                w->claim_activity(ensure_activity_for_tab(data->focused_tab));
-            }
-        }
-    }
-};
-static WindowFactory window_factory;
 
 void Window::claim_activity (Activity* a) {
     if (a == activity) return;
@@ -95,11 +84,12 @@ void Window::claim_activity (Activity* a) {
     resize();
 }
 
-void Window::hidden () {
-    LOG("Window::hidden");
+void Window::on_hidden () {
+    LOG("Window::on_hidden");
     if (activity && activity->controller) {
         activity->controller->put_IsVisible(FALSE);
     }
+     // TODO: change to FALSE
     if (shell_controller) shell_controller->put_IsVisible(TRUE);
 }
 
@@ -149,6 +139,13 @@ void Window::leave_fullscreen () {
     if (activity) activity->leave_fullscreen();
 }
 
+void Window::close () {
+    view.closed_at = now();
+    view.save();
+}
+
+///// CONTROLLER STUFF
+
 HRESULT Window::on_AcceleratorKeyPressed (
     ICoreWebView2Controller* sender,
     ICoreWebView2AcceleratorKeyPressedEventArgs* args
@@ -193,38 +190,38 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     case 'N':
         if (ctrl && !alt) {
             if (shift) return [this]{
-                Transaction tr;
-                if (int64 w = get_last_closed_window()) {
-                    unclose_window(w);
-                    unclose_tab(get_window_data(w)->focused_tab);
-                }
+//                Transaction tr;
+//                if (int64 w = get_last_closed_window()) {
+//                    unclose_window(w);
+//                    unclose_tab(get_window_data(w)->focused_tab);
+//                }
             };
             else return [this]{
-                Transaction tr;
-                int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
-                int64 new_window = create_window(new_tab, new_tab);
+//                Transaction tr;
+//                int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
+//                int64 new_window = create_window(new_tab, new_tab);
             };
         }
         break;
     case 'T':
         if (ctrl && !alt) {
             if (shift) return [this]{
-                Transaction tr;
-                if (int64 tab = get_last_closed_tab()) {
-                    unclose_tab(tab);
-                    set_window_focused_tab(id, tab);
-                    claim_activity(ensure_activity_for_tab(tab));
-                }
+//                Transaction tr;
+//                if (int64 tab = get_last_closed_tab()) {
+//                    unclose_tab(tab);
+//                    set_window_focused_tab(id, tab);
+//                    claim_activity(ensure_activity_for_tab(tab));
+//                }
             };
             else return [this]{
-                Transaction tr;
-                int64 new_tab = create_tab(
-                    get_window_data(id)->focused_tab,
-                    TabRelation::LAST_CHILD,
-                    "about:blank"
-                );
-                set_window_focused_tab(id, new_tab);
-                claim_activity(ensure_activity_for_tab(new_tab));
+//                Transaction tr;
+//                int64 new_tab = create_tab(
+//                    get_window_data(id)->focused_tab,
+//                    TabRelation::LAST_CHILD,
+//                    "about:blank"
+//                );
+//                set_window_focused_tab(id, new_tab);
+//                claim_activity(ensure_activity_for_tab(new_tab));
             };
         }
         break;
@@ -237,18 +234,18 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         break;
     case 'W':
         if (!shift && ctrl && !alt) return [this]{
-            close_tab_with_heritage(get_window_data(id)->focused_tab);
+//            close_tab_with_heritage(get_window_data(id)->focused_tab);
         };
         break;
     case VK_TAB:
         if (ctrl && !alt) {
             if (shift) return [this]{
-                int64 prev = get_prev_unclosed_tab(get_window_data(id)->focused_tab);
-                if (prev) focus_tab(prev);
+//                int64 prev = get_prev_unclosed_tab(get_window_data(id)->focused_tab);
+//                if (prev) focus_tab(prev);
             };
             else return [this]{
-                int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab);
-                if (next) focus_tab(next);
+//                int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab);
+//                if (next) focus_tab(next);
             };
         }
         break;
@@ -262,16 +259,16 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     case VK_UP:
         if (!shift && ctrl && !alt) {
             return [this]{
-                int64 prev = get_prev_unclosed_tab(get_window_data(id)->focused_tab);
-                if (prev) focus_tab(prev);
+//                int64 prev = get_prev_unclosed_tab(get_window_data(id)->focused_tab);
+//                if (prev) focus_tab(prev);
             };
         }
         break;
     case VK_DOWN:
         if (!shift && ctrl && !alt) {
             return [this]{
-                int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab);
-                if (next) focus_tab(next);
+//                int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab);
+//                if (next) focus_tab(next);
             };
         }
         break;
@@ -290,23 +287,7 @@ void Window::message_from_shell (json::Value&& message) {
                 std::pair{"theme", settings::theme}
             }
         ));
-        auto data = get_window_data(id);
-         // Focused tab and all its ancestors are expanded.  Send all their
-         //  children and grandchildren.
-         // TODO: initialize expanded tabs in constructor
-        vector<int64> known_tabs;
-        for (int64 tab = data->focused_tab;; tab = get_tab_data(tab)->parent) {
-            expanded_tabs.emplace(tab);
-            known_tabs.emplace_back(tab);
-            for (int64 c : get_all_children(tab)) {
-                known_tabs.emplace_back(c);
-                for (int64 g : get_all_children(c)) {
-                    known_tabs.emplace_back(g);
-                }
-            }
-            if (tab == data->root_tab || !tab) break;
-        }
-        send_update(known_tabs);
+        send_view();
         break;
     }
     case x31_hash("resize"): {
@@ -358,85 +339,84 @@ void Window::message_from_shell (json::Value&& message) {
         resize();
         break;
     }
-    case x31_hash("new_toplevel_tab"): {
-        Transaction tr;
-        int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
-        set_window_focused_tab(id, new_tab);
-        claim_activity(ensure_activity_for_tab(new_tab));
-        break;
-    }
      // Tab actions
-    case x31_hash("focus"): {
-        int64 tab = message[1];
-        focus_tab(tab);
+    case x31_hash("focus_link"): {
+        view.focused_link = LinkID{message[1]};
+        view.save();
         break;
     }
     case x31_hash("new_child"): {
+        PageID parent {message[1]};
         Transaction tr;
-        int64 new_tab = create_tab(message[1], TabRelation::LAST_CHILD, "about:blank");
-        set_window_focused_tab(id, new_tab);
-        claim_activity(ensure_activity_for_tab(new_tab));
+        PageData child;
+        child.url = "about:blank";
+        child.method = Method::Get;
+        child.save();
+        LinkData link;
+        link.opener_page = parent;
+        link.from_page = parent;
+        link.to_page = child;
+        link.move_last_child(parent);
+        link.save();
+        view.focused_link = link;
+        view.save();
+        claim_activity(ensure_activity_for_page(child));
         break;
     }
-    case x31_hash("star"): {
-        star_tab(message[1]);
+    case x31_hash("trash_link"): {
+        LinkData link = LinkID{message[1]}.load();
+        link.trashed_at = now();
+        link.save();
+         // TODO: delete activities that aren't visible in any views
         break;
     }
-    case x31_hash("unstar"): {
-        unstar_tab(message[1]);
-        break;
-    }
-    case x31_hash("close"): {
-        int64 tab = message[1];
-        Transaction tr;
-        if (tab == get_window_data(id)->root_tab) {
-            close_window(id);
-        }
-        close_tab(tab);
-        break;
-    }
-    case x31_hash("inherit_close"): {
-        close_tab_with_heritage(message[1]);
-        break;
-    }
-    case x31_hash("delete"): {
-        int64 tab = message[1];
-        if (get_tab_data(tab)->closed_at) {
-            delete_tab_and_children(tab);
+    case x31_hash("delete_link"): {
+        LinkData link = LinkID{message[1]}.load();
+        if (link.trashed_at) {
+            link.exists = false;
+            link.save();
         }
         break;
     }
-    case x31_hash("move_tab"): {
-        int64 tab = message[1];
-        int64 reference = message[2];
-        TabRelation rel = TabRelation(uint(message[3]));
-        move_tab(tab, reference, rel);
+    case x31_hash("move_link_before"): {
+        LinkData link = LinkID{message[1]}.load();
+        LinkID ref {message[2]};
+        link.move_before(ref);
+        link.save();
         break;
     }
-    case x31_hash("expand"): {
-        int64 tab = message[1];
-        expanded_tabs.emplace(tab);
-        vector<int64> new_known_tabs;
-        for (int64 c : get_all_children(tab)) {
-            for (int64 g : get_all_children(c)) {
-                new_known_tabs.emplace_back(g);
-            }
-        }
-        send_update(new_known_tabs);
+    case x31_hash("move_link_after"): {
+        LinkData link = LinkID{message[1]}.load();
+        LinkID ref {message[2]};
+        link.move_after(ref);
+        link.save();
         break;
     }
-    case x31_hash("contract"): {
-        int64 tab = message[1];
-        expanded_tabs.erase(tab);
+    case x31_hash("move_link_first_child"): {
+        LinkData link = LinkID{message[1]}.load();
+        PageID ref {message[2]};
+        link.move_first_child(ref);
+        link.save();
+        break;
+    }
+    case x31_hash("move_link_last_child"): {
+        LinkData link = LinkID{message[1]}.load();
+        PageID ref {message[2]};
+        link.move_last_child(ref);
+        link.save();
+        break;
+    }
+    case x31_hash("expand_link"): {
+        ViewLinkData{view, LinkID{message[1]}}.save();
+        break;
+    }
+    case x31_hash("contract_link"): {
+        ViewLinkData{view, LinkID{message[1]}, false}.save();
         break;
     }
      // Main menu
     case x31_hash("fullscreen"): {
         fullscreen ? leave_fullscreen() : enter_fullscreen();
-        break;
-    }
-    case x31_hash("fix_problems"): {
-        fix_problems();
         break;
     }
     case x31_hash("register_as_browser"): {
@@ -459,123 +439,170 @@ void Window::message_from_shell (json::Value&& message) {
     }
 }
 
-void Window::focus_tab (int64 tab) {
-    Transaction tr;
-    unclose_tab(tab);
-    set_window_focused_tab(id, tab);
-     // Load this tab and, if traversing up or down, the next one
-    claim_activity(ensure_activity_for_tab(tab));
-     // Start the search from old_focused_tab because it could be closed
-    if (old_focused_tab) {
-        if (get_next_unclosed_tab(old_focused_tab) == tab) {
-            if (int64 next = get_next_unclosed_tab(tab)) {
-                ensure_activity_for_tab(next);
+///// VIEW STUFF
+
+struct WindowUpdater : Observer {
+    void Observer_after_commit (
+        const Update& update
+    ) override {
+        for (ViewID v : update.views) {
+            ViewData view = v.load();
+            auto iter = open_windows.find(v);
+            Window* window = iter == open_windows.end() ? nullptr : iter->second;
+            if (view.exists && !view.closed_at) {
+                if (window) {
+                    window->send_update(update);
+                }
+                else {
+                    window = new Window (move(view));
+                     // TODO: auto load focused tab
+                }
+            }
+            else if (window) {
+                LOG("Destroying window", v);
+                AW(DestroyWindow(window->os_window.hwnd));
             }
         }
-        else if (get_prev_unclosed_tab(old_focused_tab) == tab) {
-            if (int64 prev = get_prev_unclosed_tab(tab)) {
-                ensure_activity_for_tab(prev);
-            }
+    }
+};
+static WindowUpdater window_updater;
+
+ // Must match constants in shell.js
+enum ShellItemFlags {
+    EXISTS = 1,
+    FOCUSED = 2,
+    VISITED = 4,
+    LOADING = 8,
+    LOADED = 16,
+    TRASHED = 32,
+    EXPANDED = 64,
+};
+
+static void get_visible_links (Window& w, unordered_set<LinkID>& r, PageID page) {
+    for (LinkID l : get_links_from_page(page)) {
+        r.insert(l);
+        if (w.expanded_links.count(l)) {
+            LinkData link = l.load();
+            get_visible_links(w, r, link.to_page);
         }
     }
 }
 
-void Window::Observer_after_commit (
-    const vector<int64>& updated_tabs,
-    const vector<int64>& updated_windows
+static json::Array make_shell_item (
+    Window& w,
+    const LinkData& link,
+    const PageData& page
 ) {
-    if (get_window_data(id)->closed_at) {
-        LOG("Destroying window", id);
-        AW(DestroyWindow(os_window.hwnd));
-        return;
+     // Find parent
+    LinkID parent;
+    for (LinkID l : w.expanded_links) {
+        LinkData link = l.load();
+        if (link.to_page == link.from_page) {
+            parent = link.id;
+            break;
+        }
     }
+     // No parent?  Theoretically this should only happen if link.id is 0
+     //  (the root page), in which case null will be sent as the parent.
 
-    send_update(updated_tabs);
+     // Choose title
+    string title = page.title;
+    if (title.empty()) title = link.title;
+    if (title.empty()) title = page.url;
+     // Generate flags
+    uint flags = 0;
+    if (link.exists) flags |= EXISTS;
+    if (w.view.focused_link == link.id) flags |= FOCUSED;
+    if (page.visited_at) flags |= VISITED;
+    if (Activity* activity = activity_for_page(page.id)) {
+        if (activity->currently_loading) flags |= LOADING;
+        else flags |= LOADED;
+    }
+    if (link.trashed_at) flags |= TRASHED;
+    if (w.expanded_links.count(link.id)) flags |= EXPANDED;
+
+    return json::array(
+        link.id,
+        link.id ? json::Value(parent) : json::Value(nullptr),
+        link.position.hex(),
+        page.url,
+        page.favicon_url,
+        title,
+        flags
+    );
 }
 
-void Window::send_update (const std::vector<int64>& updated_tabs) {
-    auto data = get_window_data(id);
+ // Send all the tabs this views wants to see
+void Window::send_view () {
+    unordered_set<LinkID> visible_links {0};  // 0 means root page
+    get_visible_links(*this, visible_links, view.root_page);
 
-    json::Array updates;
-    updates.reserve(updated_tabs.size());
-
-    bool focused_tab_changed = data->focused_tab != old_focused_tab;
-    old_focused_tab = data->focused_tab;
-
-    for (int64 tab : updated_tabs) {
-        if (!tab) continue;
-        auto t = get_tab_data(tab);
-        int64 grandparent = t->parent ? get_tab_data(t->parent)->parent : 0;
-
-         // Only send tab if it is a known tab (child or grandchild of expanded tab)
-        if (!expanded_tabs.count(tab)
-         && !expanded_tabs.count(t->parent)
-         && !expanded_tabs.count(grandparent)
-        ) {
-            continue;
-        }
-
-         // Sending no tab data tells shell to delete tab
-        if (t->deleted) {
-            updates.emplace_back(json::array(tab));
-            continue;
-        }
-
-        Activity* activity = activity_for_tab(tab);
-        if (activity) {
-            updates.emplace_back(json::array(
-                tab,
-                t->parent,
-                t->position.hex(),
-                t->child_count,
-                t->url,
-                t->title,
-                t->favicon,
-                t->visited_at,
-                t->starred_at,
-                t->closed_at,
-                activity->currently_loading ? 1 : 2,
-                activity->can_go_back ? 1 : 0,
-                activity->can_go_forward ? 1 : 0
-            ));
-        }
-        else {
-            updates.emplace_back(json::array(
-                tab,
-                t->parent,
-                t->position.hex(),
-                t->child_count,
-                t->url,
-                t->title,
-                t->favicon,
-                t->visited_at,
-                t->starred_at,
-                t->closed_at
-            ));
-        }
-
-        if (tab == data->focused_tab) focused_tab_changed = true;
+    json::Array tabs;
+    tabs.reserve(visible_links.size());
+    for (LinkID l : visible_links) {
+        LinkData link = l.load();
+        tabs.emplace_back(make_shell_item(*this, link, link.to_page.load()));
     }
+    message_to_shell(json::array("view", tabs));
+}
 
-    if (focused_tab_changed) {
-        const string& title = get_tab_data(data->focused_tab)->title;
+ // Send only tabs that have changed
+void Window::send_update (const Update& update) {
+    bool update_title = false;
+     // First update our cached things
+    for (auto id : update.views) {
+        if (id == view.id) {
+            auto old_focused_link = view.focused_link;
+            view = id.load();
+            if (old_focused_link != view.focused_link) update_title = true;
+            break;
+        }
+    }
+    for (auto& [v, l] : update.view_links) {
+        if (v == view.id) {
+            ViewLinkData vl {v, l};
+            vl.load();
+            if (vl.exists) expanded_links.insert(l);
+            else expanded_links.erase(l);
+        }
+    }
+     // Now figure out which links we care about
+     // TODO: get parent links as well
+     // TODO: this might want to be cached
+    unordered_set<LinkID> visible_links {0};  // 0 means root page
+    get_visible_links(*this, visible_links, view.root_page);
+
+     // Now merge all link updates and page updates into tab updates
+    json::Array tabs;
+    for (LinkID l : update.links) {
+        LinkData link = l.load();
+        PageData page = link.to_page.load();
+        if (visible_links.count(link.id)) {
+            tabs.emplace_back(make_shell_item(*this, link, page));
+             // Prevent sending duplicates (probably not necessary)
+            visible_links.erase(link.id);
+        }
+    }
+    for (PageID p : update.pages) {
+        PageData page = p.load();
+        for (LinkID l : get_links_to_page(page)) {
+            if (l == view.focused_link) update_title = true;
+            if (visible_links.count(l)) {
+                tabs.emplace_back(make_shell_item(*this, l.load(), page));
+            }
+        }
+    }
+     // Now send it
+    message_to_shell(json::array("update", tabs));
+
+    PageID focused_page = view.focused_link ? view.focused_link.load().to_page : view.root_page;
+     // Update window title
+    if (update_title) {
+        const string& title = focused_page.load().title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
-        if (auto activity = activity_for_tab(data->focused_tab)) {
-            activity->controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
-        }
-        else {
-            shell_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
-        }
     }
-
-    if (!activity_for_tab(data->focused_tab)) leave_fullscreen();
-
-    message_to_shell(json::array(
-        "update",
-        data->root_tab,
-        data->focused_tab,
-        updates
-    ));
+     // TODO: set UI focus?
+    if (!activity_for_page(focused_page)) leave_fullscreen();
 }
 
 void Window::message_to_shell (json::Value&& message) {

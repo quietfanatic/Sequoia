@@ -51,7 +51,7 @@ void load_settings () {
     string settings_file = profile_folder + "/settings.json";
     if (!filesystem::exists(settings_file)) return;
     json::Object settings = json::parse(slurp(settings_file));
-    A(!settings.empty());
+    AA(!settings.empty());
     for (auto pair : settings) {
         switch (x31_hash(pair.first)) {
         case x31_hash("theme"): {
@@ -64,5 +64,5 @@ void load_settings () {
     }
 }
 void save_settings () {
-    A(false); // NYI
+    AA(false); // NYI
 }

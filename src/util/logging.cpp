@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "assert.h"
+#include "time.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -11,13 +12,9 @@ using namespace std::chrono;
 std::ostream* logstream;
 
 void init_log (const std::string& filename) {
-    A(!logstream);
-    A(!filename.empty());
+    AA(!logstream);
+    AA(!filename.empty());
     logstream = new ofstream (filename);
-}
-
-static double now () {
-    return duration<double>(steady_clock::now().time_since_epoch()).count();
 }
 
 uint64 logging_timestamp () {

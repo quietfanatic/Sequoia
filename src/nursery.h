@@ -11,6 +11,5 @@ HWND existing_nursery ();
 
 void init_nursery ();
 
-void new_webview (const std::function<void(WebViewController*, WebView*, HWND)>& then);
-
+void new_webview (const std::function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then);
 

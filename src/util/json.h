@@ -102,9 +102,9 @@ struct Value {
     operator const Object& () const& { assert(type == OBJECT); return *object; }
     operator Object&& () && { assert(type == OBJECT); return std::move(*object); }
 
-    template <class T> operator const T& () const {
-        static_assert(false, "Can't cast json::Value to this type.");
-    }
+//    template <class T> operator const T& () const {
+//        static_assert(false, "Can't cast json::Value to this type.");
+//    }
 
     bool has (size_t i) const {
         return(type == ARRAY && array->size() > i);

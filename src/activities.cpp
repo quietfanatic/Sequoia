@@ -1,14 +1,9 @@
 #include "activities.h"
 
-#include <fstream>
-#include <iomanip>
-#include <map>
-#include <sstream>
 #include <stdexcept>
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "data.h"
 #include "nursery.h"
 #include "util/assert.h"
 #include "util/files.h"
@@ -16,19 +11,23 @@
 #include "util/json.h"
 #include "util/logging.h"
 #include "util/text.h"
+#include "util/time.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
 
-static map<int64, Activity*> activities_by_tab;
+static unordered_map<PageID, Activity*> activities_by_page;
 
-Activity::Activity (int64 t) : tab(t) {
-    LOG("new Activity", this);
-    A(!activities_by_tab.contains(t));
-    activities_by_tab.emplace(t, this);
+// TODO: Is an ActivityObserver necessary?  Probably not since page URLs are
+//  never supposed to change.
 
-    new_webview([this](WebViewController* wvc, WebView* wv, HWND hwnd){
+Activity::Activity (PageData&& page_) : page(move(page_)) {
+    LOG("new Activity", this, page.id);
+    AA(!activities_by_page.contains(page.id));
+    activities_by_page.emplace(page.id, this);
+
+    new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
@@ -37,7 +36,8 @@ Activity::Activity (int64 t) : tab(t) {
         claimed_by_window(window);
         if (window) {
             window->resize();
-            if (get_tab_data(tab)->url != "about:blank") {
+             // TODO: check if this is necessary
+            if (page.url != "about:blank") {
                 AH(controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
             }
         }
@@ -48,7 +48,7 @@ Activity::Activity (int64 t) : tab(t) {
                 ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
             currently_loading = true;
-            tab_updated(tab);
+            page.updated();
             return S_OK;
         }).Get(), nullptr));
 
@@ -63,7 +63,8 @@ Activity::Activity (int64 t) : tab(t) {
             if (wcscmp(source.get(), L"about:blank") != 0) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                set_tab_title(tab, from_utf16(title.get()));
+                page.title = from_utf16(title.get());
+                page.save();
             }
             return S_OK;
         }).Get(), nullptr));
@@ -88,6 +89,7 @@ Activity::Activity (int64 t) : tab(t) {
                 ICoreWebView2* sender,
                 ICoreWebView2SourceChangedEventArgs* args) -> HRESULT
         {
+             // TODO: Make new page instead of changing this one!
              // WebView2 tends to have spurious navigations to about:blank, so don't
              // save the url in that case.
             wil::unique_cotaskmem_string source;
@@ -96,11 +98,12 @@ Activity::Activity (int64 t) : tab(t) {
              && wcscmp(source.get(), L"about:blank") != 0
             ) {
                 navigated_url = "";
-                set_tab_url(tab, from_utf16(source.get()));
+                page.url = from_utf16(source.get());
             }
             else {
-                set_tab_url(tab, navigated_url);
+                page.url = navigated_url;
             }
+            page.save();
 
             return S_OK;
         }).Get(), nullptr));
@@ -111,7 +114,7 @@ Activity::Activity (int64 t) : tab(t) {
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
             currently_loading = false;
-            tab_updated(tab);
+            page.updated();
             return S_OK;
         }).Get(), nullptr));
 
@@ -124,7 +127,19 @@ Activity::Activity (int64 t) : tab(t) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            create_tab(tab, TabRelation::LAST_CHILD, from_utf16(url.get()));
+
+            PageData child;
+            LinkData link;
+            child.url = from_utf16(url.get());
+            child.method = Method::Get;
+            link.opener_page = page;
+            link.from_page = page;
+            link.move_last_child(page);
+            Transaction tr;
+            child.save();
+            link.to_page = child;
+            link.save();
+
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -165,42 +180,45 @@ Activity::Activity (int64 t) : tab(t) {
             return S_OK;
         }).Get(), nullptr));
 
-        navigate_url_or_search(get_tab_data(tab)->url);
-        set_tab_visited(tab);
+        navigate_url_or_search(page.url);
+        page.visited_at = now();
+        page.save();
     });
 
      // Delete old activities
      // TODO: configurable values
-    while (activities_by_tab.size() > 80) {
-        set<int64> keep_loaded;
-         // Don't unload self!
-        keep_loaded.emplace(tab);
-         // Don't unload tabs focused by any windows
-        for (auto w : get_all_unclosed_windows()) {
-            keep_loaded.emplace(get_window_data(w)->focused_tab);
-        }
-         // Keep last n loaded tabs regardless
-        for (auto t : get_last_visited_tabs(20)) {
-            keep_loaded.emplace(t);
-        }
-         // Find last unstarred tab or last starred tab
-        int64 victim_id = 0;
-        TabData* victim_dat = nullptr;
-        for (auto p : activities_by_tab) {
-            if (keep_loaded.contains(p.first)) continue;
-            auto dat = get_tab_data(p.first);
-             // Not yet visited?  Not quite sure why this would happen.
-            if (dat->visited_at == 0) continue;
-            if (!victim_id
-                || !dat->starred_at && victim_dat->starred_at
-                || dat->visited_at < victim_dat->visited_at
-            ) {
-                victim_id = p.first;
-                victim_dat = dat;
-            }
-        }
-        delete activity_for_tab(victim_id);
-    }
+     // TODO: This isn't quite working right
+     // TODO: Update for new schema
+//    while (activities_by_tab.size() > 80) {
+//        set<int64> keep_loaded;
+//         // Don't unload self!
+//        keep_loaded.emplace(tab);
+//         // Don't unload tabs focused by any windows
+//        for (auto w : get_all_unclosed_windows()) {
+//            keep_loaded.emplace(get_window_data(w)->focused_tab);
+//        }
+//         // Keep last n loaded tabs regardless
+//        for (auto t : get_last_visited_tabs(20)) {
+//            keep_loaded.emplace(t);
+//        }
+//         // Find last unstarred tab or last starred tab
+//        int64 victim_id = 0;
+//        TabData* victim_dat = nullptr;
+//        for (auto p : activities_by_tab) {
+//            if (keep_loaded.contains(p.first)) continue;
+//            auto dat = get_tab_data(p.first);
+//             // Not yet visited?  Not quite sure why this would happen.
+//            if (dat->visited_at == 0) continue;
+//            if (!victim_id
+//                || !dat->starred_at && victim_dat->starred_at
+//                || dat->visited_at < victim_dat->visited_at
+//            ) {
+//                victim_id = p.first;
+//                victim_dat = dat;
+//            }
+//        }
+//        delete activity_for_tab(victim_id);
+//    }
 }
 
 void Activity::message_from_webview(json::Value&& message) {
@@ -208,49 +226,59 @@ void Activity::message_from_webview(json::Value&& message) {
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
-        const string& favicon = message[1];
-        set_tab_favicon(tab, favicon);
+        page.favicon_url = string(message[1]);
+        page.save();
         break;
     }
     case x31_hash("click_link"): {
-        const string& url = message[1];
-        const string& title = message[2];
+        PageData child;
+        LinkData link;
+        child.url = string(message[1]);
+        child.method = Method::Get;
+        link.opener_page = page;
+        link.title = string(message[2]);
         int button = message[3];
         bool double_click = message[4];
         bool shift = message[5];
         bool alt = message[6];
         bool ctrl = message[7];
         if (button == 1) {
-            if (double_click) {
-                if (last_created_new_child && window) {
-                     // TODO: figure out why the new tab doesn't get loaded
-                    set_window_focused_tab(window->id, last_created_new_child);
-                }
-            }
-            else if (alt && shift) {
-                last_created_new_child = create_tab(tab, TabRelation::BEFORE, url, title);
+//            if (double_click) {
+//                if (last_created_new_child && window) {
+//                     // TODO: figure out why the new tab doesn't get loaded
+//                    set_window_focused_tab(window->id, last_created_new_child);
+//                }
+//            }
+            if (alt && shift) {
+                // TODO: get this activity's link id from view
+//                link.move_before(page);
             }
             else if (alt) {
-                last_created_new_child = create_tab(tab, TabRelation::AFTER, url, title);
+//                link.move_after(page);
             }
             else if (shift) {
-                last_created_new_child = create_tab(tab, TabRelation::FIRST_CHILD, url, title);
+                link.move_first_child(page);
             }
             else {
-                last_created_new_child = create_tab(tab, TabRelation::LAST_CHILD, url, title);
+                link.move_last_child(page);
             }
         }
+        Transaction tr;
+        child.save();
+        link.to_page = child;
+        link.save();
         break;
     }
     case x31_hash("new_children"): {
-        last_created_new_child = 0;
-        const json::Array& children = message[1];
-        Transaction tr;
-        for (auto& child : children) {
-            const string& url = child[0];
-            const string& title = child[1];
-            create_tab(tab, TabRelation::LAST_CHILD, url, title);
-        }
+     // TODO
+//        last_created_new_child = 0;
+//        const json::Array& children = message[1];
+//        Transaction tr;
+//        for (auto& child : children) {
+//            const string& url = child[0];
+//            const string& title = child[1];
+//            create_tab(tab, TabRelation::LAST_CHILD, url, title);
+//        }
         break;
     }
     default: {
@@ -275,13 +303,14 @@ void Activity::claimed_by_window (Window* w) {
         }
         else {
             AH(controller->put_IsVisible(FALSE));
+             // TODO: Don't suspend tab until DOMContentLoaded
             auto wv3 = webview.try_query<ICoreWebView2_3>();
-            A(!!wv3);
+            AA(!!wv3);
             if (wv3) {
                 AH(wv3->TrySuspend(Callback<ICoreWebView2TrySuspendCompletedHandler>(
                     [this](HRESULT hr, BOOL success){
                         AH(hr);
-                        LOG("Suspend tab", tab, success);
+                        LOG("Suspend page", page.id, success);
                         return S_OK;
                     }
                 ).Get()));
@@ -308,7 +337,7 @@ void Activity::navigate_search (const string& search) {
      // Escape URL characters
     string url = "https://duckduckgo.com/?q=" + escape_url(search);
      // If the search URL is invalid, treat it as a bug
-    A(navigate_url(url));
+    AA(navigate_url(url));
 }
 
 void Activity::navigate_url_or_search (const string& address) {
@@ -327,7 +356,8 @@ void Activity::navigate_url_or_search (const string& address) {
         }
     }
     else {
-        set_tab_url(tab, address);
+        page.url = address;
+        page.save();
     }
 }
 
@@ -344,22 +374,22 @@ void Activity::leave_fullscreen () {
 
 Activity::~Activity () {
     LOG("delete Activity", this);
-    activities_by_tab.erase(tab);
+    activities_by_page.erase(page.id);
     if (window) window->activity = nullptr;
     if (controller) controller->Close();
-    tab_updated(tab);
+    page.updated();
 }
 
-Activity* activity_for_tab (int64 id) {
-    auto iter = activities_by_tab.find(id);
-    if (iter == activities_by_tab.end()) return nullptr;
+Activity* activity_for_page (PageID id) {
+    auto iter = activities_by_page.find(id);
+    if (iter == activities_by_page.end()) return nullptr;
     else return iter->second;
 }
 
-Activity* ensure_activity_for_tab (int64 id) {
-    auto iter = activities_by_tab.find(id);
-    if (iter == activities_by_tab.end()) {
-        iter = activities_by_tab.emplace(id, new Activity(id)).first;
+Activity* ensure_activity_for_page (PageID id) {
+    auto iter = activities_by_page.find(id);
+    if (iter == activities_by_page.end()) {
+        iter = activities_by_page.emplace(id, new Activity(id.load())).first;
     }
     return iter->second;
 }

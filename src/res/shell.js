@@ -3,7 +3,33 @@
 let host = window.chrome.webview;
 let $html = document.documentElement;
 
+ // Must match enum ShellItemFlags in Window.cpp
+const EXISTS = 1;
+const FOCUSED = 2;
+const VISITED = 4;
+const LOADING = 8;
+const LOADED = 16;
+const TRASHED = 32;
+const EXPANDED = 64;
+
+///// View model (model of view, not viewmodel)
+
+ // Although the data model at the bottom is a graph of pages and links, it's
+ //  presented to the user as a tree of tabs, which looks in the DOM like
+ //     [Item [Tab] [List
+ //         [Item [Tab]]
+ //         [Item [Tab] [List
+ //             [Item [Tab]]
+ //         ]
+ //     ]
+ // The conversion is done on the app side, and communicated to this shell as
+ //  changes to this tree of tabs.  Most of the data is just stuffed directly
+ //  into the DOM without being stored in JS.  The only JS data stored per item
+ //  is for positioning.
+
 ///// Toolbar DOM
+
+ // TODO: this will all be replaced with a navigation page.
 
  // Simple back and forward buttons
 let $back = $("div", {
@@ -109,19 +135,20 @@ let $toolbar = $("div", {id:"toolbar"},
     $back, $forward, $reload, $stop, $address, $error_indicator, $toggle_sidebar, $toggle_main_menu
 );
 
+function update_toolbar (url, loading) {
+    $reload.classList.toggle("disabled", loading)
+    $stop.classList.toggle("disabled", !loading)
+    $html.classList.toggle("currently-loading", loading);
+    set_address(url);
+}
+
 ///// Sidebar DOM
 
 let $toplist = $("div", {class:"list"});
-let $subroot_tree = $("div", {id:"subroot-tree"});
 let $sidebar = $("div", {id:"sidebar"},
-    $("div", {id:"toproot-tree"},
-        $toplist,
-        $("div", {id:"new-tab", click: e => {
-            host.postMessage(["new_toplevel_tab"]);
-            handled(e);
-        }})
+    $("div", {id:"tree"}
+        $toplist
     ),
-    $subroot_tree,
     $("div", {id:"sidebar-bottom"},
         $("div", {
             id: "resize",
@@ -171,9 +198,6 @@ let $main_menu = $("nav", {id:"main-menu"},
     $("div", "Enter fullscreen", {
         click: menu_item("fullscreen"),
     }),
-    $("div", "Fix database problems", {
-        click: menu_item("fix_problems"),
-    }),
     $("div", "Register as browser with Windows", {
         click: menu_item("register_as_browser"),
     }),
@@ -219,149 +243,142 @@ function hide_main_menu () {
  // Hide menus if the shell loses focus
 window.addEventListener("blur", e => {
     hide_main_menu();
-    hide_context_menu();
     // Let event propogate
 }, {capture:true});
 
-///// Context Menu DOM
-
-let showing_context_menu_for = null;
-
-let $context_menu = $("nav", {id:"context-menu"},
-    $("div", "Close", {
-        click: context_menu_item("close"),
-    }),
-    $("div", {id:"context-back"}, "Back", {
-        click: context_menu_item("back"),
-    }),
-    $("div", {id:"context-forward"}, "Forward", {
-        click: context_menu_item("forward"),
-    }),
-    $("div", {id:"context-reload"}, "Reload", {
-        click: context_menu_item("reload"),
-    }),
-    $("div", {id:"context-stop"}, "Stop", {
-        click: context_menu_item("stop"),
-    }),
-    $("div", "New Child", {
-        click: context_menu_item("new_child"),
-    }),
-     // Don't hide menu when clicking it.
-    {click: e=>{ handled(e); }},
-);
-
-function show_context_menu (id) {
-    if (showing_context_menu_for == id) return;
-    showing_context_menu_for = id;
-    $html.classList.add("show-context-menu");
-    host.postMessage(["show_menu", $context_menu.offsetWidth]);
-}
-
-function hide_context_menu () {
-    if (!showing_context_menu_for) return;
-    showing_context_menu_for = null;
-    $html.classList.remove("show-context-menu");
-    host.postMessage(["hide_menu"]);
-}
-
-function context_menu_item (message) {
-    return event => {
-        host.postMessage([message, showing_context_menu_for]);
-        hide_context_menu();
-        handled(event);
-    };
-}
-
 ///// Tab DOM and behavior
 
-let tabs_by_id = {};
-let root_id = 0;
-let focused_id = 0;
+let items_by_id = {};
 
-function create_tab (id) {
-    let $favicon = $("img", {
-        class: "favicon",
-        load: on_favicon_load,
-        error: on_favicon_error,
-    });
-    let $title = $("div", {class:"title"});
-    let $child_count = $("div", {class:"child-count"});
-    let $tab = $("div",
+function create_item ([id, parent, position, url, favicon_url, title, flags]) {
+    let classes = "item";
+    if (flags & FOCUSED) classes += " focused";
+    if (flags & VISITED) classes += " visited";
+    if (flags & LOADED) classes += " loaded";
+    if (flags & TRASHED) classes += " trashed";
+    if (children.length) classes += " expandable";
+    if (flags & EXPANDED) classes += " expanded";
+    if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
+    let $item, $tab, $favicon, $title, $list;
+    $item = $("div",
         {
-            class: "tab",
-            title: "",
-            tabIndex: "0",
-            click: on_tab_clicked,
-            auxclick: on_tab_clicked,
-            mousedown: on_tab_mousedown,
+            id: id,
+            class: classes,
         },
-        $("div", {
-            class: "expand",
-            click: on_expand_clicked,
-        }),
-        $favicon,
-        $title,
-        $child_count,
-        $("div", {
-            class: "close",
-            click: on_close_clicked,
-        }),
-        $("div", {
-            class: "new-child",
-            click: on_new_child_clicked,
-        }),
-        $("div", {
-            class: "star",
-            click: on_star_clicked,
-        }),
+        $tab = $("div",
+            {
+                class: "tab",
+                title: title + "\n" + url,
+                tabIndex: "0",
+                click: on_tab_clicked,
+                auxclick: on_tab_clicked,
+                mousedown: on_tab_mousedown,
+            },
+            $("div", {
+                class: "expand",
+                click: on_expand_clicked,
+            }),
+            $favicon = $("img", {
+                class: "favicon",
+                src: favicon_url,
+                load: e => e.target.classList.add("loaded"),
+                error: e => e.target.classList.remove("loaded"),
+            }),
+            $title = $("div", {class:"title"}, title);
+            $("div", {
+                class: "close",
+                click: on_close_clicked,
+            }),
+            $("div", {
+                class: "new-child",
+                click: on_new_child_clicked,
+            }),
+        ),
+        $list = $("div", {class:"list"})
     );
-    let $list = $("div", {class:"list"});
-
-    let $item = $("div", {
-        id: id,
-        class: "item",
-    }, $tab, $list);
-
-    return {
-        id: id,
-        parent: 0,
-        position: "",
-        url: "",
-        expanded: false,
-        child_count: 0,
+    return items_by_id[id] = {
+        parent: null,  // Will be placed later
+        position: null,
         $item: $item,
         $tab: $tab,
         $favicon: $favicon,
         $title: $title,
-        $child_count: $child_count,
-        $list: $list,
+        $list: $list
     };
 }
 
-function close_or_delete_tab (tab) {
-    if (tab.$item.classList.contains("closed")) {
-        host.postMessage(["delete", tab.id]);
+function update_item (data) {
+    let [id, parent, position, url, favicon_url, title, flags] = data;
+    let item = items_by_id[id];
+    if (!item) {
+        if (flags & DELETED) // Do nothing
+        else create_item(data);
     }
-    else if (tab.child_count && tab.expanded) {
-        host.postMessage(["inherit_close", tab.id]);
+    else if (flags & DELETED) {
+        item.$item.remove();
+        delete items_by_id[id];
     }
     else {
-        host.postMessage(["close", tab.id]);
+        item.$item.classList.toggle("focused", flags & FOCUSED);
+        item.$item.classList.toggle("visited", flags & VISITED);
+        item.$item.classList.toggle("loading", flags & LOADING);
+        item.$item.classList.toggle("loaded", flags & LOADED);
+        item.$item.classList.toggle("trashed", flags & TRASHED);
+        item.$item.classList.toggle("expandable", children.length);
+        item.$item.classList.toggle("expanded", flags & EXPANDED);
+        if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
+
+        item.$title.innerText = title
+        item.$tab.title = title + "\n" + url;
+
+        if (favicon_url) {
+            item.$favicon.src = favicon_url;
+        }
+        else {
+            item.$favicon.removeAttribute("src");
+        }
+
+        if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
+
+        if (parent != item.parent || position != item.position) {
+            $item.remove(); // Will be reinserted later
+        }
+    }
+}
+
+function place_item ([id, parent, position, url, favicon_url, title, flags]) {
+    if (flags & DELETED) return;
+    let item = items_by_id[id];
+    item.parent = parent;
+    item.position = position;
+    let $parent_list = (parent == null ? $toplist : items_by_id[parent].$list);
+    for (let $sibling of $parent_list.children) {
+        let sibling = items_by_id[+$sibling.id];
+        if (position < sibling.position) {
+            $parent_list.insertBefore(item.$item, $sibling);
+            return;
+        }
+    }
+    $parent_list.append(item.$item);
+}
+
+function close_or_delete_link ($item) {
+    if ($item.classList.contains("closed")) {
+        host.postMessage(["delete_link", +$item.id]);
+    }
+    else {
+        host.postMessage(["trash_link", +$item.id]);
     }
 }
 
 function on_tab_clicked (event) {
-    let $item = event.target.closest('.item');
-    let tab = tabs_by_id[+$item.id];
+    let $item = event.target.closest(".item");
     if (event.button == 0) {
-        host.postMessage(["focus", tab.id]);
-        tab.$tab.focus();
+        host.postMessage(["focus_link", +$item.id]);
+        items_by_id[+$item.id].$tab.focus();
     }
     else if (event.button == 1) {
-        close_or_delete_tab(tab);
-    }
-    else if (event.button == 2) {
-        show_context_menu(+$item.id);
+        close_or_delete_link($item);
     }
     handled(event);
 }
@@ -372,61 +389,21 @@ function on_new_child_clicked (event) {
     handled(event);
 }
 
-function on_star_clicked (event) {
-    let $item = event.target.closest('.item');
-    let id = +$item.id;
-    if (tabs_by_id[id].$tab.classList.contains("starred")) {
-        host.postMessage(["unstar", id]);
-    }
-    else {
-        host.postMessage(["star", id]);
-    }
-    handled(event);
-}
-
 function on_close_clicked (event) {
     let $item = event.target.closest('.item');
-    close_or_delete_tab(tabs_by_id[+$item.id]);
+    close_or_delete_link($item);
     handled(event);
 }
 
-function expand_tab (tab) {
-    if (!tab) {
-        host.postMessage(["expand", 0]);
-        return;
-    }
-    host.postMessage(["expand", tab.id]);
-    tab.$item.classList.add("expanded");
-    let depth = 0;
-    for (let t = tab; t; t = tabs_by_id[t.parent]) {
-        depth += 1;
-    }
-    tab.$list.classList.toggle("alt", depth % 4 >= 2);
-    tab.expanded = true;
-}
-function contract_tab (tab) {
-    host.postMessage(["contract", tab.id]);
-    tab.$item.classList.remove("expanded");
-    tab.expanded = false;
-}
 function on_expand_clicked (event) {
     let $item = event.target.closest('.item');
-    let tab = tabs_by_id[+$item.id];
-    if (tab.expanded) {
-        contract_tab(tab);
+    if ($item.classList.contains("expanded")) {
+        host.postMessage(["expand_link", +$item.id]);
     }
     else {
-        expand_tab(tab);
+        host.postMessage(["contract_link", +$item.id]);
     }
     handled(event);
-}
-
-function on_favicon_load (event) {
-    event.target.classList.add("loaded");
-}
-
-function on_favicon_error (event) {
-    event.target.classList.remove("loaded");
 }
 
 ///// Tab dragging and moving
@@ -439,13 +416,6 @@ let moving_tab_id = 0;
 let $move_destination = null;
 let move_destination_rel = 0;
 let tab_move_origin_y = 0;
-
-let TabRelation = {
-    BEFORE: 0,
-    AFTER: 1,
-    FIRST_CHILD: 2,
-    LAST_CHILD: 3
-};
 
 function on_tab_mousedown (event) {
     let $item = event.target.closest('.item');
@@ -525,148 +495,24 @@ let commands = {
             $html.classList.add("theme-" + settings.theme);
         }
     },
-
-    update (new_root, new_focus, updates) {
-         // Create or change updated tabs
-        for (let [
-            id, parent, position, child_count, url, title, favicon,
-            visited_at, starred_at, closed_at, load_state, can_go_back, can_go_forward
-        ] of updates) {
-             // Only [id] will be sent for a deleted tab
-            if (parent === undefined) {
-                let tab = tabs_by_id[id];
-                if (tab) {
-                    tab.$item.remove();
-                }
-                delete tabs_by_id[id];
-                continue;
-            }
-
-            let tab = tabs_by_id[id];
-            if (!tab) {
-                tab = tabs_by_id[id] = create_tab(id);
-            }
-
-            if (parent != tab.parent || position != tab.position) {
-                 // If tab's location was changed, take it out of the DOM.
-                 // It'll be reinserted later.
-                tab.$item.remove();
-            }
-            tab.parent = parent;
-            tab.position = position;
-            tab.url = url;
-            tab.$title.innerText = title ? title : url;
-
-            let tooltip = title;
-            if (url) tooltip += "\n" + url;
-            if (child_count > 1) tooltip += "\n(" + child_count + ")";
-            tab.$tab.title = tooltip;
-
-            tab.child_count = child_count;
-            if (child_count) {
-                tab.$child_count.innerText = "(" + child_count + ")";
-                tab.$item.classList.add("parent");
-            }
-            else {
-                tab.$child_count.innerText = "";
-                tab.$item.classList.remove("parent");
-            }
-
-            tab.$tab.classList.toggle("loaded", !!load_state);
-            tab.$tab.classList.toggle("visited", visited_at > 0);
-            tab.$tab.classList.toggle("starred", starred_at > 0);
-            tab.$item.classList.toggle("closed", closed_at > 0);
-            if (favicon) {
-                tab.$favicon.src = favicon;
-            }
-            else {
-                tab.$favicon.removeAttribute("src");
-                tab.$favicon.classList.remove("loaded");
-            }
-
-             // Update toolbar state for active tab
-            if (id == new_focus) {
-                $back.classList.toggle("disabled", !can_go_back);
-                $forward.classList.toggle("disabled", !can_go_forward);
-                $reload.classList.toggle("disabled", !load_state)
-                $stop.classList.toggle("disabled", load_state != 1)
-                $html.classList.toggle("currently-loading", load_state == 1);
-                set_address(tab.url);
-            }
+    view (items) {
+        $($toplist, []);
+        items_by_id = {};
+        for (let item of items) {
+            update_item(item);
         }
-
-        if (root_id != new_root) {
-            $html.classList.toggle("root-is-sub", !!new_root);
-             // If the root has changed, force reinsertion of the affected $items
-            let old_tab = tabs_by_id[root_id];
-            if (old_tab) {
-                old_tab.$item.remove();
-                updates.push([root_id]);
-            }
-            let new_tab = tabs_by_id[new_root];
-            if (new_tab) {
-                new_tab.$item.remove();
-                updates.push([new_root]);
-            }
-            root_id = new_root;
-        }
-
-         // Wait until we're done updating to insert moved tabs, to make sure
-         //  parent tabs have been created.
-        for (let [id] of updates) {
-            let tab = tabs_by_id[id];
-            if (!tab) continue;  // Must have been deleted or something
-            if (tab.$item.isConnected) continue;
-            if (id == root_id) {
-                $($subroot_tree, tab.$item)
-            }
-            else {
-                let $parent_list = tab.parent == 0 ? $toplist : tabs_by_id[tab.parent].$list;
-                 // Insert sorted by position.
-                for (let $child_item of $parent_list.childNodes) {
-                    let child = tabs_by_id[+$child_item.id];
-                    if (tab.position < child.position) {
-                        $parent_list.insertBefore(tab.$item, $child_item);
-                        break;
-                    }
-                }
-                if (!tab.$item.isConnected) {
-                    $parent_list.appendChild(tab.$item);
-                }
-                 // TODO: investigate why this doesn't work right
-                if (updates.length == 1) {
-                    tab.$tab.scrollIntoViewIfNeeded();
-                }
-            }
-        }
-
-        if (new_focus != focused_id) {
-            let old_focused_tab = tabs_by_id[focused_id];
-            if (old_focused_tab) {
-                old_focused_tab.$tab.classList.remove("focused");
-            }
-            focused_id = new_focus;
-            let focused_tab = tabs_by_id[focused_id];
-            if (focused_tab) {
-                focused_tab.$tab.classList.add("focused");
-                set_address(focused_tab.url);
-                 // Expand everything above and including the focused tab
-                expandUp(focused_tab)
-                function expandUp (tab) {
-                    expand_tab(tab);
-                    if (!tab || tab.id == root_id) return;
-                    expandUp(tabs_by_id[tab.parent]);
-                }
-
-                focused_tab.$tab.scrollIntoViewIfNeeded();
-                if (focused_tab.url == "about:blank") {
-                    $address.select();
-                    $address.focus();
-                }
-            }
+        for (let item of items) {
+            place_item(item);
         }
     },
-
+    update (items) {
+        for (let item of items) {
+            update_item(item);
+        }
+        for (let item of items) {
+            place_item(item);
+        }
+    },
     select_location () {
         $address.select();
         $address.focus();
