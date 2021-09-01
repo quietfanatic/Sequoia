@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "util/assert.h"
 #include "util/hash.h"
+#include "util/logging.h"
 #include "util/json.h"
 #include "util/text.h"
 #include "Window.h"
@@ -97,6 +98,7 @@ static void create (const function<void(ICoreWebView2Controller*, ICoreWebView2*
         Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
             [then](HRESULT hr, ICoreWebView2Controller* controller) -> HRESULT
    {
+        LOG("Nursery: new webview created");
         AH(hr);
         HWND hwnd = GetWindow(nursery_hwnd, GW_CHILD);
         AW(hwnd);
@@ -111,6 +113,7 @@ static void create (const function<void(ICoreWebView2Controller*, ICoreWebView2*
 
 static void queue () {
     create([](ICoreWebView2Controller* controller, ICoreWebView2* webview, HWND hwnd){
+        LOG("Nursery: new webview queued");
         next_controller = controller;
         next_webview = webview;
         next_hwnd = hwnd;
@@ -118,8 +121,10 @@ static void queue () {
 }
 
 void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then) {
+    LOG("Nursery: new webview requested");
     AA(nursery_hwnd);
     if (!environment) {
+        LOG("Nursery: creating environment");
         auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
         AH(options->put_AllowSingleSignOnUsingOSPrimaryAccount(TRUE));
         AH(CreateCoreWebView2EnvironmentWithOptions(
@@ -128,6 +133,7 @@ void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, 
                 [then](HRESULT hr, ICoreWebView2Environment* env) -> HRESULT
         {
             AH(hr);
+            LOG("Nursery: environment created");
             environment = env;
             create(then);
             queue();
@@ -135,12 +141,14 @@ void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, 
         }).Get()));
     }
     else if (next_controller) {
+        LOG("Nursery: using queued webview");
         auto controller = std::move(next_controller);
         auto webview = std::move(next_webview);
         then(controller.get(), webview.get(), next_hwnd);
         queue();
     }
     else {
+        LOG("Nursery: skipping queue");
          // next_webview isn't ready yet.
          // Instead of trying to queue up an arbitrary number of callbacks, just make a
          // new webview ignoring the queue.
