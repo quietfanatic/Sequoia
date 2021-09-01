@@ -53,13 +53,14 @@ void PageData::save () {
     LOG("PageData::save", id);
     Transaction tr;
     if (exists) {
-        static State<>::Ment<optional<PageID>, string, optional<Method>, optional<int64>, optional<string>, optional<double>, optional<string>> ins = R"(
-INSERT OR REPLACE INTO _pages (_id, _url, _method, _group, _favicon_url, _visited_at, _title)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+        static State<>::Ment<optional<PageID>, int64, string, optional<Method>, optional<int64>, optional<string>, optional<double>, optional<string>> ins = R"(
+INSERT OR REPLACE INTO _pages (_id, _url_hash, _url, _method, _group, _favicon_url, _visited_at, _title)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         )";
         AA(url != "");
         ins.run_void(
             null_default(id),
+            x31_hash(url),
             url,
             null_default(method, Method::Unknown),
             null_default(group),

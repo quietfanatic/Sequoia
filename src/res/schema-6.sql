@@ -63,7 +63,7 @@ CREATE INDEX _pages_by_group ON _pages (
 
 CREATE INDEX _pages_by_visited_at ON _pages (
     _visited_at
-) WHERE _visited_at IS NOT NULL
+) WHERE _visited_at IS NOT NULL;
 
 ----- LINKS
 
@@ -145,7 +145,7 @@ CREATE TABLE _groups (
 CREATE TABLE _views (
     _id INTEGER PRIMARY KEY,
     _root_page INTEGER NOT NULL,
-    _focused_link INTEGER NOT NULL
+    _focused_link INTEGER NOT NULL,
     _closed_at REAL,
     _trashed_at REAL
 );
