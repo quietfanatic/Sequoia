@@ -146,7 +146,7 @@ function update_toolbar (url, loading) {
 
 let $toplist = $("div", {class:"list"});
 let $sidebar = $("div", {id:"sidebar"},
-    $("div", {id:"tree"}
+    $("div", {id:"tree"},
         $toplist
     ),
     $("div", {id:"sidebar-bottom"},
@@ -284,7 +284,7 @@ function create_item ([id, parent, position, url, favicon_url, title, flags]) {
                 load: e => e.target.classList.add("loaded"),
                 error: e => e.target.classList.remove("loaded"),
             }),
-            $title = $("div", {class:"title"}, title);
+            $title = $("div", {class:"title"}, title),
             $("div", {
                 class: "close",
                 click: on_close_clicked,
@@ -294,7 +294,7 @@ function create_item ([id, parent, position, url, favicon_url, title, flags]) {
                 click: on_new_child_clicked,
             }),
         ),
-        $list = $("div", {class:"list"})
+        $list = $("div", {class:"list"}),
     );
     return items_by_id[id] = {
         parent: null,  // Will be placed later
@@ -311,14 +311,10 @@ function update_item (data) {
     let [id, parent, position, url, favicon_url, title, flags] = data;
     let item = items_by_id[id];
     if (!item) {
-        if (flags & DELETED) // Do nothing
-        else create_item(data);
+        if (flags & EXISTS) create_item(data);
+        // else do nothing
     }
-    else if (flags & DELETED) {
-        item.$item.remove();
-        delete items_by_id[id];
-    }
-    else {
+    else if (flags & EXISTS) {
         item.$item.classList.toggle("focused", flags & FOCUSED);
         item.$item.classList.toggle("visited", flags & VISITED);
         item.$item.classList.toggle("loading", flags & LOADING);
@@ -344,10 +340,14 @@ function update_item (data) {
             $item.remove(); // Will be reinserted later
         }
     }
+    else {
+        item.$item.remove();
+        delete items_by_id[id];
+    }
 }
 
 function place_item ([id, parent, position, url, favicon_url, title, flags]) {
-    if (flags & DELETED) return;
+    if (!(flags & EXISTS)) return;
     let item = items_by_id[id];
     item.parent = parent;
     item.position = position;
@@ -525,7 +525,7 @@ host.addEventListener("message", e=>{
         return;
     }
     let command = e.data.shift();
-    //console.log(command, e.data);
+    console.log(command, e.data);
     if (command in commands) {
         commands[command].apply(undefined, e.data)
     }
@@ -557,7 +557,7 @@ document.addEventListener("mousedown", event => {
 ///// Create DOM and finish up
 
 $(document.body,
-    $toolbar, $sidebar, $main_menu, $context_menu
+    $toolbar, $sidebar, $main_menu,
 );
 host.postMessage(["ready"]);
 send_resize();
