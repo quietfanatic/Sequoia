@@ -291,6 +291,8 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
 }
 
 void Window::message_from_shell (json::Value&& message) {
+    try {
+
     const string& command = message[0];
 
     switch (x31_hash(command.c_str())) {
@@ -365,19 +367,21 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("new_child"): {
-        PageID parent {message[1]};
+        LinkID parent_tab {message[1]};
+        PageID parent_page = parent_tab ? parent_tab.load().to_page : view.root_page;
         Transaction tr;
         PageData child;
         child.url = "about:blank";
         child.method = Method::Get;
         child.save();
         LinkData link;
-        link.opener_page = parent;
-        link.from_page = parent;
+        link.opener_page = parent_page;
+        link.from_page = parent_page;
         link.to_page = child;
-        link.move_last_child(parent);
+        link.move_last_child(parent_page);
         link.save();
         view.focused_tab = link;
+        view.expanded_tabs.insert(parent_tab);
         view.save();
         claim_activity(ensure_activity_for_page(child));
         break;
@@ -457,6 +461,11 @@ void Window::message_from_shell (json::Value&& message) {
     default: {
         throw logic_error("Unknown message name");
     }
+    }
+
+    } catch (exception& e) {
+        show_string_error(__FILE__, __LINE__, (string("Uncaught exception: ") + e.what()).c_str());
+        throw;
     }
 }
 
