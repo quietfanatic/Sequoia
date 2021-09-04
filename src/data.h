@@ -107,6 +107,8 @@ struct ViewData {
     bool exists = true;
     std::unordered_set<LinkID> expanded_tabs;
 
+    PageID focused_page () { return focused_tab ? focused_tab.load().to_page : root_page; }
+
     void load ();
     void save ();
     void updated ();

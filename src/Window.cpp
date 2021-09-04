@@ -312,7 +312,9 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("navigate"): {
-        if (activity) activity->navigate_url_or_search(message[1]);
+        Transaction tr;
+        claim_activity(ensure_activity_for_page(view.focused_page()));
+        activity->navigate_url_or_search(message[1]);
         break;
     }
      // Toolbar buttons
@@ -355,9 +357,11 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
      // Tab actions
-    case x31_hash("focus_link"): {
+    case x31_hash("focus_tab"): {
+        Transaction tr;
         view.focused_tab = LinkID{message[1]};
         view.save();
+        claim_activity(ensure_activity_for_page(view.focused_page()));
         break;
     }
     case x31_hash("new_child"): {

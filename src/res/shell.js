@@ -374,7 +374,7 @@ function close_or_delete_link ($item) {
 function on_tab_clicked (event) {
     let $item = event.target.closest(".item");
     if (event.button == 0) {
-        host.postMessage(["focus_link", +$item.id]);
+        host.postMessage(["focus_tab", +$item.id]);
         items_by_id[+$item.id].$tab.focus();
     }
     else if (event.button == 1) {

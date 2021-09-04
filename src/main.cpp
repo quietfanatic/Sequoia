@@ -95,7 +95,7 @@ int WINAPI WinMain (
     LPSTR lpCmdLine,
     int nCmdShow
 ) {
-//    try {
+    try {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
         parse_args(__argc, __argv);
@@ -141,11 +141,11 @@ int WINAPI WinMain (
             }
         }
         return (int)msg.wParam;
-//    }
-//    catch (exception& e) {
-//        show_string_error(__FILE__, __LINE__, (string("Uncaught exception: ") + e.what()).c_str());
-//        throw;
-//    }
+    }
+    catch (exception& e) {
+        show_string_error(__FILE__, __LINE__, (string("Uncaught exception: ") + e.what()).c_str());
+        throw;
+    }
 }
 
 void quit () {
