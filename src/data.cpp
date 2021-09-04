@@ -7,7 +7,8 @@
 #include "util/assert.h"
 #include "util/db_support.h"
 #include "util/hash.h"
-#include "util/logging.h"
+#include "util/json.h"
+#include "util/log.h"
 #include "util/time.h"
 
 using namespace std;
@@ -247,14 +248,17 @@ SELECT _id FROM _links WHERE _to_page = ?
 void ViewData::load () {
     LOG("ViewData::load", id);
     AA(id);
-    static State<PageID, LinkID, double, double>::Ment<ViewID> sel = R"(
-SELECT _root_page, _focused_link, _closed_at, _trashed_at FROM _views WHERE _id = ?
+    static State<PageID, LinkID, double, double, string>::Ment<ViewID> sel = R"(
+SELECT _root_page, _focused_tab, _closed_at, _trashed_at, _expanded_tabs FROM _views WHERE _id = ?
     )";
     if (auto row = sel.run_optional(id)) {
         root_page = get<0>(*row);
-        focused_link = get<1>(*row);
+        focused_tab = get<1>(*row);
         closed_at = get<2>(*row);
         trashed_at = get<3>(*row);
+        for (int64 l : json::Array(json::parse(get<4>(*row)))) {
+            expanded_tabs.insert(LinkID{l});
+        }
         exists = true;
     }
     else {
@@ -266,24 +270,27 @@ void ViewData::save () {
     LOG("ViewData::save", id);
     Transaction tr;
     if (exists) {
-        static State<>::Ment<optional<ViewID>, PageID, LinkID, optional<double>, optional<double>> ins = R"(
-INSERT OR REPLACE INTO _views (_id, _root_page, _focused_link, _closed_at, _trashed_at)
-VALUES (?, ?, ?, ?, ?)
+        static State<>::Ment<optional<ViewID>, PageID, LinkID, optional<double>, optional<double>, string> ins = R"(
+INSERT OR REPLACE INTO _views (_id, _root_page, _focused_tab, _closed_at, _trashed_at, _expanded_tabs)
+VALUES (?, ?, ?, ?, ?, ?)
         )";
+        json::Array expanded_tabs_json;
+        expanded_tabs_json.reserve(expanded_tabs.size());
+        for (LinkID tab : expanded_tabs) expanded_tabs_json.push_back(int64{tab});
         ins.run(
             null_default(id),
             root_page,
-            focused_link,
+            focused_tab,
             null_default(closed_at),
-            null_default(trashed_at)
+            null_default(trashed_at),
+            json::stringify(expanded_tabs_json)
         );
         if (!id) id = ViewID{sqlite3_last_insert_rowid(db)};
         updated();
     }
     else if (id) {
         static State<>::Ment<ViewID> del = R"(
-DELETE FROM _views WHERE _id = ?1;
-DELETE FROM _view_links WHERE _view = ?1;
+DELETE FROM _views WHERE _id = ?
         )";
         del.run_void(id);
         updated();
@@ -314,52 +321,6 @@ WHERE _closed_at IS NOT NULL ORDER BY _closed_at DESC LIMIT 1
     )";
     ViewData r;
     return sel.run_optional().value_or(ViewID{});
-}
-
-///// ViewLinks
-
-void ViewLinkData::load () {
-    LOG("ViewLinkData::load", view, link);
-    AA(view && link);
-    static State<bool>::Ment<ViewID, LinkID> sel = R"(
-SELECT COUNT(*) FROM _view_links WHERE _view = ? AND _link = ? LIMIT 1
-    )";
-    exists = sel.run_single(view, link);
-}
-
-void ViewLinkData::save () {
-    LOG("ViewLinkData::save", view, link);
-    Transaction tr;
-    if (exists) {
-        static State<>::Ment<ViewID, LinkID> ins = R"(
-INSERT OR IGNORE INTO _view_links (_view, _link) VALUES (?, ?)
-        )";
-        ins.run_void(view, link);
-    }
-    else {
-        static State<>::Ment<ViewID, LinkID> del = R"(
-DELETE FROM _view_links WHERE _view = ? AND _link = ?
-        )";
-        del.run_void(view, link);
-    }
-    updated();
-}
-
-void ViewLinkData::updated () {
-    AA(view && link);
-    for (auto [v, l] : current_update.view_links) {
-        if (v == view && l == link) return;
-    }
-    current_update.view_links.emplace_back(view, link);
-}
-
-vector<LinkID> get_view_link_links_with_view (ViewID view) {
-    LOG("get_view_link_links_with_view", view);
-    AA(view);
-    static State<LinkID>::Ment<ViewID> sel = R"(
-SELECT _link FROM _view_links WHERE _view = ?
-    )";
-    return sel.run(view);
 }
 
 ///// Transactions

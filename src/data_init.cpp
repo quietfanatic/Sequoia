@@ -9,7 +9,7 @@
 #include "settings.h"
 #include "util/db_support.h"
 #include "util/files.h"
-#include "util/logging.h"
+#include "util/log.h"
 
 using namespace std;
 
@@ -32,9 +32,9 @@ void init_db () {
         LOG("Migrating schema", version, CURRENT_SCHEMA_VERSION);
         Transaction tr;
 
-        switch (version) {
-            default: throw std::logic_error("Unknown user_version number in db");
-        }
+//        switch (version) {
+//            default: throw std::logic_error("Unknown user_version number in db");
+//        }
         LOG("Migration complete.");
     }
     else {

@@ -8,7 +8,7 @@
 #include "util/files.h"
 #include "util/hash.h"
 #include "util/json.h"
-#include "util/logging.h"
+#include "util/log.h"
 #include "util/text.h"
 
 using namespace std;
@@ -46,7 +46,7 @@ void load_profile () {
 }
 
 void load_settings () {
-    init_log(profile_folder + "/Sequoia.log");
+    init_log(profile_folder + "/debug.log");
     LOG("Using profile folder:", profile_folder);
     string settings_file = profile_folder + "/settings.json";
     if (!filesystem::exists(settings_file)) return;

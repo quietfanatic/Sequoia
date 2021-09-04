@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "util/assert.h"
@@ -17,6 +18,13 @@ struct IDHandle {
 
     T load () const { T data; data.id = *this; data.load(); return data; }
 };
+namespace std {
+    template <class T>
+    struct hash<IDHandle<T>> {
+        std::size_t operator () (IDHandle<T> v) const { return std::hash<int64>{}(v.id); }
+    };
+}
+
 
 ///// PAGES
 
@@ -58,7 +66,7 @@ struct LinkData {
     PageID from_page;
     PageID to_page;
     Bifractor position;
-    std::string title = 0;
+    std::string title;
     double trashed_at = 0;
     double created_at = 0;
     bool exists = true;
@@ -93,10 +101,11 @@ using ViewID = IDHandle<ViewData>;
 struct ViewData {
     ViewID id;
     PageID root_page;
-    LinkID focused_link;
+    LinkID focused_tab;
     double closed_at = 0;
     double trashed_at = 0;
     bool exists = true;
+    std::unordered_set<LinkID> expanded_tabs;
 
     void load ();
     void save ();
@@ -106,20 +115,6 @@ struct ViewData {
 std::vector<ViewID> get_open_views ();
  // Returns 0 if none
 ViewID get_last_closed_view ();
-
-///// VIEWLINKS
-
-struct ViewLinkData {
-    ViewID view;
-    LinkID link;
-    bool exists = true;
-
-    void load ();
-    void save ();
-    void updated ();
-};
-
-std::vector<LinkID> get_view_link_links_with_view (ViewID);
 
 ///// TRANSACTIONS
 
@@ -132,7 +127,6 @@ struct Update {
     std::vector<PageID> pages;
     std::vector<LinkID> links;
     std::vector<ViewID> views;
-    std::vector<std::pair<ViewID, LinkID>> view_links;
 };
 
 struct Observer {
@@ -140,13 +134,4 @@ struct Observer {
     Observer();
     ~Observer();
 };
-
-///// MISC
-
-namespace std {
-    template <class T>
-    struct hash<IDHandle<T>> {
-        std::size_t operator () (IDHandle<T> v) const { return std::hash<int64>{}(v.id); }
-    };
-}
 

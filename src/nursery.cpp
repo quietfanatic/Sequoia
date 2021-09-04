@@ -10,7 +10,7 @@
 #include "settings.h"
 #include "util/assert.h"
 #include "util/hash.h"
-#include "util/logging.h"
+#include "util/log.h"
 #include "util/json.h"
 #include "util/text.h"
 #include "Window.h"

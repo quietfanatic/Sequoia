@@ -1,6 +1,5 @@
 #include "Window.h"
 
-#include <unordered_map>
 #include <unordered_set>
 #include <stdexcept>
 #include <WebView2.h>
@@ -15,7 +14,7 @@
 #include "util/files.h"
 #include "util/hash.h"
 #include "util/json.h"
-#include "util/logging.h"
+#include "util/log.h"
 #include "util/text.h"
 #include "util/time.h"
 
@@ -26,12 +25,26 @@ using namespace std;
 
 static std::unordered_map<ViewID, Window*> open_windows;
 
-Window::Window (ViewData&& view) :
-    view(move(view)), os_window(this)
-{
-    for (LinkID l : get_view_link_links_with_view(view)) {
-        expanded_links.emplace(l);
+static void gen_visible_tabs (Window& w) {
+    w.visible_tabs.clear();
+    vector<Tab> tabs_to_scan {Tab{LinkID{}, w.view.root_page, LinkID{}}};
+    for (size_t i = 0; i < tabs_to_scan.size(); i++) {
+        Tab& tab = tabs_to_scan[i];
+        w.visible_tabs.emplace(tab.id, tab);
+        if (w.view.expanded_tabs.count(tab.id)) {
+             // TODO: get_links_to_page also
+            for (LinkID l : get_links_from_page(tab.page)) {
+                if (!w.visible_tabs.count(l)) {
+                    tabs_to_scan.push_back(Tab{l, l.load().to_page, tab.id});
+                }
+            }
+        }
     }
+}
+
+Window::Window (ViewID v) :
+    view(v.load()), os_window(this)
+{
     open_windows.emplace(view.id, this);
      // TODO: Fix possible use-after-free of this
     new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
@@ -66,6 +79,7 @@ Window::Window (ViewData&& view) :
 
         resize();
     });
+    gen_visible_tabs(*this);
 };
 
 Window::~Window () {
@@ -288,6 +302,7 @@ void Window::message_from_shell (json::Value&& message) {
             }
         ));
         send_view();
+        ready = true;
         break;
     }
     case x31_hash("resize"): {
@@ -341,7 +356,7 @@ void Window::message_from_shell (json::Value&& message) {
     }
      // Tab actions
     case x31_hash("focus_link"): {
-        view.focused_link = LinkID{message[1]};
+        view.focused_tab = LinkID{message[1]};
         view.save();
         break;
     }
@@ -358,7 +373,7 @@ void Window::message_from_shell (json::Value&& message) {
         link.to_page = child;
         link.move_last_child(parent);
         link.save();
-        view.focused_link = link;
+        view.focused_tab = link;
         view.save();
         claim_activity(ensure_activity_for_page(child));
         break;
@@ -407,11 +422,13 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("expand_link"): {
-        ViewLinkData{view, LinkID{message[1]}}.save();
+        view.expanded_tabs.insert(LinkID{message[1]});
+        view.save();
         break;
     }
     case x31_hash("contract_link"): {
-        ViewLinkData{view, LinkID{message[1]}, false}.save();
+        view.expanded_tabs.erase(LinkID{message[1]});
+        view.save();
         break;
     }
      // Main menu
@@ -454,7 +471,7 @@ struct WindowUpdater : Observer {
                     window->send_update(update);
                 }
                 else {
-                    window = new Window (move(view));
+                    window = new Window (v);
                      // TODO: auto load focused tab
                 }
             }
@@ -468,7 +485,7 @@ struct WindowUpdater : Observer {
 static WindowUpdater window_updater;
 
  // Must match constants in shell.js
-enum ShellItemFlags {
+enum TabFlags {
     EXISTS = 1,
     FOCUSED = 2,
     VISITED = 4,
@@ -478,52 +495,30 @@ enum ShellItemFlags {
     EXPANDED = 64,
 };
 
-static void get_visible_links (Window& w, unordered_set<LinkID>& r, PageID page) {
-    for (LinkID l : get_links_from_page(page)) {
-        r.insert(l);
-        if (w.expanded_links.count(l)) {
-            LinkData link = l.load();
-            get_visible_links(w, r, link.to_page);
-        }
-    }
-}
-
-static json::Array make_shell_item (
-    Window& w,
-    const LinkData& link,
-    const PageData& page
-) {
-     // Find parent
-    LinkID parent;
-    for (LinkID l : w.expanded_links) {
-        LinkData link = l.load();
-        if (link.to_page == link.from_page) {
-            parent = link.id;
-            break;
-        }
-    }
-     // No parent?  Theoretically this should only happen if link.id is 0
-     //  (the root page), in which case null will be sent as the parent.
+static json::Array make_tab_json (Window& w, const Tab& tab) {
+    LinkData link;
+    if (tab.id) link = tab.id.load();
+    PageData page = tab.page.load();
 
      // Choose title
     string title = page.title;
-    if (title.empty()) title = link.title;
+    if (title.empty()) title = link.title; // TODO: don't use this if inverted link
     if (title.empty()) title = page.url;
-     // Generate flags
+     // Compile flags
     uint flags = 0;
     if (link.exists) flags |= EXISTS;
-    if (w.view.focused_link == link.id) flags |= FOCUSED;
+    if (w.view.focused_tab == link.id) flags |= FOCUSED;
     if (page.visited_at) flags |= VISITED;
     if (Activity* activity = activity_for_page(page.id)) {
         if (activity->currently_loading) flags |= LOADING;
         else flags |= LOADED;
     }
     if (link.trashed_at) flags |= TRASHED;
-    if (w.expanded_links.count(link.id)) flags |= EXPANDED;
+    if (w.view.expanded_tabs.count(link.id)) flags |= EXPANDED;
 
     return json::array(
-        link.id,
-        link.id ? json::Value(parent) : json::Value(nullptr),
+        tab.id,
+        tab.id ? json::Value(tab.parent) : json::Value(nullptr),
         link.position.hex(),
         page.url,
         page.favicon_url,
@@ -532,72 +527,68 @@ static json::Array make_shell_item (
     );
 }
 
- // Send all the tabs this views wants to see
+ // Send all the tabs in this view
 void Window::send_view () {
-    unordered_set<LinkID> visible_links {0};  // 0 means root page
-    get_visible_links(*this, visible_links, view.root_page);
-
     json::Array tabs;
-    tabs.reserve(visible_links.size());
-    for (LinkID l : visible_links) {
-        LinkData link = l.load();
-        tabs.emplace_back(make_shell_item(*this, link, link.to_page.load()));
+    tabs.reserve(visible_tabs.size());
+    for (auto& [id, tab] : visible_tabs) {
+        tabs.emplace_back(make_tab_json(*this, tab));
     }
     message_to_shell(json::array("view", tabs));
 }
 
  // Send only tabs that have changed
 void Window::send_update (const Update& update) {
-    bool update_title = false;
-     // First update our cached things
+     // First update our cached view
+    bool focus_changed = false;
     for (auto id : update.views) {
         if (id == view.id) {
-            auto old_focused_link = view.focused_link;
+            ViewData old = move(view);
             view = id.load();
-            if (old_focused_link != view.focused_link) update_title = true;
+            if (view.focused_tab != old.focused_tab) {
+                focus_changed = true;
+            }
+            if (view.expanded_tabs != old.expanded_tabs) {
+                 // Theoretically we could update the existing visible_tabs
+                 //  instead of recreating it every time, but the optimization
+                 //  probably isn't worth the effort.
+                gen_visible_tabs(*this);
+            }
             break;
         }
     }
-    for (auto& [v, l] : update.view_links) {
-        if (v == view.id) {
-            ViewLinkData vl {v, l};
-            vl.load();
-            if (vl.exists) expanded_links.insert(l);
-            else expanded_links.erase(l);
-        }
-    }
-     // Now figure out which links we care about
-     // TODO: get parent links as well
-     // TODO: this might want to be cached
-    unordered_set<LinkID> visible_links {0};  // 0 means root page
-    get_visible_links(*this, visible_links, view.root_page);
 
-     // Now merge all link updates and page updates into tab updates
-    json::Array tabs;
-    for (LinkID l : update.links) {
-        LinkData link = l.load();
-        PageData page = link.to_page.load();
-        if (visible_links.count(link.id)) {
-            tabs.emplace_back(make_shell_item(*this, link, page));
-             // Prevent sending duplicates (probably not necessary)
-            visible_links.erase(link.id);
-        }
-    }
-    for (PageID p : update.pages) {
-        PageData page = p.load();
-        for (LinkID l : get_links_to_page(page)) {
-            if (l == view.focused_link) update_title = true;
-            if (visible_links.count(l)) {
-                tabs.emplace_back(make_shell_item(*this, l.load(), page));
+    if (shell) {
+         // Now merge all link updates and page updates into tab updates
+        std::unordered_map<LinkID, Tab*> updated_tabs;
+        for (LinkID l : update.links) {
+            auto iter = visible_tabs.find(l);
+            if (iter != visible_tabs.end()) {
+                updated_tabs.emplace(l, &iter->second);
             }
         }
-    }
-     // Now send it
-    message_to_shell(json::array("update", tabs));
+        for (PageID p : update.pages) {
+             // Okay this is a little awkward because we don't keep an index of
+             //  tabs by page ID
+            for (auto& [id, tab] : visible_tabs) {
+                if (tab.page == p) {
+                    updated_tabs.emplace(tab.id, &tab);
+                }
+            }
+        }
 
-    PageID focused_page = view.focused_link ? view.focused_link.load().to_page : view.root_page;
+         // Now send it
+        json::Array tabs;
+        tabs.reserve(updated_tabs.size());
+        for (auto& [id, tab] : updated_tabs) {
+            tabs.emplace_back(make_tab_json(*this, *tab));
+        }
+        message_to_shell(json::array("update", tabs));
+    }
+
+    PageID focused_page = visible_tabs.at(view.focused_tab).page;
      // Update window title
-    if (update_title) {
+    if (focus_changed) {
         const string& title = focused_page.load().title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
     }

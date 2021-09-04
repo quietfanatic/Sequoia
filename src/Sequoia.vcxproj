@@ -152,7 +152,7 @@
     <ClCompile Include="util/bifractor.cpp" />
     <ClCompile Include="util/files.cpp" />
     <ClCompile Include="util/json.cpp" />
-    <ClCompile Include="util/logging.cpp" />
+    <ClCompile Include="util/log.cpp" />
     <ClCompile Include="util/text.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -170,7 +170,7 @@
     <ClInclude Include="util/db_support.h" />
     <ClInclude Include="util/files.h" />
     <ClInclude Include="util/json.h" />
-    <ClInclude Include="util/logging.h" />
+    <ClInclude Include="util/log.h" />
     <ClInclude Include="util/types.h" />
     <ClInclude Include="util/text.h" />
     <ClInclude Include="Window.h" />

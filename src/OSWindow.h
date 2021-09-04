@@ -17,6 +17,4 @@ struct OSWindow {
     void enter_fullscreen ();
     void leave_fullscreen ();
     void close ();  // Will delete this
-
-    LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
 };

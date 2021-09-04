@@ -2,7 +2,7 @@
 
 #include "data.h"
 #include "util/assert.h"
-#include "util/logging.h"
+#include "util/log.h"
 #include "util/text.h"
 
 using namespace std;
@@ -24,7 +24,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         return 0;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN: {
-         // Since our application is only webviews, I'm not we ever get here
+         // Since our application is only webviews, I'm not sure we ever get here
         auto handler = window->get_key_handler(
             uint(w),
             GetKeyState(VK_SHIFT) < 0,
@@ -39,6 +39,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         break;
     }
     case WM_CLOSE:
+         // TODO: respond to session manager messages
         window->close();
         return 0;
     case WM_DESTROY:

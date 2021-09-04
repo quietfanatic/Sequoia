@@ -256,7 +256,7 @@ function create_item ([id, parent, position, url, favicon_url, title, flags]) {
     if (flags & VISITED) classes += " visited";
     if (flags & LOADED) classes += " loaded";
     if (flags & TRASHED) classes += " trashed";
-    if (children.length) classes += " expandable";
+     // TODO: expandable
     if (flags & EXPANDED) classes += " expanded";
     if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
     let $item, $tab, $favicon, $title, $list;
@@ -320,7 +320,7 @@ function update_item (data) {
         item.$item.classList.toggle("loading", flags & LOADING);
         item.$item.classList.toggle("loaded", flags & LOADED);
         item.$item.classList.toggle("trashed", flags & TRASHED);
-        item.$item.classList.toggle("expandable", children.length);
+         // TODO: expandable
         item.$item.classList.toggle("expanded", flags & EXPANDED);
         if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
 

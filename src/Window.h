@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <unordered_set>
+#include <unordered_map>
 #include <vector>
 #include <wil/com.h>
 #include <windows.h>
@@ -14,13 +14,24 @@ namespace json { struct Value; }
 
 struct ICoreWebView2AcceleratorKeyPressedEventArgs;
 
+ // visible_tabs shadow what the shell sees for the update algorithm
+ // TODO: move this and shell algorithm stuff to another file
+ // Tab IDs are the same as Link IDs, except they allow the value 0 to represent
+ //  the view's root page (which has no associated link)
+struct Tab {
+    LinkID id;
+    PageID page; // Not necessarily the link's from_page
+    LinkID parent; // The tab this one is shown under
+};
+
 struct Window {
     ViewData view;
-    std::unordered_set<LinkID> expanded_links;
+    std::unordered_map<LinkID, Tab> visible_tabs;
 
     wil::com_ptr<ICoreWebView2Controller> shell_controller;
     wil::com_ptr<ICoreWebView2> shell;
     HWND shell_hwnd = nullptr;
+    bool ready = false;
 
     Activity* activity = nullptr;
     OSWindow os_window;
@@ -50,7 +61,7 @@ struct Window {
     void send_update (const Update&);
     void message_to_shell (json::Value&& message);
 
-    Window (ViewData&& data);
+    Window (ViewID);
     ~Window();
 };
 

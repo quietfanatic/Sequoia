@@ -138,30 +138,21 @@ CREATE TABLE _groups (
  -- To preserver the path to the focused tab, views do two things:
  --  - They focus on links, not pages or groups, because links know their parent
  --  - They require that a tab is expanded in only one place it occurs.
- -- If _closed_at is NULL, there is an open desktop window viewing this view.
- -- If _focused_link is 0, that means the root page is focused.  This is a
+ -- If _focused_tab is 0, that means the root page is focused.  This is a
  --  little weird, and frankly I'm not quite satisfied, but the root page might
  --  not have any links associated with it.
+ -- If _closed_at is NULL, there is an open desktop window viewing this view.
+ -- _expanded_tabs is a JSON array of link IDs (0 = root page)
 CREATE TABLE _views (
     _id INTEGER PRIMARY KEY,
     _root_page INTEGER NOT NULL,
-    _focused_link INTEGER NOT NULL,
+    _focused_tab INTEGER NOT NULL,
     _closed_at REAL,
-    _trashed_at REAL
+    _trashed_at REAL,
+    _expanded_tabs TEXT NOT NULL
 );
 
  -- Probably not necessary but whatever
 CREATE INDEX _views_by_closed_at ON _views (
     _closed_at
 );
-
- -- Tables that stores view-specific and link-specific information.
- -- Currently the only thing stored is whether the link is expanded in the view
- --  (determined by the existence of the row)
- -- If _link is 0, it refers to the root tab.
-CREATE TABLE _view_links (
-    _view INTEGER NOT NULL,
-    _link INTEGER NOT NULL,
-    PRIMARY KEY(_view, _link)
-) WITHOUT ROWID;
- -- Don't need index by _links.
