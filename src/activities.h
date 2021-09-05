@@ -24,7 +24,7 @@ struct Activity {
      // Workaround for special URLs not surviving a round-trip the navigation
     std::string navigated_url;
 
-    Activity (PageData&&);
+    Activity (PageID);
 
     void resize (RECT available);
     bool navigate_url (const std::string& url);

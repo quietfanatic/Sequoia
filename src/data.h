@@ -16,7 +16,20 @@ struct IDHandle {
     IDHandle (const T& data) : id(data.id) { AA(id); }
     operator int64 () const { return id; }
 
-    T load () const { T data; data.id = *this; data.load(); return data; }
+     // If you want to modify the data, you have to copy it first.
+     //  The address of the return is not guaranteed to be stable, so don't
+     //  keep it around anywhere.
+    const T& operator * () const {
+        AA(id);
+        static int64 last_id = 0;
+        static const T* last_data;
+        if (last_id != id) {
+            last_id = id;
+            last_data = T::load(*this);
+        }
+        return *last_data;
+    }
+    const T* operator -> () const { return &**this; }
 };
 namespace std {
     template <class T>
@@ -24,7 +37,6 @@ namespace std {
         std::size_t operator () (IDHandle<T> v) const { return std::hash<int64>{}(v.id); }
     };
 }
-
 
 ///// PAGES
 
@@ -49,7 +61,7 @@ struct PageData {
     std::string title;
     bool exists = true;
 
-    void load ();  // Populate *this with row from database
+    static const PageData* load (PageID);
     void save ();  // Write *this to database
     void updated ();  // Send to Observers without saving
 };
@@ -71,7 +83,7 @@ struct LinkData {
     double created_at = 0;
     bool exists = true;
 
-    void load ();
+    static const LinkData* load (LinkID);
     void save ();
     void updated ();
 
@@ -107,9 +119,9 @@ struct ViewData {
     bool exists = true;
     std::unordered_set<LinkID> expanded_tabs;
 
-    PageID focused_page () { return focused_tab ? focused_tab.load().to_page : root_page; }
+    PageID focused_page () { return focused_tab ? focused_tab->to_page : root_page; }
 
-    void load ();
+    static const ViewData* load (ViewID);
     void save ();
     void updated ();
 };

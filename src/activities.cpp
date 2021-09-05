@@ -22,7 +22,7 @@ static unordered_map<PageID, Activity*> activities_by_page;
 // TODO: Is an ActivityObserver necessary?  Probably not since page URLs are
 //  never supposed to change.
 
-Activity::Activity (PageData&& page_) : page(move(page_)) {
+Activity::Activity (PageID p) : page(*p) {
     LOG("new Activity", this, page.id);
     AA(!activities_by_page.contains(page.id));
     activities_by_page.emplace(page.id, this);
@@ -389,7 +389,7 @@ Activity* activity_for_page (PageID id) {
 Activity* ensure_activity_for_page (PageID id) {
     auto iter = activities_by_page.find(id);
     if (iter == activities_by_page.end()) {
-        iter = activities_by_page.emplace(id, new Activity(id.load())).first;
+        iter = activities_by_page.emplace(id, new Activity(id)).first;
     }
     return iter->second;
 }

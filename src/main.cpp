@@ -65,15 +65,14 @@ void start_browser () {
     vector<ViewID> views = get_open_views();
     if (!views.empty()) {
         for (ViewID v : views) {
-            ViewData view = v.load();
-            if (view.closed_at) continue;
+            if (v->closed_at) continue;
              // Create directly instead of going through WindowUpdater,
              //  so that focused tabs are not loaded
-            new Window(move(view));
+            new Window(v);
         }
     }
     else if (ViewID v = get_last_closed_view()) {
-        ViewData view = v.load();
+        ViewData view = *v;
         view.closed_at = 0;
         view.save();  // Should spawn a Window
     }

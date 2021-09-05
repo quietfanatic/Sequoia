@@ -35,7 +35,7 @@ static void gen_visible_tabs (Window& w) {
              // TODO: get_links_to_page also
             for (LinkID l : get_links_from_page(tab.page)) {
                 if (!w.visible_tabs.count(l)) {
-                    tabs_to_scan.push_back(Tab{l, l.load().to_page, tab.id});
+                    tabs_to_scan.push_back(Tab{l, l->to_page, tab.id});
                 }
             }
         }
@@ -43,7 +43,7 @@ static void gen_visible_tabs (Window& w) {
 }
 
 Window::Window (ViewID v) :
-    view(v.load()), os_window(this)
+    view(*v), os_window(this)
 {
     open_windows.emplace(view.id, this);
      // TODO: Fix possible use-after-free of this
@@ -368,7 +368,7 @@ void Window::message_from_shell (json::Value&& message) {
     }
     case x31_hash("new_child"): {
         LinkID parent_tab {message[1]};
-        PageID parent_page = parent_tab ? parent_tab.load().to_page : view.root_page;
+        PageID parent_page = parent_tab ? parent_tab->to_page : view.root_page;
         Transaction tr;
         PageData child;
         child.url = "about:blank";
@@ -387,14 +387,14 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("trash_link"): {
-        LinkData link = LinkID{message[1]}.load();
+        LinkData link = *LinkID{message[1]};
         link.trashed_at = now();
         link.save();
          // TODO: delete activities that aren't visible in any views
         break;
     }
     case x31_hash("delete_link"): {
-        LinkData link = LinkID{message[1]}.load();
+        LinkData link = *LinkID{message[1]};
         if (link.trashed_at) {
             link.exists = false;
             link.save();
@@ -402,28 +402,28 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("move_link_before"): {
-        LinkData link = LinkID{message[1]}.load();
+        LinkData link = *LinkID{message[1]};
         LinkID ref {message[2]};
         link.move_before(ref);
         link.save();
         break;
     }
     case x31_hash("move_link_after"): {
-        LinkData link = LinkID{message[1]}.load();
+        LinkData link = *LinkID{message[1]};
         LinkID ref {message[2]};
         link.move_after(ref);
         link.save();
         break;
     }
     case x31_hash("move_link_first_child"): {
-        LinkData link = LinkID{message[1]}.load();
+        LinkData link = *LinkID{message[1]};
         PageID ref {message[2]};
         link.move_first_child(ref);
         link.save();
         break;
     }
     case x31_hash("move_link_last_child"): {
-        LinkData link = LinkID{message[1]}.load();
+        LinkData link = *LinkID{message[1]};
         PageID ref {message[2]};
         link.move_last_child(ref);
         link.save();
@@ -476,10 +476,9 @@ struct WindowUpdater : Observer {
         const Update& update
     ) override {
         for (ViewID v : update.views) {
-            ViewData view = v.load();
             auto iter = open_windows.find(v);
             Window* window = iter == open_windows.end() ? nullptr : iter->second;
-            if (view.exists && !view.closed_at) {
+            if (v->exists && !v->closed_at) {
                 if (window) {
                     window->send_update(update);
                 }
@@ -510,8 +509,8 @@ enum TabFlags {
 
 static json::Array make_tab_json (Window& w, const Tab& tab) {
     LinkData link;
-    if (tab.id) link = tab.id.load();
-    PageData page = tab.page.load();
+    if (tab.id) link = *tab.id;
+    PageData page = *tab.page;
 
      // Choose title
     string title = page.title;
@@ -554,10 +553,10 @@ void Window::send_view () {
 void Window::send_update (const Update& update) {
      // First update our cached view
     bool focus_changed = false;
-    for (auto id : update.views) {
-        if (id == view.id) {
+    for (auto v : update.views) {
+        if (v == view.id) {
             ViewData old = move(view);
-            view = id.load();
+            view = *v;
             if (view.focused_tab != old.focused_tab) {
                 focus_changed = true;
             }
@@ -602,7 +601,7 @@ void Window::send_update (const Update& update) {
     PageID focused_page = visible_tabs.at(view.focused_tab).page;
      // Update window title
     if (focus_changed) {
-        const string& title = focused_page.load().title;
+        const string& title = focused_page->title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
     }
      // TODO: set UI focus?

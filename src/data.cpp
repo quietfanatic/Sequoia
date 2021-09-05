@@ -1,8 +1,9 @@
 #include "data.h"
 
 #include <type_traits>
-#include <sqlite3.h>
+#include <unordered_map>
 
+#include <sqlite3.h>
 #include "data_init.h"
 #include "util/assert.h"
 #include "util/db_support.h"
@@ -26,10 +27,16 @@ optional<remove_cvref_t<T>> null_default (T&& v, Def def = Def{}) {
 
 ///// Pages
 
-void PageData::load () {
+unordered_map<PageID, PageData> page_cache;
+
+const PageData* PageData::load (PageID id) {
     LOG("PageData::load", id);
     AA(id > 0);
-     // TODO: check current_update first
+    PageData& r = page_cache[id];
+    if (r.id) {
+        AA(r.id == id);
+        return &r;
+    }
     static State<string, optional<Method>, int64, string, double, string>::Ment<PageID> sel = R"(
 SELECT _url, _method, _group, _favicon_url, _visited_at, _title FROM _pages WHERE _id = ?
     )";
@@ -37,17 +44,19 @@ SELECT _url, _method, _group, _favicon_url, _visited_at, _title FROM _pages WHER
      //  Probably, by simplifying the db support module
      // TODO: See if overloading ->* works to clean this up
     if (auto row = sel.run_optional(id)) {
-        url = get<0>(*row);
-        method = get<1>(*row).value_or(Method::Unknown);
-        group = get<2>(*row);
-        favicon_url = get<3>(*row);
-        visited_at = get<4>(*row);
-        title = get<5>(*row);
-        exists = true;
+        r.id = id;
+        r.url = get<0>(*row);
+        r.method = get<1>(*row).value_or(Method::Unknown);
+        r.group = get<2>(*row);
+        r.favicon_url = get<3>(*row);
+        r.visited_at = get<4>(*row);
+        r.title = get<5>(*row);
+        r.exists = true;
     }
     else {
-        exists = false;
+        r.exists = false;
     }
+    return &r;
 }
 
 void PageData::save () {
@@ -70,6 +79,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             null_default(title)
         );
         if (!id) id = PageID{sqlite3_last_insert_rowid(db)};
+        page_cache[id] = *this;
         updated();
     }
     else if (id) {
@@ -77,6 +87,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 DELETE FROM _pages WHERE _id = ?
         )";
         del.run_void(id);
+        page_cache[id] = *this;
         updated();
     }
 }
@@ -99,26 +110,34 @@ SELECT _id FROM _pages WHERE _url_hash = ? AND _url = ?
 
 ///// Links
 
-void LinkData::load () {
+unordered_map<LinkID, LinkData> link_cache;
+
+const LinkData* LinkData::load (LinkID id) {
     LOG("LinkData::load", id);
     AA(id > 0);
+    LinkData& r = link_cache[id];
+    if (r.id) {
+        AA(r.id == id);
+        return &r;
+    }
     static State<PageID, PageID, PageID, Bifractor, string, double, double>::Ment<LinkID> sel = R"(
 SELECT _opener_page, _from_page, _to_page, _position, _title, _created_at, _trashed_at
 FROM _links WHERE _id = ?
     )";
     if (auto row = sel.run_optional(id)) {
-        opener_page = get<0>(*row);
-        from_page = get<1>(*row);
-        to_page = get<2>(*row);
-        position = move(get<3>(*row));
-        title = move(get<4>(*row));
-        created_at = get<5>(*row);
-        trashed_at = get<6>(*row);
-        exists = true;
+        r.opener_page = get<0>(*row);
+        r.from_page = get<1>(*row);
+        r.to_page = get<2>(*row);
+        r.position = move(get<3>(*row));
+        r.title = move(get<4>(*row));
+        r.created_at = get<5>(*row);
+        r.trashed_at = get<6>(*row);
+        r.exists = true;
     }
     else {
-        exists = false;
+        r.exists = false;
     }
+    return &r;
 }
 
 void LinkData::save () {
@@ -153,6 +172,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             null_default(trashed_at)
         );
         if (!id) id = LinkID{sqlite3_last_insert_rowid(db)};
+        link_cache[id] = *this;
         updated();
     }
     else if (id) {
@@ -161,6 +181,7 @@ DELETE FROM _links WHERE _id = ?1;
 DELETE FROM _view_links WHERE _link = ?1
         )";
         del.run_single(id);
+        link_cache[id] = *this;
         updated();
     }
 }
@@ -245,25 +266,34 @@ SELECT _id FROM _links WHERE _to_page = ?
 
 ///// Views
 
-void ViewData::load () {
+unordered_map<ViewID, ViewData> view_cache;
+
+const ViewData* ViewData::load (ViewID id) {
     LOG("ViewData::load", id);
-    AA(id);
+    AA(id > 0);
+    ViewData& r = view_cache[id];
+    if (r.id) {
+        AA(r.id == id);
+        return &r;
+    }
     static State<PageID, LinkID, double, double, string>::Ment<ViewID> sel = R"(
 SELECT _root_page, _focused_tab, _closed_at, _trashed_at, _expanded_tabs FROM _views WHERE _id = ?
     )";
     if (auto row = sel.run_optional(id)) {
-        root_page = get<0>(*row);
-        focused_tab = get<1>(*row);
-        closed_at = get<2>(*row);
-        trashed_at = get<3>(*row);
+        r.id = id;
+        r.root_page = get<0>(*row);
+        r.focused_tab = get<1>(*row);
+        r.closed_at = get<2>(*row);
+        r.trashed_at = get<3>(*row);
         for (int64 l : json::Array(json::parse(get<4>(*row)))) {
-            expanded_tabs.insert(LinkID{l});
+            r.expanded_tabs.insert(LinkID{l});
         }
-        exists = true;
+        r.exists = true;
     }
     else {
-        exists = false;
+        r.exists = false;
     }
+    return &r;
 }
 
 void ViewData::save () {
@@ -286,6 +316,7 @@ VALUES (?, ?, ?, ?, ?, ?)
             json::stringify(expanded_tabs_json)
         );
         if (!id) id = ViewID{sqlite3_last_insert_rowid(db)};
+        view_cache[id] = *this;
         updated();
     }
     else if (id) {
@@ -293,6 +324,7 @@ VALUES (?, ?, ?, ?, ?, ?)
 DELETE FROM _views WHERE _id = ?
         )";
         del.run_void(id);
+        view_cache[id] = *this;
         updated();
     }
 }
