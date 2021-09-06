@@ -42,7 +42,6 @@ SELECT _url, _method, _group, _favicon_url, _visited_at, _title FROM _pages WHER
     )";
      // TODO: Is it possible to avoid the extra copy?
      //  Probably, by simplifying the db support module
-     // TODO: See if overloading ->* works to clean this up
     if (auto row = sel.run_optional(id)) {
         r.id = id;
         r.url = get<0>(*row);
