@@ -199,7 +199,7 @@ void LinkData::move_before (LinkID next_link) {
 SELECT n._from_page, n._position, (
     SELECT _position FROM _links p
     WHERE p._from_page = n._from_page AND p._position < n._position
-    ORDER BY p._position DESC
+    ORDER BY p._position DESC LIMIT 1
 )
 FROM _links n WHERE n._id = ?
     )";
@@ -214,7 +214,7 @@ void LinkData::move_after (LinkID prev_link) {
 SELECT p._from_page, p._position, (
     SELECT _position FROM _links n
     WHERE n._from_page = p._from_page AND n._position > p._position
-    ORDER BY n._position DESC
+    ORDER BY n._position DESC LIMIT 1
 )
 FROM _links p WHERE p._id = ?
     )";
