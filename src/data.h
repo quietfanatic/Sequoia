@@ -42,11 +42,11 @@ namespace std {
 
  // I don't know who defined DELETE as a macro but I'm mad
 enum class Method : int8 {
+    Unknown,
     Get,
     Post,
     Put,
     Delete,
-    Unknown = -1
 };
 
 struct PageData;
@@ -79,8 +79,8 @@ struct LinkData {
     PageID to_page;
     Bifractor position;
     std::string title;
-    double trashed_at = 0;
     double created_at = 0;
+    double trashed_at = 0;
     bool exists = true;
 
     static const LinkData* load (LinkID);
@@ -115,6 +115,7 @@ struct ViewData {
     PageID root_page;
     LinkID focused_tab;
     double closed_at = 0;
+    double created_at = 0;
     double trashed_at = 0;
     bool exists = true;
     std::unordered_set<LinkID> expanded_tabs;

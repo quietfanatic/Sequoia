@@ -37,7 +37,7 @@ const PageData* PageData::load (PageID id) {
         AA(r.id == id);
         return &r;
     }
-    static State<string, optional<Method>, int64, string, double, string>::Ment<PageID> sel = R"(
+    static State<string, Method, int64, string, double, string>::Ment<PageID> sel = R"(
 SELECT _url, _method, _group, _favicon_url, _visited_at, _title FROM _pages WHERE _id = ?
     )";
      // TODO: Is it possible to avoid the extra copy?
@@ -45,7 +45,7 @@ SELECT _url, _method, _group, _favicon_url, _visited_at, _title FROM _pages WHER
     if (auto row = sel.run_optional(id)) {
         r.id = id;
         r.url = get<0>(*row);
-        r.method = get<1>(*row).value_or(Method::Unknown);
+        r.method = get<1>(*row);
         r.group = get<2>(*row);
         r.favicon_url = get<3>(*row);
         r.visited_at = get<4>(*row);
@@ -62,7 +62,7 @@ void PageData::save () {
     LOG("PageData::save", id);
     Transaction tr;
     if (exists) {
-        static State<>::Ment<optional<PageID>, int64, string, optional<Method>, optional<int64>, optional<string>, optional<double>, optional<string>> ins = R"(
+        static State<>::Ment<optional<PageID>, int64, string, Method, int64, string, double, string> ins = R"(
 INSERT OR REPLACE INTO _pages (_id, _url_hash, _url, _method, _group, _favicon_url, _visited_at, _title)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         )";
@@ -71,11 +71,11 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             null_default(id),
             x31_hash(url),
             url,
-            null_default(method, Method::Unknown),
-            null_default(group),
-            null_default(favicon_url),
-            null_default(visited_at),
-            null_default(title)
+            method,
+            group,
+            favicon_url,
+            visited_at,
+            title
         );
         if (!id) id = PageID{sqlite3_last_insert_rowid(db)};
         page_cache[id] = *this;
@@ -149,26 +149,26 @@ void LinkData::save () {
         }
         static State<>::Ment<
             optional<LinkID>,
-            optional<PageID>,
+            PageID,
             int64,
             int64,
             Bifractor,
-            optional<string>,
+            string,
             double,
-            optional<double>
+            double
         > ins = R"(
 INSERT OR REPLACE INTO _links (_id, _opener_page, _from_page, _to_page, _position, _title, _created_at, _trashed_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         )";
         ins.run_void(
             null_default(id),
-            null_default(opener_page),
+            opener_page,
             from_page,
             to_page,
             position,
-            null_default(title),
+            title,
             created_at,
-            null_default(trashed_at)
+            trashed_at
         );
         if (!id) id = LinkID{sqlite3_last_insert_rowid(db)};
         link_cache[id] = *this;
@@ -299,9 +299,13 @@ void ViewData::save () {
     LOG("ViewData::save", id);
     Transaction tr;
     if (exists) {
-        static State<>::Ment<optional<ViewID>, PageID, LinkID, optional<double>, optional<double>, string> ins = R"(
-INSERT OR REPLACE INTO _views (_id, _root_page, _focused_tab, _closed_at, _trashed_at, _expanded_tabs)
-VALUES (?, ?, ?, ?, ?, ?)
+        if (!created_at) {
+            AA(!id);
+            created_at = now();
+        }
+        static State<>::Ment<optional<ViewID>, PageID, LinkID, double, double, double, string> ins = R"(
+INSERT OR REPLACE INTO _views (_id, _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs)
+VALUES (?, ?, ?, ?, ?, ?, ?)
         )";
         json::Array expanded_tabs_json;
         expanded_tabs_json.reserve(expanded_tabs.size());
@@ -310,8 +314,9 @@ VALUES (?, ?, ?, ?, ?, ?)
             null_default(id),
             root_page,
             focused_tab,
-            null_default(closed_at),
-            null_default(trashed_at),
+            created_at,
+            closed_at,
+            trashed_at,
             json::stringify(expanded_tabs_json)
         );
         if (!id) id = ViewID{sqlite3_last_insert_rowid(db)};

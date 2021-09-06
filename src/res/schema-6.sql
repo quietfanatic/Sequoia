@@ -28,11 +28,11 @@ PRAGMA user_version = 6;
  --  page if they only differ by fragment?
  -- _url: Currently TEXT but will be deduplicated in a separate table eventually
  -- _method:
- --    - 0: GET
- --    - 1: POST
- --    - 2: PUT
- --    - 3: DELETE
- --    - NULL: unknown or other
+ --    - 0: Unknown or other
+ --    - 1: GET
+ --    - 2: POST
+ --    - 3: PUT
+ --    - 4: DELETE
  --    - more may be added later
  --    - Typically only GET pages will be deduplicated.
  --    - Getting the HTTP method from NavigationStarting is NYI in WV2, so we
@@ -40,17 +40,19 @@ PRAGMA user_version = 6;
  --    -  workaround.
  -- _group doesn't semantically belong in this table, but since it's a
  --  one-to-many relationship, this is where it's easiest to put it.
- -- _title_id is the actual title from the HTML page.  It will be NULL if this
+ -- _title_id is the actual title from the HTML page.  It will be "" if this
  --  page has not been loaded yet.
 CREATE TABLE _pages (
     _id INTEGER PRIMARY KEY,
     _url_hash INTEGER NOT NULL,
     _url TEXT NOT NULL,
-    _method INTEGER,
-    _group INTEGER,
-    _favicon_url TEXT,
-    _visited_at REAL,
-    _title TEXT
+    _method INTEGER NOT NULL,
+    _group INTEGER NOT NULL,
+    _favicon_url TEXT NOT NULL,
+    _visited_at REAL NOT NULL,
+    _title TEXT NOT NULL,
+    CHECK(_id > 0),
+    CHECK(_visited_at >= 0)
 );
 CREATE INDEX _pages_by_url_hash ON _pages (
     _url_hash
@@ -59,11 +61,11 @@ CREATE INDEX _pages_by_url_hash ON _pages (
  --  visited, the one with the largest id (last created).
 CREATE INDEX _pages_by_group ON _pages (
     _group, _visited_at, _id
-) WHERE _group IS NOT NULL;
+) WHERE _group <> 0;
 
 CREATE INDEX _pages_by_visited_at ON _pages (
     _visited_at
-) WHERE _visited_at IS NOT NULL;
+) WHERE _visited_at > 0;
 
 ----- LINKS
 
@@ -81,14 +83,20 @@ CREATE INDEX _pages_by_visited_at ON _pages (
  --  used as the user-visible title of the _to_page before it's loaded.
 CREATE TABLE _links (
     _id INTEGER PRIMARY KEY,
-    _opener_page INTEGER,
+    _opener_page INTEGER NOT NULL,
     _from_page INTEGER NOT NULL,
     _to_page INTEGER NOT NULL,
     _position BLOB NOT NULL,
-    _title TEXT,
+    _title TEXT NOT NULL,
     _created_at REAL NOT NULL,
-    _trashed_at REAL,
-    CHECK(_from_page <> _to_page)
+    _trashed_at REAL NOT NULL,
+    CHECK(_id > 0),
+    CHECK(_from_page > 0),
+    CHECK(_to_page > 0),
+    CHECK(_position BETWEEN X'00' AND X'FF'),
+    CHECK(_from_page <> _to_page),
+    CHECK(_created_at > 0),
+    CHECK(_trashed_at >= 0)
 );
 CREATE UNIQUE INDEX _links_by_location ON _links (
     _from_page, _position
@@ -98,20 +106,25 @@ CREATE INDEX _links_by_to_page ON _links (
 );
 CREATE INDEX _trashed_links_by_trashed_at ON _links (
     _trashed_at
-) WHERE _trashed_at IS NOT NULL;
+) WHERE _trashed_at > 0;
 
 ----- TAGS
 
 CREATE TABLE _tags (
     _id INTEGER PRIMARY KEY,
     _name TEXT NOT NULL,
-    _trashed_at REAL
+    _trashed_at REAL NOT NULL
+    CHECK(_id > 0),
+    CHECK(LENGTH(_name) > 0),
+    CHECK(_trashed_at >= 0)
 );
 
 CREATE TABLE _page_tags (
     _page INTEGER NOT NULL,
     _tag INTEGER NOT NULL,
-    PRIMARY KEY(_page, _tag)
+    PRIMARY KEY(_page, _tag),
+    CHECK(_page > 0),
+    CHECK(_tag > 0)
 ) WITHOUT ROWID;
 
  -- SQLite properly deduplicates columns in the table's primary key that are
@@ -130,6 +143,8 @@ CREATE INDEX _page_tags_by_tag ON _page_tags (
 CREATE TABLE _groups (
     _id INTEGER PRIMARY KEY,
     _current_page INTEGER NOT NULL
+    CHECK(_id > 0),
+    CHECK(_current_page > 0)
 );
 
 ----- VIEWS
@@ -147,12 +162,25 @@ CREATE TABLE _views (
     _id INTEGER PRIMARY KEY,
     _root_page INTEGER NOT NULL,
     _focused_tab INTEGER NOT NULL,
-    _closed_at REAL,
-    _trashed_at REAL,
-    _expanded_tabs TEXT NOT NULL
+    _created_at REAL NOT NULL,
+    _closed_at REAL NOT NULL,
+    _trashed_at REAL NOT NULL,
+    _expanded_tabs TEXT NOT NULL,
+    CHECK(_id > 0),
+    CHECK(_root_page > 0),
+    CHECK(_focused_tab >= 0),
+    CHECK(_created_at > 0),
+    CHECK(_closed_at >= 0),
+    CHECK(_trashed_at >= 0),
+    CHECK(_expanded_tabs LIKE '[%]')
 );
 
- -- Probably not necessary but whatever
-CREATE INDEX _views_by_closed_at ON _views (
+ -- These probably aren't necessary but whatever
+CREATE INDEX _unclosed_views_by_created_at ON _views (
+    _created_at
+) WHERE _closed_at = 0;
+
+CREATE INDEX _closed_views_by_closed_at ON _views (
     _closed_at
-);
+) WHERE _closed_at > 0;
+
