@@ -81,14 +81,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         page_cache[id] = *this;
         updated();
     }
-    else if (id) {
+    else {
+        AA(id > 0);
         static State<>::Ment<PageID> del = R"(
 DELETE FROM _pages WHERE _id = ?
         )";
         del.run_void(id);
-        page_cache[id] = *this;
-        updated();
     }
+    page_cache[id] = *this;
+    updated();
 }
 
 void PageData::updated () {
@@ -171,18 +172,17 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             trashed_at
         );
         if (!id) id = LinkID{sqlite3_last_insert_rowid(db)};
-        link_cache[id] = *this;
-        updated();
     }
-    else if (id) {
+    else {
+        AA(id > 0);
         static State<>::Ment<LinkID> del = R"(
 DELETE FROM _links WHERE _id = ?1;
 DELETE FROM _view_links WHERE _link = ?1
         )";
         del.run_single(id);
-        link_cache[id] = *this;
-        updated();
     }
+    link_cache[id] = *this;
+    updated();
 }
 
 void LinkData::updated () {
@@ -275,16 +275,17 @@ const ViewData* ViewData::load (ViewID id) {
         AA(r.id == id);
         return &r;
     }
-    static State<PageID, LinkID, double, double, string>::Ment<ViewID> sel = R"(
-SELECT _root_page, _focused_tab, _closed_at, _trashed_at, _expanded_tabs FROM _views WHERE _id = ?
+    static State<PageID, LinkID, double, double, double, string>::Ment<ViewID> sel = R"(
+SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs FROM _views WHERE _id = ?
     )";
     if (auto row = sel.run_optional(id)) {
         r.id = id;
         r.root_page = get<0>(*row);
         r.focused_tab = get<1>(*row);
-        r.closed_at = get<2>(*row);
-        r.trashed_at = get<3>(*row);
-        for (int64 l : json::Array(json::parse(get<4>(*row)))) {
+        r.created_at = get<2>(*row);
+        r.closed_at = get<3>(*row);
+        r.trashed_at = get<4>(*row);
+        for (int64 l : json::Array(json::parse(get<5>(*row)))) {
             r.expanded_tabs.insert(LinkID{l});
         }
         r.exists = true;
@@ -320,17 +321,16 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
             json::stringify(expanded_tabs_json)
         );
         if (!id) id = ViewID{sqlite3_last_insert_rowid(db)};
-        view_cache[id] = *this;
-        updated();
     }
-    else if (id) {
+    else {
+        AA(id > 0);
         static State<>::Ment<ViewID> del = R"(
 DELETE FROM _views WHERE _id = ?
         )";
         del.run_void(id);
-        view_cache[id] = *this;
-        updated();
     }
+    view_cache[id] = *this;
+    updated();
 }
 
 void ViewData::updated () {

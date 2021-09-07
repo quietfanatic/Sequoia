@@ -29,7 +29,7 @@ static void gen_visible_tabs (Window& w) {
     w.visible_tabs.clear();
     vector<Tab> tabs_to_scan {Tab{LinkID{}, w.view.root_page, LinkID{}}};
     for (size_t i = 0; i < tabs_to_scan.size(); i++) {
-        Tab& tab = tabs_to_scan[i];
+        Tab tab = tabs_to_scan[i];
         w.visible_tabs.emplace(tab.id, tab);
         if (w.view.expanded_tabs.count(tab.id)) {
              // TODO: get_links_to_page also
@@ -526,6 +526,7 @@ static json::Array make_tab_json (Window& w, const Tab& tab) {
         else flags |= LOADED;
     }
     if (link.trashed_at) flags |= TRASHED;
+     // TODO: EXPANDABLE
     if (w.view.expanded_tabs.count(link.id)) flags |= EXPANDED;
 
     return json::array(
@@ -553,20 +554,35 @@ void Window::send_view () {
 void Window::send_update (const Update& update) {
      // First update our cached view
     bool focus_changed = false;
+    bool expanded_tabs_changed = false;
     for (auto v : update.views) {
         if (v == view.id) {
-            ViewData old = move(view);
+            focus_changed = v->focused_tab != view.focused_tab;
+            expanded_tabs_changed = v->expanded_tabs != view.expanded_tabs;
             view = *v;
-            if (view.focused_tab != old.focused_tab) {
-                focus_changed = true;
-            }
-            if (view.expanded_tabs != old.expanded_tabs) {
-                 // Theoretically we could update the existing visible_tabs
-                 //  instead of recreating it every time, but the optimization
-                 //  probably isn't worth the effort.
-                gen_visible_tabs(*this);
-            }
             break;
+        }
+    }
+
+     // Update visible_tabs.  Might not even be worth storing these.
+    if (expanded_tabs_changed) {
+         // Theoretically we could update the existing visible_tabs
+         //  instead of recreating it every time, but the optimization
+         //  probably isn't worth the effort.
+        gen_visible_tabs(*this);
+    }
+    else for (LinkID l : update.links) {
+         // Add links to visible_tabs if their parent is both visible and expanded
+        if (l->from_page == view.root_page) {
+            if (view.expanded_tabs.count(LinkID{})) {
+                visible_tabs.emplace(l, Tab{l, l->to_page, LinkID{}});
+            }
+        }
+        else for (LinkID parent : get_links_to_page(l->from_page)) {
+            if (visible_tabs.count(parent) && view.expanded_tabs.count(parent)) {
+                visible_tabs.emplace(l, Tab{l, l->to_page, LinkID{}});
+                break;
+            }
         }
     }
 
@@ -598,7 +614,9 @@ void Window::send_update (const Update& update) {
         message_to_shell(json::array("update", tabs));
     }
 
-    PageID focused_page = visible_tabs.at(view.focused_tab).page;
+    auto iter = visible_tabs.find(view.focused_tab);
+    AA(iter != visible_tabs.end());
+    PageID focused_page = iter->second.page;
      // Update window title
     if (focus_changed) {
         const string& title = focused_page->title;
