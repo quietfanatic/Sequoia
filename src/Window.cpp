@@ -23,24 +23,20 @@ using namespace std;
 
 ///// WINDOW STUFF
 
-static std::unordered_map<ViewID, Window*> open_windows;
-
-static void gen_visible_tabs (Window& w) {
-    w.visible_tabs.clear();
-    vector<Tab> tabs_to_scan {Tab{LinkID{}, w.view.root_page, LinkID{}}};
-    for (size_t i = 0; i < tabs_to_scan.size(); i++) {
-        Tab tab = tabs_to_scan[i];
-        w.visible_tabs.emplace(tab.id, tab);
-        if (w.view.expanded_tabs.count(tab.id)) {
-             // TODO: get_links_to_page also
-            for (LinkID l : get_links_from_page(tab.page)) {
-                if (!w.visible_tabs.count(l)) {
-                    tabs_to_scan.push_back(Tab{l, l->to_page, tab.id});
-                }
-            }
+static void gen_tabs (
+    unordered_map<LinkID, Tab>& tabs, const ViewData& view,
+    LinkID link, PageID page, LinkID parent
+) {
+    tabs.emplace(link, Tab{page, parent});
+    if (view.expanded_tabs.count(link)) {
+         // TODO: include get_links_to_page
+        for (LinkID child : get_links_from_page(page)) {
+            gen_tabs(tabs, view, child, child->to_page, link);
         }
     }
 }
+
+static unordered_map<ViewID, Window*> open_windows;
 
 Window::Window (ViewID v) :
     view(*v), os_window(this)
@@ -79,7 +75,6 @@ Window::Window (ViewID v) :
 
         resize();
     });
-    gen_visible_tabs(*this);
 };
 
 Window::~Window () {
@@ -294,7 +289,6 @@ void Window::message_from_shell (json::Value&& message) {
     try {
 
     const string& command = message[0];
-
     switch (x31_hash(command.c_str())) {
     case x31_hash("ready"): {
         message_to_shell(json::array(
@@ -386,14 +380,14 @@ void Window::message_from_shell (json::Value&& message) {
         claim_activity(ensure_activity_for_page(child));
         break;
     }
-    case x31_hash("trash_link"): {
+    case x31_hash("trash_tab"): {
         LinkData link = *LinkID{message[1]};
         link.trashed_at = now();
         link.save();
          // TODO: delete activities that aren't visible in any views
         break;
     }
-    case x31_hash("delete_link"): {
+    case x31_hash("delete_tab"): {
         LinkData link = *LinkID{message[1]};
         if (link.trashed_at) {
             link.exists = false;
@@ -401,40 +395,40 @@ void Window::message_from_shell (json::Value&& message) {
         }
         break;
     }
-    case x31_hash("move_link_before"): {
+    case x31_hash("move_tab_before"): {
         LinkData link = *LinkID{message[1]};
         LinkID ref {message[2]};
         link.move_before(ref);
         link.save();
         break;
     }
-    case x31_hash("move_link_after"): {
+    case x31_hash("move_tab_after"): {
         LinkData link = *LinkID{message[1]};
         LinkID ref {message[2]};
         link.move_after(ref);
         link.save();
         break;
     }
-    case x31_hash("move_link_first_child"): {
+    case x31_hash("move_tab_first_child"): {
         LinkData link = *LinkID{message[1]};
         PageID ref {message[2]};
         link.move_first_child(ref);
         link.save();
         break;
     }
-    case x31_hash("move_link_last_child"): {
+    case x31_hash("move_tab_last_child"): {
         LinkData link = *LinkID{message[1]};
         PageID ref {message[2]};
         link.move_last_child(ref);
         link.save();
         break;
     }
-    case x31_hash("expand_link"): {
+    case x31_hash("expand_tab"): {
         view.expanded_tabs.insert(LinkID{message[1]});
         view.save();
         break;
     }
-    case x31_hash("contract_link"): {
+    case x31_hash("contract_tab"): {
         view.expanded_tabs.erase(LinkID{message[1]});
         view.save();
         break;
@@ -498,125 +492,102 @@ static WindowUpdater window_updater;
 
  // Must match constants in shell.js
 enum TabFlags {
-    EXISTS = 1,
-    FOCUSED = 2,
-    VISITED = 4,
-    LOADING = 8,
-    LOADED = 16,
-    TRASHED = 32,
-    EXPANDED = 64,
+    FOCUSED = 1,
+    VISITED = 2,
+    LOADING = 4,
+    LOADED = 8,
+    TRASHED = 16,
+    EXPANDED = 32,
 };
 
-static json::Array make_tab_json (Window& w, const Tab& tab) {
-    LinkData link;
-    if (tab.id) link = *tab.id;
-    PageData page = *tab.page;
-
+static json::Array make_tab_json (const ViewData& view, LinkID link, PageID page, LinkID parent) {
+     // Sending just id means tab should be removed
+    if (link && !link->exists) {
+        return json::array(link);
+    }
      // Choose title
-    string title = page.title;
-    if (title.empty()) title = link.title; // TODO: don't use this if inverted link
-    if (title.empty()) title = page.url;
+    string title = page->title;
+    if (title.empty() && link) title = link->title; // TODO: don't use this if inverted link
+    if (title.empty()) title = page->url;
      // Compile flags
     uint flags = 0;
-    if (link.exists) flags |= EXISTS;
-    if (w.view.focused_tab == link.id) flags |= FOCUSED;
-    if (page.visited_at) flags |= VISITED;
-    if (Activity* activity = activity_for_page(page.id)) {
+    if (view.focused_tab == link) flags |= FOCUSED;
+    if (page->visited_at) flags |= VISITED;
+    if (Activity* activity = activity_for_page(page)) {
         if (activity->currently_loading) flags |= LOADING;
         else flags |= LOADED;
     }
-    if (link.trashed_at) flags |= TRASHED;
+    if (link && link->trashed_at) flags |= TRASHED;
      // TODO: EXPANDABLE
-    if (w.view.expanded_tabs.count(link.id)) flags |= EXPANDED;
+    if (view.expanded_tabs.count(link)) flags |= EXPANDED;
 
     return json::array(
-        tab.id,
-        tab.id ? json::Value(tab.parent) : json::Value(nullptr),
-        link.position.hex(),
-        page.url,
-        page.favicon_url,
+        link,
+        link ? json::Value(parent) : json::Value(nullptr),
+        link ? link->position.hex() : "80",
+        page->url,
+        page->favicon_url,
         title,
         flags
     );
 }
 
- // Send all the tabs in this view
 void Window::send_view () {
-    json::Array tabs;
-    tabs.reserve(visible_tabs.size());
-    for (auto& [id, tab] : visible_tabs) {
-        tabs.emplace_back(make_tab_json(*this, tab));
+    gen_tabs(tabs, view, LinkID{}, view.root_page, LinkID{});
+    json::Array tab_updates;
+    tab_updates.reserve(tabs.size());
+    for (auto& [id, tab] : tabs) {
+        tab_updates.emplace_back(make_tab_json(view, id, tab.page, tab.parent));
     }
-    message_to_shell(json::array("view", tabs));
+    message_to_shell(json::array("view", tab_updates));
 }
 
  // Send only tabs that have changed
 void Window::send_update (const Update& update) {
      // First update our cached view
     bool focus_changed = false;
-    bool expanded_tabs_changed = false;
     for (auto v : update.views) {
         if (v == view.id) {
             focus_changed = v->focused_tab != view.focused_tab;
-            expanded_tabs_changed = v->expanded_tabs != view.expanded_tabs;
             view = *v;
             break;
         }
     }
-
-     // Update visible_tabs.  Might not even be worth storing these.
-    if (expanded_tabs_changed) {
-         // Theoretically we could update the existing visible_tabs
-         //  instead of recreating it every time, but the optimization
-         //  probably isn't worth the effort.
-        gen_visible_tabs(*this);
-    }
-    else for (LinkID l : update.links) {
-         // Add links to visible_tabs if their parent is both visible and expanded
-        if (l->from_page == view.root_page) {
-            if (view.expanded_tabs.count(LinkID{})) {
-                visible_tabs.emplace(l, Tab{l, l->to_page, LinkID{}});
-            }
-        }
-        else for (LinkID parent : get_links_to_page(l->from_page)) {
-            if (visible_tabs.count(parent) && view.expanded_tabs.count(parent)) {
-                visible_tabs.emplace(l, Tab{l, l->to_page, LinkID{}});
-                break;
-            }
-        }
-    }
-
+    PageID focused_page = view.focused_page();
+     // Generate new tab collection
+    json::Array tab_updates;
+    unordered_map<LinkID, Tab> old_tabs = move(tabs);
+    gen_tabs(tabs, view, LinkID{}, view.root_page, LinkID{});
     if (shell) {
-         // Now merge all link updates and page updates into tab updates
-        std::unordered_map<LinkID, Tab*> updated_tabs;
-        for (LinkID l : update.links) {
-            auto iter = visible_tabs.find(l);
-            if (iter != visible_tabs.end()) {
-                updated_tabs.emplace(l, &iter->second);
+         // Remove tabs that are no longer visible
+        for (auto& [id, tab] : old_tabs) {
+            if (!tabs.count(id)) {
+                tab_updates.emplace_back(json::array(id));
             }
         }
-        for (PageID p : update.pages) {
-             // Okay this is a little awkward because we don't keep an index of
-             //  tabs by page ID
-            for (auto& [id, tab] : visible_tabs) {
-                if (tab.page == p) {
-                    updated_tabs.emplace(tab.id, &tab);
+         // Send tabs that are newly visible, or visible and have their link or page updated.
+        for (auto& [id, tab] : tabs) {
+            bool in_update = !old_tabs.count(id);
+             // Updates are typically small so no need to transform the vector into a map
+            if (!in_update) for (LinkID l : update.links) {
+                if (l == id) {
+                    in_update = true;
+                    break;
                 }
             }
+            if (!in_update) for (PageID p : update.pages) {
+                if (p == tab.page) {
+                    in_update = true;
+                    if (id == focused_page) focus_changed = true;
+                    break;
+                }
+            }
+            if (in_update) tab_updates.emplace_back(make_tab_json(view, id, tab.page, tab.parent));
         }
-
-         // Now send it
-        json::Array tabs;
-        tabs.reserve(updated_tabs.size());
-        for (auto& [id, tab] : updated_tabs) {
-            tabs.emplace_back(make_tab_json(*this, *tab));
-        }
-        message_to_shell(json::array("update", tabs));
+         // Now do the sending
+        message_to_shell(json::array("update", tab_updates));
     }
 
-    auto iter = visible_tabs.find(view.focused_tab);
-    AA(iter != visible_tabs.end());
-    PageID focused_page = iter->second.page;
      // Update window title
     if (focus_changed) {
         const string& title = focused_page->title;

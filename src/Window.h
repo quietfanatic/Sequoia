@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <wil/com.h>
 #include <windows.h>
@@ -14,19 +14,18 @@ namespace json { struct Value; }
 
 struct ICoreWebView2AcceleratorKeyPressedEventArgs;
 
- // visible_tabs shadow what the shell sees for the update algorithm
- // TODO: move this and shell algorithm stuff to another file
- // Tab IDs are the same as Link IDs, except they allow the value 0 to represent
- //  the view's root page (which has no associated link)
+ // Mirrors the structure of the tree view in the shell.
+ //  I hate to resort to using a shadow dom to manage updates because of the
+ //  overhead, but it really is the easiest algorithm to work with.
+ //  ...and let's be real, this is ants compared to the js dom.
 struct Tab {
-    LinkID id;
-    PageID page; // Not necessarily the link's from_page
-    LinkID parent; // The tab this one is shown under
+    PageID page;
+    LinkID parent;
 };
 
 struct Window {
     ViewData view;
-    std::unordered_map<LinkID, Tab> visible_tabs;
+    std::unordered_map<LinkID, Tab> tabs;
 
     wil::com_ptr<ICoreWebView2Controller> shell_controller;
     wil::com_ptr<ICoreWebView2> shell;

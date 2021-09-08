@@ -4,13 +4,12 @@ let host = window.chrome.webview;
 let $html = document.documentElement;
 
  // Must match enum ShellItemFlags in Window.cpp
-const EXISTS = 1;
-const FOCUSED = 2;
-const VISITED = 4;
-const LOADING = 8;
-const LOADED = 16;
-const TRASHED = 32;
-const EXPANDED = 64;
+const FOCUSED = 1;
+const VISITED = 2;
+const LOADING = 4;
+const LOADED = 8;
+const TRASHED = 16;
+const EXPANDED = 32;
 
 ///// View model (model of view, not viewmodel)
 
@@ -311,10 +310,9 @@ function update_item (data) {
     let [id, parent, position, url, favicon_url, title, flags] = data;
     let item = items_by_id[id];
     if (!item) {
-        if (flags & EXISTS) create_item(data);
-        // else do nothing
+        create_item(data);
     }
-    else if (flags & EXISTS) {
+    else {
         item.$item.classList.toggle("focused", flags & FOCUSED);
         item.$item.classList.toggle("visited", flags & VISITED);
         item.$item.classList.toggle("loading", flags & LOADING);
@@ -340,14 +338,14 @@ function update_item (data) {
             $item.remove(); // Will be reinserted later
         }
     }
-    else {
-        item.$item.remove();
-        delete items_by_id[id];
-    }
+}
+
+function remove_item (id) {
+    items_by_id[id].$item.remove();
+    delete items_by_id[id];
 }
 
 function place_item ([id, parent, position, url, favicon_url, title, flags]) {
-    if (!(flags & EXISTS)) return;
     let item = items_by_id[id];
     item.parent = parent;
     item.position = position;
@@ -362,12 +360,12 @@ function place_item ([id, parent, position, url, favicon_url, title, flags]) {
     $parent_list.append(item.$item);
 }
 
-function close_or_delete_link ($item) {
+function close_or_delete_tab ($item) {
     if ($item.classList.contains("closed")) {
-        host.postMessage(["delete_link", +$item.id]);
+        host.postMessage(["delete_tab", +$item.id]);
     }
     else {
-        host.postMessage(["trash_link", +$item.id]);
+        host.postMessage(["trash_tab", +$item.id]);
     }
 }
 
@@ -378,7 +376,7 @@ function on_tab_clicked (event) {
         items_by_id[+$item.id].$tab.focus();
     }
     else if (event.button == 1) {
-        close_or_delete_link($item);
+        close_or_delete_tab($item);
     }
     handled(event);
 }
@@ -391,17 +389,17 @@ function on_new_child_clicked (event) {
 
 function on_close_clicked (event) {
     let $item = event.target.closest('.item');
-    close_or_delete_link($item);
+    close_or_delete_tab($item);
     handled(event);
 }
 
 function on_expand_clicked (event) {
     let $item = event.target.closest('.item');
     if ($item.classList.contains("expanded")) {
-        host.postMessage(["expand_link", +$item.id]);
+        host.postMessage(["expand_tab", +$item.id]);
     }
     else {
-        host.postMessage(["contract_link", +$item.id]);
+        host.postMessage(["contract_tab", +$item.id]);
     }
     handled(event);
 }
@@ -507,10 +505,18 @@ let commands = {
     },
     update (items) {
         for (let item of items) {
-            update_item(item);
+            if (item.length > 1) {
+                update_item(item);
+            }
+            else {
+                 // If we're just sent the id, it means remove the tab
+                remove_item(item);
+            }
         }
         for (let item of items) {
-            place_item(item);
+            if (item.length > 1) {
+                place_item(item);
+            }
         }
     },
     select_location () {
