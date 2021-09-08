@@ -139,9 +139,9 @@ struct Transaction {
 };
 
 struct Update {
-    std::vector<PageID> pages;
-    std::vector<LinkID> links;
-    std::vector<ViewID> views;
+    std::unordered_set<PageID> pages;
+    std::unordered_set<LinkID> links;
+    std::unordered_set<ViewID> views;
 };
 
 struct Observer {

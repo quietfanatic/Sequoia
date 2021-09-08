@@ -549,13 +549,7 @@ void Window::send_view () {
 void Window::send_update (const Update& update) {
      // First update our cached view
     LinkID old_focused_tab = view.focused_tab;
-    for (auto v : update.views) {
-        if (v == view.id) {
-            view = *v;
-            break;
-        }
-    }
-    LOG("focus change", old_focused_tab, view.focused_tab);
+    if (update.views.count(view.id)) view = *view.id;
      // Generate new tab collection
     unordered_map<LinkID, Tab> old_tabs = move(tabs);
     gen_tabs(tabs, view, LinkID{}, view.root_page, LinkID{});
@@ -572,22 +566,14 @@ void Window::send_update (const Update& update) {
          //  - Visible and are in the update
          //  - The new or old focused tab
         for (auto& [id, tab] : tabs) {
-            LOG("Checking tab", id);
-            bool in_update = !old_tabs.count(id) || id == view.focused_tab || id == old_focused_tab;
-             // Updates are typically small so no need to transform the vector into a set
-            if (!in_update) for (LinkID l : update.links) {
-                if (l == id) {
-                    in_update = true;
-                    break;
-                }
+            if (!old_tabs.count(id)
+                || id == view.focused_tab
+                || id == old_focused_tab
+                || update.links.count(id)
+                || update.pages.count(tab.page)
+            ) {
+                tab_updates.emplace_back(make_tab_json(view, id, tab.page, tab.parent));
             }
-            if (!in_update) for (PageID p : update.pages) {
-                if (p == tab.page) {
-                    in_update = true;
-                    break;
-                }
-            }
-            if (in_update) tab_updates.emplace_back(make_tab_json(view, id, tab.page, tab.parent));
         }
          // Now do the sending
         if (tab_updates.size()) {

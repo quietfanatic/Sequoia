@@ -94,10 +94,7 @@ DELETE FROM _pages WHERE _id = ?
 
 void PageData::updated () {
     AA(id);
-    for (PageID p : current_update.pages) {
-        if (p == id) return;
-    }
-    current_update.pages.push_back(*this);
+    current_update.pages.insert(*this);
 }
 
 vector<PageID> get_pages_with_url (const string& url) {
@@ -187,10 +184,7 @@ DELETE FROM _view_links WHERE _link = ?1
 
 void LinkData::updated () {
     AA(id);
-    for (LinkID l : current_update.links) {
-        if (l == id) return;
-    }
-    current_update.links.push_back(*this);
+    current_update.links.insert(*this);
 }
 
 void LinkData::move_before (LinkID next_link) {
@@ -335,10 +329,7 @@ DELETE FROM _views WHERE _id = ?
 
 void ViewData::updated () {
     AA(id);
-    for (ViewID v : current_update.views) {
-        if (v == id) return;
-    }
-    current_update.views.emplace_back(*this);
+    current_update.views.insert(*this);
 }
 
 vector<ViewID> get_open_views () {
@@ -395,7 +386,7 @@ Transaction::Transaction () {
      // Don't start a transaction in an exception handler lol
     AA(!uncaught_exceptions());
     if (!transaction_depth) {
-        static State<>::Ment<> begin {"BEGIN"};
+        static State<>::Ment<> begin = "BEGIN";
         begin.run_void();
     }
     transaction_depth += 1;
@@ -404,12 +395,12 @@ Transaction::~Transaction () {
     transaction_depth -= 1;
     if (!transaction_depth) {
         if (uncaught_exceptions()) {
-            static State<>::Ment<> rollback {"ROLLBACK"};
+            static State<>::Ment<> rollback = "ROLLBACK";
             rollback.run_void();
             current_update = Update{};
         }
         else {
-            static State<>::Ment<> commit {"COMMIT"};
+            static State<>::Ment<> commit = "COMMIT";
             commit.run_void();
             update_observers();
         }
