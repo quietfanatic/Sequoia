@@ -9,7 +9,8 @@ const VISITED = 2;
 const LOADING = 4;
 const LOADED = 8;
 const TRASHED = 16;
-const EXPANDED = 32;
+const EXPANDABLE = 32;
+const EXPANDED = 64;
 
 ///// View model (model of view, not viewmodel)
 
@@ -255,7 +256,7 @@ function create_item ([id, parent, position, url, favicon_url, title, flags]) {
     if (flags & VISITED) classes += " visited";
     if (flags & LOADED) classes += " loaded";
     if (flags & TRASHED) classes += " trashed";
-     // TODO: expandable
+    if (flags & EXPANDABLE) classes += " expandable";
     if (flags & EXPANDED) classes += " expanded";
     if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
     let $item, $tab, $favicon, $title, $list;
@@ -318,7 +319,7 @@ function update_item (data) {
         item.$item.classList.toggle("loading", flags & LOADING);
         item.$item.classList.toggle("loaded", flags & LOADED);
         item.$item.classList.toggle("trashed", flags & TRASHED);
-         // TODO: expandable
+        item.$item.classList.toggle("expandable", flags & EXPANDABLE);
         item.$item.classList.toggle("expanded", flags & EXPANDED);
         if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
 

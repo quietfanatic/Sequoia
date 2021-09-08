@@ -497,7 +497,8 @@ enum TabFlags {
     LOADING = 4,
     LOADED = 8,
     TRASHED = 16,
-    EXPANDED = 32,
+    EXPANDABLE = 32,
+    EXPANDED = 64,
 };
 
 static json::Array make_tab_json (const ViewData& view, LinkID link, PageID page, LinkID parent) {
@@ -518,7 +519,7 @@ static json::Array make_tab_json (const ViewData& view, LinkID link, PageID page
         else flags |= LOADED;
     }
     if (link && link->trashed_at) flags |= TRASHED;
-     // TODO: EXPANDABLE
+    if (get_links_from_page(page).size()) flags |= EXPANDABLE; // TODO: don't use if inverted
     if (view.expanded_tabs.count(link)) flags |= EXPANDED;
 
     return json::array(
@@ -546,6 +547,7 @@ void Window::send_view () {
 void Window::send_update (const Update& update) {
      // First update our cached view
     bool focus_changed = false;
+    LinkID old_focused_tab = view.focused_tab;
     for (auto v : update.views) {
         if (v == view.id) {
             focus_changed = v->focused_tab != view.focused_tab;
@@ -565,10 +567,13 @@ void Window::send_update (const Update& update) {
                 tab_updates.emplace_back(json::array(id));
             }
         }
-         // Send tabs that are newly visible, or visible and have their link or page updated.
+         // Send tabs that are:
+         //  - Newly visible
+         //  - Visible and are in the update
+         //  - The new or old focused tab
         for (auto& [id, tab] : tabs) {
-            bool in_update = !old_tabs.count(id);
-             // Updates are typically small so no need to transform the vector into a map
+            bool in_update = !old_tabs.count(id) || id == view.focused_tab || id == old_focused_tab;
+             // Updates are typically small so no need to transform the vector into a set
             if (!in_update) for (LinkID l : update.links) {
                 if (l == id) {
                     in_update = true;
@@ -585,7 +590,9 @@ void Window::send_update (const Update& update) {
             if (in_update) tab_updates.emplace_back(make_tab_json(view, id, tab.page, tab.parent));
         }
          // Now do the sending
-        message_to_shell(json::array("update", tab_updates));
+        if (tab_updates.size()) {
+            message_to_shell(json::array("update", tab_updates));
+        }
     }
 
      // Update window title
