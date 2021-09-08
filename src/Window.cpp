@@ -355,9 +355,10 @@ void Window::message_from_shell (json::Value&& message) {
      // Tab actions
     case x31_hash("focus_tab"): {
         Transaction tr;
-        view.focused_tab = LinkID{message[1]};
-        view.save();
-        claim_activity(ensure_activity_for_page(view.focused_page()));
+        ViewData new_view = view;
+        new_view.focused_tab = LinkID{message[1]};
+        new_view.save();
+        claim_activity(ensure_activity_for_page(new_view.focused_page()));
         break;
     }
     case x31_hash("new_child"): {
@@ -374,9 +375,10 @@ void Window::message_from_shell (json::Value&& message) {
         link.to_page = child;
         link.move_last_child(parent_page);
         link.save();
-        view.focused_tab = link;
-        view.expanded_tabs.insert(parent_tab);
-        view.save();
+        ViewData new_view = view;
+        new_view.focused_tab = link;
+        new_view.expanded_tabs.insert(parent_tab);
+        new_view.save();
         claim_activity(ensure_activity_for_page(child));
         break;
     }
@@ -546,21 +548,19 @@ void Window::send_view () {
  // Send only tabs that have changed
 void Window::send_update (const Update& update) {
      // First update our cached view
-    bool focus_changed = false;
     LinkID old_focused_tab = view.focused_tab;
     for (auto v : update.views) {
         if (v == view.id) {
-            focus_changed = v->focused_tab != view.focused_tab;
             view = *v;
             break;
         }
     }
-    PageID focused_page = view.focused_page();
+    LOG("focus change", old_focused_tab, view.focused_tab);
      // Generate new tab collection
-    json::Array tab_updates;
     unordered_map<LinkID, Tab> old_tabs = move(tabs);
     gen_tabs(tabs, view, LinkID{}, view.root_page, LinkID{});
     if (shell) {
+        json::Array tab_updates;
          // Remove tabs that are no longer visible
         for (auto& [id, tab] : old_tabs) {
             if (!tabs.count(id)) {
@@ -572,6 +572,7 @@ void Window::send_update (const Update& update) {
          //  - Visible and are in the update
          //  - The new or old focused tab
         for (auto& [id, tab] : tabs) {
+            LOG("Checking tab", id);
             bool in_update = !old_tabs.count(id) || id == view.focused_tab || id == old_focused_tab;
              // Updates are typically small so no need to transform the vector into a set
             if (!in_update) for (LinkID l : update.links) {
@@ -583,7 +584,6 @@ void Window::send_update (const Update& update) {
             if (!in_update) for (PageID p : update.pages) {
                 if (p == tab.page) {
                     in_update = true;
-                    if (id == focused_page) focus_changed = true;
                     break;
                 }
             }
@@ -594,8 +594,15 @@ void Window::send_update (const Update& update) {
             message_to_shell(json::array("update", tab_updates));
         }
     }
-
-     // Update window title
+     // Update window title if necessary
+    PageID focused_page = view.focused_page();
+    bool focus_changed = view.focused_tab != old_focused_tab;
+    if (!focus_changed) for (PageID p : update.pages) {
+        if (p == focused_page) {
+            focus_changed = true;
+            break;
+        }
+    }
     if (focus_changed) {
         const string& title = focused_page->title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
