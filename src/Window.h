@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <unordered_set>
+#include <unordered_map>
 #include <vector>
 #include <wil/com.h>
 #include <windows.h>
@@ -19,8 +19,19 @@ struct ICoreWebView2AcceleratorKeyPressedEventArgs;
  //  overhead, but it really is the easiest algorithm to work with.
  //  ...and let's be real, this is ants compared to the js dom.
 struct Tab {
+     // Must match constants in shell.js
+    enum Flags {
+        FOCUSED = 1,
+        VISITED = 2,
+        LOADING = 4,
+        LOADED = 8,
+        TRASHED = 16,
+        EXPANDABLE = 32,
+        EXPANDED = 64,
+    };
     PageID page;
     LinkID parent;
+    Flags flags;
 };
 
 struct Window {

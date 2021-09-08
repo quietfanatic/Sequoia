@@ -27,10 +27,23 @@ static void gen_tabs (
     unordered_map<LinkID, Tab>& tabs, const ViewData& view,
     LinkID link, PageID page, LinkID parent
 ) {
-    tabs.emplace(link, Tab{page, parent});
+    auto children = get_links_from_page(page);
+
+    int flags = 0;
+    if (view.focused_tab == link) flags |= Tab::FOCUSED;
+    if (page->visited_at) flags |= Tab::VISITED;
+    if (Activity* activity = activity_for_page(page)) {
+        if (activity->currently_loading) flags |= Tab::LOADING;
+        else flags |= Tab::LOADED;
+    }
+    if (link && link->trashed_at) flags |= Tab::TRASHED;
+    if (children.size()) flags |= Tab::EXPANDABLE; // TODO: don't use if inverted
+    if (view.expanded_tabs.count(link)) flags |= Tab::EXPANDED;
+
+    tabs.emplace(link, Tab{page, parent, Tab::Flags(flags)});
     if (view.expanded_tabs.count(link)) {
          // TODO: include get_links_to_page
-        for (LinkID child : get_links_from_page(page)) {
+        for (LinkID child : children) {
             gen_tabs(tabs, view, child, child->to_page, link);
         }
     }
@@ -492,46 +505,25 @@ struct WindowUpdater : Observer {
 };
 static WindowUpdater window_updater;
 
- // Must match constants in shell.js
-enum TabFlags {
-    FOCUSED = 1,
-    VISITED = 2,
-    LOADING = 4,
-    LOADED = 8,
-    TRASHED = 16,
-    EXPANDABLE = 32,
-    EXPANDED = 64,
-};
-
-static json::Array make_tab_json (const ViewData& view, LinkID link, PageID page, LinkID parent) {
+static json::Array make_tab_json (const ViewData& view, LinkID link, const Tab& tab) {
      // Sending just id means tab should be removed
+     // This code path will probably never be hit.
     if (link && !link->exists) {
         return json::array(link);
     }
      // Choose title
-    string title = page->title;
+    string title = tab.page->title;
     if (title.empty() && link) title = link->title; // TODO: don't use this if inverted link
-    if (title.empty()) title = page->url;
-     // Compile flags
-    uint flags = 0;
-    if (view.focused_tab == link) flags |= FOCUSED;
-    if (page->visited_at) flags |= VISITED;
-    if (Activity* activity = activity_for_page(page)) {
-        if (activity->currently_loading) flags |= LOADING;
-        else flags |= LOADED;
-    }
-    if (link && link->trashed_at) flags |= TRASHED;
-    if (get_links_from_page(page).size()) flags |= EXPANDABLE; // TODO: don't use if inverted
-    if (view.expanded_tabs.count(link)) flags |= EXPANDED;
+    if (title.empty()) title = tab.page->url;
 
     return json::array(
         link,
-        link ? json::Value(parent) : json::Value(nullptr),
+        link ? json::Value(tab.parent) : json::Value(nullptr),
         link ? link->position.hex() : "80",
-        page->url,
-        page->favicon_url,
+        tab.page->url,
+        tab.page->favicon_url,
         title,
-        flags
+        tab.flags
     );
 }
 
@@ -540,7 +532,7 @@ void Window::send_view () {
     json::Array tab_updates;
     tab_updates.reserve(tabs.size());
     for (auto& [id, tab] : tabs) {
-        tab_updates.emplace_back(make_tab_json(view, id, tab.page, tab.parent));
+        tab_updates.emplace_back(make_tab_json(view, id, tab));
     }
     message_to_shell(json::array("view", tab_updates));
 }
@@ -562,17 +554,17 @@ void Window::send_update (const Update& update) {
             }
         }
          // Send tabs that are:
-         //  - Newly visible
-         //  - Visible and are in the update
-         //  - The new or old focused tab
+         //  - Are newly visible
+         //  - Are visible and are in the Update
+         //  - Have had their flags changed, most of which won't be reflected in the Update.
         for (auto& [id, tab] : tabs) {
-            if (!old_tabs.count(id)
-                || id == view.focused_tab
-                || id == old_focused_tab
+            auto old = old_tabs.find(id);
+            if (old == old_tabs.end()
+                || tab.flags != old->second.flags
                 || update.links.count(id)
                 || update.pages.count(tab.page)
             ) {
-                tab_updates.emplace_back(make_tab_json(view, id, tab.page, tab.parent));
+                tab_updates.emplace_back(make_tab_json(view, id, tab));
             }
         }
          // Now do the sending

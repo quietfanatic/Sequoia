@@ -30,13 +30,13 @@ optional<remove_cvref_t<T>> null_default (T&& v, Def def = Def{}) {
 unordered_map<PageID, PageData> page_cache;
 
 const PageData* PageData::load (PageID id) {
-    LOG("PageData::load", id);
     AA(id > 0);
     PageData& r = page_cache[id];
     if (r.id) {
         AA(r.id == id);
         return &r;
     }
+    LOG("PageData::load", id);
     static State<string, Method, int64, string, double, string>::Ment<PageID> sel = R"(
 SELECT _url, _method, _group, _favicon_url, _visited_at, _title FROM _pages WHERE _id = ?
     )";
@@ -110,13 +110,13 @@ SELECT _id FROM _pages WHERE _url_hash = ? AND _url = ?
 unordered_map<LinkID, LinkData> link_cache;
 
 const LinkData* LinkData::load (LinkID id) {
-    LOG("LinkData::load", id);
     AA(id > 0);
     LinkData& r = link_cache[id];
     if (r.id) {
         AA(r.id == id);
         return &r;
     }
+    LOG("LinkData::load", id);
     static State<PageID, PageID, PageID, Bifractor, string, double, double>::Ment<LinkID> sel = R"(
 SELECT _opener_page, _from_page, _to_page, _position, _title, _created_at, _trashed_at
 FROM _links WHERE _id = ?
@@ -262,13 +262,13 @@ SELECT _id FROM _links WHERE _to_page = ?
 unordered_map<ViewID, ViewData> view_cache;
 
 const ViewData* ViewData::load (ViewID id) {
-    LOG("ViewData::load", id);
     AA(id > 0);
     ViewData& r = view_cache[id];
     if (r.id) {
         AA(r.id == id);
         return &r;
     }
+    LOG("ViewData::load", id);
     static State<PageID, LinkID, double, double, double, string>::Ment<ViewID> sel = R"(
 SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs FROM _views WHERE _id = ?
     )";
