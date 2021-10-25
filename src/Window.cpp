@@ -439,13 +439,15 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("expand_tab"): {
-        view.expanded_tabs.insert(LinkID{message[1]});
-        view.save();
+        ViewData new_view = view;
+        new_view.expanded_tabs.insert(LinkID{message[1]});
+        new_view.save();
         break;
     }
     case x31_hash("contract_tab"): {
-        view.expanded_tabs.erase(LinkID{message[1]});
-        view.save();
+        ViewData new_view = view;
+        new_view.expanded_tabs.erase(LinkID{message[1]});
+        new_view.save();
         break;
     }
      // Main menu
