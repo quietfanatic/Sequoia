@@ -10,6 +10,7 @@
 #include "activities.h"
 #include "model/data.h"
 #include "model/database.h"
+#include "model/transaction.h"
 #include "nursery.h"
 #include "settings.h"
 #include "util/assert.h"

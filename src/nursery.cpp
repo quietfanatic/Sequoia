@@ -7,6 +7,7 @@
 
 #include "activities.h"
 #include "model/data.h"
+#include "model/transaction.h"
 #include "settings.h"
 #include "util/assert.h"
 #include "util/hash.h"

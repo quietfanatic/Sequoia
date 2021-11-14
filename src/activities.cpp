@@ -4,6 +4,7 @@
 #include <WebView2.h>
 #include <wrl.h>
 
+#include "model/transaction.h"
 #include "nursery.h"
 #include "util/assert.h"
 #include "util/files.h"

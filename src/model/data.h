@@ -136,23 +136,4 @@ std::vector<ViewID> get_open_views ();
  // Returns 0 if none
 ViewID get_last_closed_view ();
 
-///// TRANSACTIONS
-
-struct Transaction {
-    Transaction ();
-    ~Transaction ();
-};
-
-struct Update {
-    std::unordered_set<PageID> pages;
-    std::unordered_set<LinkID> links;
-    std::unordered_set<ViewID> views;
-};
-
-struct Observer {
-    virtual void Observer_after_commit (const Update&) = 0;
-    Observer();
-    ~Observer();
-};
-
 } // namespace model
