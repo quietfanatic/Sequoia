@@ -12,6 +12,8 @@
 #include "../util/time.h"
 #include "database.h"
 
+namespace model {
+
 using namespace std;
 
 static Update current_update;
@@ -27,16 +29,16 @@ optional<remove_cvref_t<T>> null_default (T&& v, Def def = Def{}) {
 
 ///// Pages
 
-unordered_map<PageID, PageData> page_cache;
+unordered_map<PageID, Page> page_cache;
 
-const PageData* PageData::load (PageID id) {
+const Page* Page::load (PageID id) {
     AA(id > 0);
-    PageData& r = page_cache[id];
+    Page& r = page_cache[id];
     if (r.id) {
         AA(r.id == id);
         return &r;
     }
-    LOG("PageData::load", id);
+    LOG("Page::load", id);
     static State<string, Method, int64, string, double, string>::Ment<PageID> sel = R"(
 SELECT _url, _method, _group, _favicon_url, _visited_at, _title FROM _pages WHERE _id = ?
     )";
@@ -58,8 +60,8 @@ SELECT _url, _method, _group, _favicon_url, _visited_at, _title FROM _pages WHER
     return &r;
 }
 
-void PageData::save () {
-    LOG("PageData::save", id);
+void Page::save () {
+    LOG("Page::save", id);
     Transaction tr;
     if (exists) {
         static State<>::Ment<optional<PageID>, int64, string, Method, int64, string, double, string> ins = R"(
@@ -92,7 +94,7 @@ DELETE FROM _pages WHERE _id = ?
     updated();
 }
 
-void PageData::updated () {
+void Page::updated () {
     AA(id);
     current_update.pages.insert(*this);
 }
@@ -107,16 +109,16 @@ SELECT _id FROM _pages WHERE _url_hash = ? AND _url = ?
 
 ///// Links
 
-unordered_map<LinkID, LinkData> link_cache;
+unordered_map<LinkID, Link> link_cache;
 
-const LinkData* LinkData::load (LinkID id) {
+const Link* Link::load (LinkID id) {
     AA(id > 0);
-    LinkData& r = link_cache[id];
+    Link& r = link_cache[id];
     if (r.id) {
         AA(r.id == id);
         return &r;
     }
-    LOG("LinkData::load", id);
+    LOG("Link::load", id);
     static State<PageID, PageID, PageID, Bifractor, string, double, double>::Ment<LinkID> sel = R"(
 SELECT _opener_page, _from_page, _to_page, _position, _title, _created_at, _trashed_at
 FROM _links WHERE _id = ?
@@ -137,8 +139,8 @@ FROM _links WHERE _id = ?
     return &r;
 }
 
-void LinkData::save () {
-    LOG("LinkData::save", id);
+void Link::save () {
+    LOG("Link::save", id);
     Transaction tr;
     if (exists) {
         if (!created_at) {
@@ -182,13 +184,13 @@ DELETE FROM _view_links WHERE _link = ?1
     updated();
 }
 
-void LinkData::updated () {
+void Link::updated () {
     AA(id);
     current_update.links.insert(*this);
 }
 
-void LinkData::move_before (LinkID next_link) {
-    LOG("LinkData::move_before", id, next_link);
+void Link::move_before (LinkID next_link) {
+    LOG("Link::move_before", id, next_link);
     static State<PageID, Bifractor, optional<Bifractor>>::Ment<LinkID> sel = R"(
 SELECT n._from_page, n._position, (
     SELECT _position FROM _links p
@@ -202,8 +204,8 @@ FROM _links n WHERE n._id = ?
     position = Bifractor(get<2>(row).value_or(0), get<1>(row), 0xc0);
 }
 
-void LinkData::move_after (LinkID prev_link) {
-    LOG("LinkData::move_after", id, prev_link);
+void Link::move_after (LinkID prev_link) {
+    LOG("Link::move_after", id, prev_link);
     static State<PageID, Bifractor, optional<Bifractor>>::Ment<LinkID> sel = R"(
 SELECT p._from_page, p._position, (
     SELECT _position FROM _links n
@@ -217,8 +219,8 @@ FROM _links p WHERE p._id = ?
     position = Bifractor(get<1>(row), get<2>(row).value_or(1), 0x40);
 }
 
-void LinkData::move_first_child (PageID from_page) {
-    LOG("LinkData::move_first_child", id, from_page);
+void Link::move_first_child (PageID from_page) {
+    LOG("Link::move_first_child", id, from_page);
     static State<Bifractor>::Ment<PageID> sel = R"(
 SELECT _position FROM _links WHERE _from_page = ?
 ORDER BY _position ASC LIMIT 1
@@ -228,8 +230,8 @@ ORDER BY _position ASC LIMIT 1
     position = Bifractor(0, row.value_or(1), 0xf8);
 }
 
-void LinkData::move_last_child (PageID from_page) {
-    LOG("LinkData::move_last_child", id, from_page);
+void Link::move_last_child (PageID from_page) {
+    LOG("Link::move_last_child", id, from_page);
     static State<Bifractor>::Ment<PageID> sel = R"(
 SELECT _position FROM _links WHERE _from_page = ?
 ORDER BY _position DESC LIMIT 1
@@ -259,16 +261,16 @@ SELECT _id FROM _links WHERE _to_page = ?
 
 ///// Views
 
-unordered_map<ViewID, ViewData> view_cache;
+unordered_map<ViewID, View> view_cache;
 
-const ViewData* ViewData::load (ViewID id) {
+const View* View::load (ViewID id) {
     AA(id > 0);
-    ViewData& r = view_cache[id];
+    View& r = view_cache[id];
     if (r.id) {
         AA(r.id == id);
         return &r;
     }
-    LOG("ViewData::load", id);
+    LOG("View::load", id);
     static State<PageID, LinkID, double, double, double, string>::Ment<ViewID> sel = R"(
 SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs FROM _views WHERE _id = ?
     )";
@@ -290,8 +292,8 @@ SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded
     return &r;
 }
 
-void ViewData::save () {
-    LOG("ViewData::save", id);
+void View::save () {
+    LOG("View::save", id);
     Transaction tr;
     if (exists) {
         if (!created_at) {
@@ -327,7 +329,7 @@ DELETE FROM _views WHERE _id = ?
     updated();
 }
 
-void ViewData::updated () {
+void View::updated () {
     AA(id);
     current_update.views.insert(*this);
 }
@@ -346,7 +348,7 @@ ViewID get_last_closed_view () {
 SELECT _id FROM _views
 WHERE _closed_at IS NOT NULL ORDER BY _closed_at DESC LIMIT 1
     )";
-    ViewData r;
+    View r;
     return sel.run_optional().value_or(ViewID{});
 }
 
@@ -417,3 +419,4 @@ Observer::~Observer () {
     }
 }
 
+} // namespace model

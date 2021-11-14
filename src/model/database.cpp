@@ -11,9 +11,11 @@
 #include "../util/log.h"
 #include "data.h"
 
-using namespace std;
-
 sqlite3* db = nullptr;
+
+namespace model {
+
+using namespace std;
 
 void init_db () {
     if (db) return;
@@ -49,3 +51,4 @@ void init_db () {
     }
 }
 
+} // namespace model

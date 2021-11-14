@@ -8,6 +8,8 @@
 #include "../util/bifractor.h"
 #include "../util/types.h"
 
+namespace model {
+
 template <class T>
 struct IDHandle {
     int64 id;
@@ -31,12 +33,15 @@ struct IDHandle {
     }
     const T* operator -> () const { return &**this; }
 };
-namespace std {
+
+} namespace std {
     template <class T>
-    struct hash<IDHandle<T>> {
-        std::size_t operator () (IDHandle<T> v) const { return std::hash<int64>{}(v.id); }
+    struct hash<model::IDHandle<T>> {
+        std::size_t operator () (model::IDHandle<T> v) const {
+            return std::hash<int64>{}(v.id);
+        }
     };
-}
+} namespace model {
 
 ///// PAGES
 
@@ -49,9 +54,9 @@ enum class Method : int8 {
     Delete,
 };
 
-struct PageData;
-using PageID = IDHandle<PageData>;
-struct PageData {
+struct Page;
+using PageID = IDHandle<Page>;
+struct Page {
     PageID id;
     std::string url;
     Method method = Method::Get;
@@ -61,7 +66,7 @@ struct PageData {
     std::string title;
     bool exists = true;
 
-    static const PageData* load (PageID);
+    static const Page* load (PageID);
     void save ();  // Write *this to database
     void updated ();  // Send to Observers without saving
 };
@@ -70,9 +75,9 @@ std::vector<PageID> get_pages_with_url (const std::string& url);
 
 ///// LINKS
 
-struct LinkData;
-using LinkID = IDHandle<LinkData>;
-struct LinkData {
+struct Link;
+using LinkID = IDHandle<Link>;
+struct Link {
     LinkID id;
     PageID opener_page;
     PageID from_page;
@@ -83,7 +88,7 @@ struct LinkData {
     double trashed_at = 0;
     bool exists = true;
 
-    static const LinkData* load (LinkID);
+    static const Link* load (LinkID);
     void save ();
     void updated ();
 
@@ -108,9 +113,9 @@ LinkID get_last_trashed_link ();
 
 ///// VIEWS
 
-struct ViewData;
-using ViewID = IDHandle<ViewData>;
-struct ViewData {
+struct View;
+using ViewID = IDHandle<View>;
+struct View {
     ViewID id;
     PageID root_page;
     LinkID focused_tab;
@@ -122,7 +127,7 @@ struct ViewData {
 
     PageID focused_page () { return focused_tab ? focused_tab->to_page : root_page; }
 
-    static const ViewData* load (ViewID);
+    static const View* load (ViewID);
     void save ();
     void updated ();
 };
@@ -150,3 +155,4 @@ struct Observer {
     ~Observer();
 };
 
+} // namespace model

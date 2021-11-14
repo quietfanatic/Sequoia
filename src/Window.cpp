@@ -23,10 +23,10 @@ using namespace std;
 
 ///// WINDOW STUFF
 
-static unordered_map<ViewID, Window*> open_windows;
+static unordered_map<model::ViewID, Window*> open_windows;
 
-Window::Window (ViewID v) :
-    view(*v), os_window(this)
+Window::Window (const model::View& v) :
+    view(v), os_window(this)
 {
     open_windows.emplace(view.id, this);
      // TODO: Fix possible use-after-free of this
@@ -186,14 +186,14 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     case 'N':
         if (ctrl && !alt) {
             if (shift) return [this]{
-//                Transaction tr;
+//                model::Transaction tr;
 //                if (int64 w = get_last_closed_window()) {
 //                    unclose_window(w);
 //                    unclose_tab(get_window_data(w)->focused_tab);
 //                }
             };
             else return [this]{
-//                Transaction tr;
+//                model::Transaction tr;
 //                int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
 //                int64 new_window = create_window(new_tab, new_tab);
             };
@@ -202,7 +202,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     case 'T':
         if (ctrl && !alt) {
             if (shift) return [this]{
-//                Transaction tr;
+//                model::Transaction tr;
 //                if (int64 tab = get_last_closed_tab()) {
 //                    unclose_tab(tab);
 //                    set_window_focused_tab(id, tab);
@@ -210,7 +210,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
 //                }
             };
             else return [this]{
-//                Transaction tr;
+//                model::Transaction tr;
 //                int64 new_tab = create_tab(
 //                    get_window_data(id)->focused_tab,
 //                    TabRelation::LAST_CHILD,
@@ -295,7 +295,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("navigate"): {
-        Transaction tr;
+        model::Transaction tr;
         claim_activity(ensure_activity_for_page(view.focused_page()));
         activity->navigate_url_or_search(message[1]);
         break;
@@ -341,28 +341,28 @@ void Window::message_from_shell (json::Value&& message) {
     }
      // Tab actions
     case x31_hash("focus_tab"): {
-        Transaction tr;
-        ViewData new_view = view;
-        new_view.focused_tab = LinkID{message[1]};
+        model::Transaction tr;
+        model::View new_view = view;
+        new_view.focused_tab = model::LinkID{message[1]};
         new_view.save();
         claim_activity(ensure_activity_for_page(new_view.focused_page()));
         break;
     }
     case x31_hash("new_child"): {
-        LinkID parent_tab {message[1]};
-        PageID parent_page = parent_tab ? parent_tab->to_page : view.root_page;
-        Transaction tr;
-        PageData child;
+        model::LinkID parent_tab {message[1]};
+        model::PageID parent_page = parent_tab ? parent_tab->to_page : view.root_page;
+        model::Transaction tr;
+        model::Page child;
         child.url = "about:blank";
-        child.method = Method::Get;
+        child.method = model::Method::Get;
         child.save();
-        LinkData link;
+        model::Link link;
         link.opener_page = parent_page;
         link.from_page = parent_page;
         link.to_page = child;
         link.move_last_child(parent_page);
         link.save();
-        ViewData new_view = view;
+        model::View new_view = view;
         new_view.focused_tab = link;
         new_view.expanded_tabs.insert(parent_tab);
         new_view.save();
@@ -370,14 +370,14 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("trash_tab"): {
-        LinkData link = *LinkID{message[1]};
+        model::Link link = *model::LinkID{message[1]};
         link.trashed_at = now();
         link.save();
          // TODO: delete activities that aren't visible in any views
         break;
     }
     case x31_hash("delete_tab"): {
-        LinkData link = *LinkID{message[1]};
+        model::Link link = *model::LinkID{message[1]};
         if (link.trashed_at) {
             link.exists = false;
             link.save();
@@ -385,42 +385,42 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("move_tab_before"): {
-        LinkData link = *LinkID{message[1]};
-        LinkID ref {message[2]};
+        model::Link link = *model::LinkID{message[1]};
+        model::LinkID ref {message[2]};
         link.move_before(ref);
         link.save();
         break;
     }
     case x31_hash("move_tab_after"): {
-        LinkData link = *LinkID{message[1]};
-        LinkID ref {message[2]};
+        model::Link link = *model::LinkID{message[1]};
+        model::LinkID ref {message[2]};
         link.move_after(ref);
         link.save();
         break;
     }
     case x31_hash("move_tab_first_child"): {
-        LinkData link = *LinkID{message[1]};
-        PageID ref {message[2]};
+        model::Link link = *model::LinkID{message[1]};
+        model::PageID ref {message[2]};
         link.move_first_child(ref);
         link.save();
         break;
     }
     case x31_hash("move_tab_last_child"): {
-        LinkData link = *LinkID{message[1]};
-        PageID ref {message[2]};
+        model::Link link = *model::LinkID{message[1]};
+        model::PageID ref {message[2]};
         link.move_last_child(ref);
         link.save();
         break;
     }
     case x31_hash("expand_tab"): {
-        ViewData new_view = view;
-        new_view.expanded_tabs.insert(LinkID{message[1]});
+        model::View new_view = view;
+        new_view.expanded_tabs.insert(model::LinkID{message[1]});
         new_view.save();
         break;
     }
     case x31_hash("contract_tab"): {
-        ViewData new_view = view;
-        new_view.expanded_tabs.erase(LinkID{message[1]});
+        model::View new_view = view;
+        new_view.expanded_tabs.erase(model::LinkID{message[1]});
         new_view.save();
         break;
     }
@@ -456,11 +456,11 @@ void Window::message_from_shell (json::Value&& message) {
 
 ///// VIEW STUFF
 
-struct WindowUpdater : Observer {
+struct WindowUpdater : model::Observer {
     void Observer_after_commit (
-        const Update& update
+        const model::Update& update
     ) override {
-        for (ViewID v : update.views) {
+        for (model::ViewID v : update.views) {
             auto iter = open_windows.find(v);
             Window* window = iter == open_windows.end() ? nullptr : iter->second;
             if (v->exists && !v->closed_at) {
@@ -468,7 +468,7 @@ struct WindowUpdater : Observer {
                     window->send_update(update);
                 }
                 else {
-                    window = new Window (v);
+                    window = new Window (*v);
                      // TODO: auto load focused tab
                 }
             }
@@ -481,7 +481,9 @@ struct WindowUpdater : Observer {
 };
 static WindowUpdater window_updater;
 
-static json::Array make_tab_json (const ViewData& view, LinkID link, const Tab& tab) {
+static json::Array make_tab_json (
+    const model::View& view, model::LinkID link, const model::Tab& tab
+) {
      // Sending just id means tab should be removed
     if (!tab.page) {
         return json::array(link);
@@ -517,16 +519,16 @@ void Window::send_view () {
 }
 
  // Send only tabs that have changed
-void Window::send_update (const Update& update) {
+void Window::send_update (const model::Update& update) {
      // First update our cached view
-    LinkID old_focused_tab = view.focused_tab;
+    model::LinkID old_focused_tab = view.focused_tab;
     if (update.views.count(view.id)) view = *view.id;
      // Generate new tab collection
-    unordered_map<LinkID, Tab> old_tabs = move(tabs);
+    model::TabTree old_tabs = move(tabs);
     tabs = create_tab_tree(view);
      // Send changed tabs to shell
     if (shell) {
-        TabChanges changes = get_changed_tabs(old_tabs, tabs, update);
+        model::TabChanges changes = get_changed_tabs(old_tabs, tabs, update);
         json::Array tab_updates;
         tab_updates.reserve(changes.size());
         for (auto& [id, tab] : changes) {
@@ -537,9 +539,9 @@ void Window::send_update (const Update& update) {
         }
     }
      // Update window title if necessary
-    PageID focused_page = view.focused_page();
+    model::PageID focused_page = view.focused_page();
     bool focus_changed = view.focused_tab != old_focused_tab;
-    if (!focus_changed) for (PageID p : update.pages) {
+    if (!focus_changed) for (model::PageID p : update.pages) {
         if (p == focused_page) {
             focus_changed = true;
             break;

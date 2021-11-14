@@ -5,6 +5,8 @@
 
 #include "data.h"
 
+namespace model {
+
  // Mirrors the structure of the tree view in the shell.
  //  I hate to resort to using a shadow dom to manage updates because of the
  //  overhead, but it really is the easiest algorithm to work with.
@@ -30,7 +32,7 @@ struct Tab {
 
 using TabTree = std::unordered_map<LinkID, Tab>;
 
-TabTree create_tab_tree (const ViewData& view);
+TabTree create_tab_tree (const View& view);
 
  // A removed tab is represented by a tab with 0 for its PageID.  This is kind
  //  of dumb and may change.
@@ -42,3 +44,4 @@ TabChanges get_changed_tabs (
     const TabTree& old_tree, const TabTree& new_tree, const Update& update
 );
 
+} // namespace model

@@ -62,27 +62,27 @@ void parse_args (int argc, char** argv) {
 }
 
 void start_browser () {
-    vector<ViewID> views = get_open_views();
+    vector<model::ViewID> views = model::get_open_views();
     if (!views.empty()) {
-        for (ViewID v : views) {
+        for (model::ViewID v : views) {
             if (v->closed_at) continue;
              // Create directly instead of going through WindowUpdater,
              //  so that focused tabs are not loaded
-            new Window(v);
+            new Window(*v);
         }
     }
-    else if (ViewID v = get_last_closed_view()) {
-        ViewData view = *v;
+    else if (model::ViewID v = model::get_last_closed_view()) {
+        model::View view = *v;
         view.closed_at = 0;
         view.save();  // Should spawn a Window
     }
     else {
          // Otherwise create a new window if none exists
-        Transaction tr;
-        PageData page;
+        model::Transaction tr;
+        model::Page page;
         page.url = "about:blank";
         page.save();
-        ViewData view2;
+        model::View view2;
         view2.root_page = page.id;
         view2.save();
     }
@@ -117,16 +117,16 @@ int WINAPI WinMain (
 
         init_nursery();
         load_settings();
-        init_db();
+        model::init_db();
         start_browser();
 
          // TODO: allow multiple urls to open in same window
         if (positional_args.size() >= 1) {
-            Transaction tr;
-            PageData page;
+            model::Transaction tr;
+            model::Page page;
             page.url = positional_args[0];
             page.save();
-            ViewData view;
+            model::View view;
             view.root_page = page.id;
             view.save();
         }

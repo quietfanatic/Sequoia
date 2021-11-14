@@ -17,12 +17,12 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-static unordered_map<PageID, Activity*> activities_by_page;
+static unordered_map<model::PageID, Activity*> activities_by_page;
 
 // TODO: Is an ActivityObserver necessary?  Probably not since page URLs are
 //  never supposed to change.
 
-Activity::Activity (PageID p) : page(*p) {
+Activity::Activity (const model::Page& p) : page(p) {
     LOG("new Activity", this, page.id);
     AA(!activities_by_page.contains(page.id));
     activities_by_page.emplace(page.id, this);
@@ -128,14 +128,14 @@ Activity::Activity (PageID p) : page(*p) {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
 
-            PageData child;
-            LinkData link;
+            model::Page child;
+            model::Link link;
             child.url = from_utf16(url.get());
-            child.method = Method::Get;
+            child.method = model::Method::Get;
             link.opener_page = page;
             link.from_page = page;
             link.move_last_child(page);
-            Transaction tr;
+            model::Transaction tr;
             child.save();
             link.to_page = child;
             link.save();
@@ -231,10 +231,10 @@ void Activity::message_from_webview(json::Value&& message) {
         break;
     }
     case x31_hash("click_link"): {
-        PageData child;
-        LinkData link;
+        model::Page child;
+        model::Link link;
         child.url = string(message[1]);
-        child.method = Method::Get;
+        child.method = model::Method::Get;
         link.opener_page = page;
         link.title = string(message[2]);
         int button = message[3];
@@ -263,7 +263,7 @@ void Activity::message_from_webview(json::Value&& message) {
                 link.move_last_child(page);
             }
         }
-        Transaction tr;
+        model::Transaction tr;
         child.save();
         link.to_page = child;
         link.save();
@@ -380,16 +380,16 @@ Activity::~Activity () {
     page.updated();
 }
 
-Activity* activity_for_page (PageID id) {
+Activity* activity_for_page (model::PageID id) {
     auto iter = activities_by_page.find(id);
     if (iter == activities_by_page.end()) return nullptr;
     else return iter->second;
 }
 
-Activity* ensure_activity_for_page (PageID id) {
+Activity* ensure_activity_for_page (model::PageID id) {
     auto iter = activities_by_page.find(id);
     if (iter == activities_by_page.end()) {
-        iter = activities_by_page.emplace(id, new Activity(id)).first;
+        iter = activities_by_page.emplace(id, new Activity(*id)).first;
     }
     return iter->second;
 }
