@@ -397,10 +397,10 @@ function on_close_clicked (event) {
 function on_expand_clicked (event) {
     let $item = event.target.closest('.item');
     if ($item.classList.contains("expanded")) {
-        host.postMessage(["expand_tab", +$item.id]);
+        host.postMessage(["contract_tab", +$item.id]);
     }
     else {
-        host.postMessage(["contract_tab", +$item.id]);
+        host.postMessage(["expand_tab", +$item.id]);
     }
     handled(event);
 }
