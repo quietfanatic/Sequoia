@@ -6,8 +6,8 @@
 #include <wrl.h>
 
 #include "activities.h"
-#include "data.h"
 #include "main.h"
+#include "model/data.h"
 #include "nursery.h"
 #include "settings.h"
 #include "util/assert.h"

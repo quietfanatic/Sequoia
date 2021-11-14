@@ -1,6 +1,6 @@
 #include "tabs.h"
 
-#include "activities.h"
+#include "../activities.h"
 
 using namespace std;
 

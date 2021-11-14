@@ -1,15 +1,15 @@
-#include "data_init.h"
+#include "database.h"
 
 #include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <sqlite3.h>
 
+#include "../settings.h"
+#include "../util/db_support.h"
+#include "../util/files.h"
+#include "../util/log.h"
 #include "data.h"
-#include "settings.h"
-#include "util/db_support.h"
-#include "util/files.h"
-#include "util/log.h"
 
 using namespace std;
 

@@ -4,13 +4,13 @@
 #include <unordered_map>
 
 #include <sqlite3.h>
-#include "data_init.h"
-#include "util/assert.h"
-#include "util/db_support.h"
-#include "util/hash.h"
-#include "util/json.h"
-#include "util/log.h"
-#include "util/time.h"
+#include "../util/assert.h"
+#include "../util/db_support.h"
+#include "../util/hash.h"
+#include "../util/json.h"
+#include "../util/log.h"
+#include "../util/time.h"
+#include "database.h"
 
 using namespace std;
 

@@ -8,8 +8,8 @@
 #include <wrl.h>
 
 #include "activities.h"
-#include "data.h"
-#include "data_init.h"
+#include "model/data.h"
+#include "model/database.h"
 #include "nursery.h"
 #include "settings.h"
 #include "util/assert.h"

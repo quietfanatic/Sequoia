@@ -6,7 +6,7 @@
 #include <wrl.h>
 
 #include "activities.h"
-#include "data.h"
+#include "model/data.h"
 #include "settings.h"
 #include "util/assert.h"
 #include "util/hash.h"

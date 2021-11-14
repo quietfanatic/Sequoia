@@ -4,9 +4,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "util/assert.h"
-#include "util/bifractor.h"
-#include "util/types.h"
+#include "../util/assert.h"
+#include "../util/bifractor.h"
+#include "../util/types.h"
 
 template <class T>
 struct IDHandle {

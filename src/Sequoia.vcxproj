@@ -141,14 +141,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="activities.cpp" />
-    <ClCompile Include="data.cpp" />
-    <ClCompile Include="data_init.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="model/data.cpp" />
+    <ClCompile Include="model/database.cpp" />
+    <ClCompile Include="model/tabs.cpp" />
     <ClCompile Include="nursery.cpp" />
     <ClCompile Include="OSWindow.cpp" />
     <ClCompile Include="settings.cpp" />
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
-    <ClCompile Include="tabs.cpp" />
     <ClCompile Include="util/assert.cpp" />
     <ClCompile Include="util/bifractor.cpp" />
     <ClCompile Include="util/files.cpp" />
@@ -159,14 +159,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activities.h" />
-    <ClInclude Include="data.h" />
-    <ClInclude Include="data_init.h" />
+    <ClInclude Include="model/data.h" />
+    <ClInclude Include="model/database.h" />
+    <ClInclude Include="model/tabs.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="nursery.h" />
     <ClInclude Include="OSWindow.h" />
     <ClInclude Include="settings.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
-    <ClInclude Include="tabs.h" />
     <ClInclude Include="util/assert.h" />
     <ClInclude Include="util/bifractor.h" />
     <ClInclude Include="util/db_support.h" />
