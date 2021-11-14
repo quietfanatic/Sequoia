@@ -23,32 +23,6 @@ using namespace std;
 
 ///// WINDOW STUFF
 
-static void gen_tabs (
-    unordered_map<LinkID, Tab>& tabs, const ViewData& view,
-    LinkID link, PageID page, LinkID parent
-) {
-    auto children = get_links_from_page(page);
-
-    int flags = 0;
-    if (view.focused_tab == link) flags |= Tab::FOCUSED;
-    if (page->visited_at) flags |= Tab::VISITED;
-    if (Activity* activity = activity_for_page(page)) {
-        if (activity->currently_loading) flags |= Tab::LOADING;
-        else flags |= Tab::LOADED;
-    }
-    if (link && link->trashed_at) flags |= Tab::TRASHED;
-    if (children.size()) flags |= Tab::EXPANDABLE; // TODO: don't use if inverted
-    if (view.expanded_tabs.count(link)) flags |= Tab::EXPANDED;
-
-    tabs.emplace(link, Tab{page, parent, Tab::Flags(flags)});
-    if (view.expanded_tabs.count(link)) {
-         // TODO: include get_links_to_page
-        for (LinkID child : children) {
-            gen_tabs(tabs, view, child, child->to_page, link);
-        }
-    }
-}
-
 static unordered_map<ViewID, Window*> open_windows;
 
 Window::Window (ViewID v) :
@@ -509,6 +483,9 @@ static WindowUpdater window_updater;
 
 static json::Array make_tab_json (const ViewData& view, LinkID link, const Tab& tab) {
      // Sending just id means tab should be removed
+    if (!tab.page) {
+        return json::array(link);
+    }
      // This code path will probably never be hit.
     if (link && !link->exists) {
         return json::array(link);
@@ -530,7 +507,7 @@ static json::Array make_tab_json (const ViewData& view, LinkID link, const Tab& 
 }
 
 void Window::send_view () {
-    gen_tabs(tabs, view, LinkID{}, view.root_page, LinkID{});
+    tabs = create_tab_tree(view);
     json::Array tab_updates;
     tab_updates.reserve(tabs.size());
     for (auto& [id, tab] : tabs) {
@@ -546,30 +523,15 @@ void Window::send_update (const Update& update) {
     if (update.views.count(view.id)) view = *view.id;
      // Generate new tab collection
     unordered_map<LinkID, Tab> old_tabs = move(tabs);
-    gen_tabs(tabs, view, LinkID{}, view.root_page, LinkID{});
+    tabs = create_tab_tree(view);
+     // Send changed tabs to shell
     if (shell) {
+        TabChanges changes = get_changed_tabs(old_tabs, tabs, update);
         json::Array tab_updates;
-         // Remove tabs that are no longer visible
-        for (auto& [id, tab] : old_tabs) {
-            if (!tabs.count(id)) {
-                tab_updates.emplace_back(json::array(id));
-            }
+        tab_updates.reserve(changes.size());
+        for (auto& [id, tab] : changes) {
+            tab_updates.emplace_back(make_tab_json(view, id, tab));
         }
-         // Send tabs that are:
-         //  - Are newly visible
-         //  - Are visible and are in the Update
-         //  - Have had their flags changed, most of which won't be reflected in the Update.
-        for (auto& [id, tab] : tabs) {
-            auto old = old_tabs.find(id);
-            if (old == old_tabs.end()
-                || tab.flags != old->second.flags
-                || update.links.count(id)
-                || update.pages.count(tab.page)
-            ) {
-                tab_updates.emplace_back(make_tab_json(view, id, tab));
-            }
-        }
-         // Now do the sending
         if (tab_updates.size()) {
             message_to_shell(json::array("update", tab_updates));
         }

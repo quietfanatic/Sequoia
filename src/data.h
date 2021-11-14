@@ -12,9 +12,9 @@ template <class T>
 struct IDHandle {
     int64 id;
 
-    explicit IDHandle (int64 id = 0) : id(id) { }
+    explicit constexpr IDHandle (int64 id = 0) : id(id) { }
     IDHandle (const T& data) : id(data.id) { AA(id); }
-    operator int64 () const { return id; }
+    constexpr operator int64 () const { return id; }
 
      // If you want to modify the data, you have to copy it first.
      //  The address of the return is not guaranteed to be stable, so don't
