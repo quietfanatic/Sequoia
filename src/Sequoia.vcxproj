@@ -144,6 +144,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model/data.cpp" />
     <ClCompile Include="model/database.cpp" />
+    <ClCompile Include="model/page.cpp" />
     <ClCompile Include="model/tabs.cpp" />
     <ClCompile Include="model/transaction.cpp" />
     <ClCompile Include="nursery.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="activities.h" />
     <ClInclude Include="model/data.h" />
     <ClInclude Include="model/database.h" />
+    <ClInclude Include="model/page.h" />
     <ClInclude Include="model/tabs.h" />
     <ClInclude Include="model/transaction.h" />
     <ClInclude Include="main.h" />

@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -43,6 +44,13 @@ namespace std {
             return std::hash<int64>{}(v.id);
         }
     };
+}
+
+ // Took way too many tries to get this correct
+template <class T, class Def = const std::remove_cvref_t<T>&>
+std::optional<std::remove_cvref_t<T>> null_default (T&& v, Def def = Def{}) {
+    if (v == def) return std::nullopt;
+    else return {std::forward<T>(v)};
 }
 
  // getting awkward

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "data.h"
+#include "page.h"
 #include "transaction.h"
 
 namespace model {

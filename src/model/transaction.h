@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "data.h"
+#include "page.h"
 
 namespace model {
 
