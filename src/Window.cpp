@@ -7,7 +7,9 @@
 
 #include "activities.h"
 #include "main.h"
+#include "model/link.h"
 #include "model/transaction.h"
+#include "model/view.h"
 #include "nursery.h"
 #include "settings.h"
 #include "util/assert.h"

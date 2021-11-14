@@ -8,9 +8,10 @@
 #include <wrl.h>
 
 #include "activities.h"
-#include "model/data.h"
 #include "model/database.h"
+#include "model/page.h"
 #include "model/transaction.h"
+#include "model/view.h"
 #include "nursery.h"
 #include "settings.h"
 #include "util/assert.h"

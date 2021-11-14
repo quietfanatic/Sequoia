@@ -3,8 +3,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "data.h"
+#include "link.h"
 #include "page.h"
+#include "view.h"
 #include "transaction.h"
 
 namespace model {

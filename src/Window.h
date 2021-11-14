@@ -6,8 +6,8 @@
 #include <wil/com.h>
 #include <windows.h>
 
-#include "model/data.h"
 #include "model/tabs.h"
+#include "model/view.h"
 #include "OSWindow.h"
 #include "util/types.h"
 

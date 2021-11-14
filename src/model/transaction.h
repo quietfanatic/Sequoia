@@ -1,9 +1,11 @@
 #pragma once
 
+#include <unordered_set>
 #include <vector>
 
-#include "data.h"
+#include "link.h"
 #include "page.h"
+#include "view.h"
 
 namespace model {
 

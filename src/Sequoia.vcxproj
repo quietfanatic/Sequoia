@@ -142,11 +142,12 @@
   <ItemGroup>
     <ClCompile Include="activities.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="model/data.cpp" />
     <ClCompile Include="model/database.cpp" />
+    <ClCompile Include="model/link.cpp" />
     <ClCompile Include="model/page.cpp" />
     <ClCompile Include="model/tabs.cpp" />
     <ClCompile Include="model/transaction.cpp" />
+    <ClCompile Include="model/view.cpp" />
     <ClCompile Include="nursery.cpp" />
     <ClCompile Include="OSWindow.cpp" />
     <ClCompile Include="settings.cpp" />
@@ -161,11 +162,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activities.h" />
-    <ClInclude Include="model/data.h" />
     <ClInclude Include="model/database.h" />
+    <ClInclude Include="model/link.h" />
     <ClInclude Include="model/page.h" />
     <ClInclude Include="model/tabs.h" />
     <ClInclude Include="model/transaction.h" />
+    <ClInclude Include="model/view.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="nursery.h" />
     <ClInclude Include="OSWindow.h" />
