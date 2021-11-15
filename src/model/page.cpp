@@ -81,7 +81,7 @@ DELETE FROM _pages WHERE _id = ?
     updated();
 }
 
-void Page::updated () {
+void Page::updated () const {
     AA(id);
     current_update.pages.insert(*this);
 }

@@ -142,6 +142,7 @@
   <ItemGroup>
     <ClCompile Include="activities.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="model/actions.cpp" />
     <ClCompile Include="model/database.cpp" />
     <ClCompile Include="model/link.cpp" />
     <ClCompile Include="model/page.cpp" />
@@ -162,6 +163,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="activities.h" />
+    <ClInclude Include="model/actions.h" />
     <ClInclude Include="model/database.h" />
     <ClInclude Include="model/link.h" />
     <ClInclude Include="model/page.h" />

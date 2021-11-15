@@ -31,7 +31,7 @@ struct Page {
 
     static const Page* load (PageID);
     void save ();  // Write *this to database
-    void updated ();  // Send to Observers without saving
+    void updated () const;  // Send to Observers without saving
 };
 
 std::vector<PageID> get_pages_with_url (const std::string& url);

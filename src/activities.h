@@ -11,7 +11,7 @@ struct Window;
 namespace json { struct Value; }
 
 struct Activity {
-    model::Page page;
+    model::PageID page;
     Window* window = nullptr;
 
     wil::com_ptr<ICoreWebView2Controller> controller;
@@ -24,7 +24,7 @@ struct Activity {
      // Workaround for special URLs not surviving a round-trip the navigation
     std::string navigated_url;
 
-    Activity (const model::Page&);
+    Activity (model::PageID);
 
     void resize (RECT available);
     bool navigate_url (const std::string& url);

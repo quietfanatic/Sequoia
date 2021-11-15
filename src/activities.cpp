@@ -4,7 +4,7 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "model/transaction.h"
+#include "model/actions.h"
 #include "nursery.h"
 #include "util/assert.h"
 #include "util/files.h"
@@ -12,7 +12,6 @@
 #include "util/json.h"
 #include "util/log.h"
 #include "util/text.h"
-#include "util/time.h"
 #include "Window.h"
 
 using namespace Microsoft::WRL;
@@ -20,13 +19,12 @@ using namespace std;
 
 static unordered_map<model::PageID, Activity*> activities_by_page;
 
-// TODO: Is an ActivityObserver necessary?  Probably not since page URLs are
-//  never supposed to change.
+// TODO: ActivityUpdater
 
-Activity::Activity (const model::Page& p) : page(p) {
-    LOG("new Activity", this, page.id);
-    AA(!activities_by_page.contains(page.id));
-    activities_by_page.emplace(page.id, this);
+Activity::Activity (model::PageID p) : page(p) {
+    LOG("new Activity", this, page);
+    AA(!activities_by_page.contains(page));
+    activities_by_page.emplace(page, this);
 
     new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         controller = wvc;
@@ -38,7 +36,7 @@ Activity::Activity (const model::Page& p) : page(p) {
         if (window) {
             window->resize();
              // TODO: check if this is necessary
-            if (page.url != "about:blank") {
+            if (page->url != "about:blank") {
                 AH(controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
             }
         }
@@ -49,7 +47,7 @@ Activity::Activity (const model::Page& p) : page(p) {
                 ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
             currently_loading = true;
-            page.updated();
+            page->updated();
             return S_OK;
         }).Get(), nullptr));
 
@@ -64,8 +62,7 @@ Activity::Activity (const model::Page& p) : page(p) {
             if (wcscmp(source.get(), L"about:blank") != 0) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                page.title = from_utf16(title.get());
-                page.save();
+                model::change_page_title(page, from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
@@ -99,12 +96,11 @@ Activity::Activity (const model::Page& p) : page(p) {
              && wcscmp(source.get(), L"about:blank") != 0
             ) {
                 navigated_url = "";
-                page.url = from_utf16(source.get());
+                model::change_page_url(page, from_utf16(source.get()));
             }
             else {
-                page.url = navigated_url;
+                model::change_page_url(page, navigated_url);
             }
-            page.save();
 
             return S_OK;
         }).Get(), nullptr));
@@ -115,7 +111,7 @@ Activity::Activity (const model::Page& p) : page(p) {
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
             currently_loading = false;
-            page.updated();
+            page->updated();
             return S_OK;
         }).Get(), nullptr));
 
@@ -128,19 +124,7 @@ Activity::Activity (const model::Page& p) : page(p) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-
-            model::Page child;
-            model::Link link;
-            child.url = from_utf16(url.get());
-            child.method = model::Method::Get;
-            link.opener_page = page;
-            link.from_page = page;
-            link.move_last_child(page);
-            model::Transaction tr;
-            child.save();
-            link.to_page = child;
-            link.save();
-
+            model::open_as_last_child(page, from_utf16(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -181,9 +165,8 @@ Activity::Activity (const model::Page& p) : page(p) {
             return S_OK;
         }).Get(), nullptr));
 
-        navigate_url_or_search(page.url);
-        page.visited_at = now();
-        page.save();
+        navigate_url_or_search(page->url);
+        model::set_page_visited(page);
     });
 
      // Delete old activities
@@ -227,17 +210,12 @@ void Activity::message_from_webview(json::Value&& message) {
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
-        page.favicon_url = string(message[1]);
-        page.save();
+        model::change_page_favicon(page, message[1]);
         break;
     }
     case x31_hash("click_link"): {
-        model::Page child;
-        model::Link link;
-        child.url = string(message[1]);
-        child.method = model::Method::Get;
-        link.opener_page = page;
-        link.title = string(message[2]);
+        std::string url = message[1];
+        std::string title = message[2];
         int button = message[3];
         bool double_click = message[4];
         bool shift = message[5];
@@ -258,16 +236,12 @@ void Activity::message_from_webview(json::Value&& message) {
 //                link.move_after(page);
             }
             else if (shift) {
-                link.move_first_child(page);
+                model::open_as_first_child(page, url, title);
             }
             else {
-                link.move_last_child(page);
+                model::open_as_last_child(page, url, title);
             }
         }
-        model::Transaction tr;
-        child.save();
-        link.to_page = child;
-        link.save();
         break;
     }
     case x31_hash("new_children"): {
@@ -357,8 +331,7 @@ void Activity::navigate_url_or_search (const string& address) {
         }
     }
     else {
-        page.url = address;
-        page.save();
+        model::change_page_url(page, address);
     }
 }
 
@@ -375,10 +348,10 @@ void Activity::leave_fullscreen () {
 
 Activity::~Activity () {
     LOG("delete Activity", this);
-    activities_by_page.erase(page.id);
+    activities_by_page.erase(page);
     if (window) window->activity = nullptr;
     if (controller) controller->Close();
-    page.updated();
+    page->updated();
 }
 
 Activity* activity_for_page (model::PageID id) {
