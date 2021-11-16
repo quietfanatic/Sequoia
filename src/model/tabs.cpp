@@ -1,7 +1,5 @@
 #include "tabs.h"
 
-#include "../activities.h"
-
 namespace model {
 
 using namespace std;

@@ -1,24 +1,24 @@
-#include "Window.h"
+#include "window.h"
 
 #include <unordered_set>
 #include <stdexcept>
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "activities.h"
-#include "main.h"
-#include "model/link.h"
-#include "model/transaction.h"
-#include "model/view.h"
-#include "nursery.h"
-#include "settings.h"
-#include "util/assert.h"
-#include "util/files.h"
-#include "util/hash.h"
-#include "util/json.h"
-#include "util/log.h"
-#include "util/text.h"
-#include "util/time.h"
+#include "../main.h"
+#include "../model/link.h"
+#include "../model/transaction.h"
+#include "../model/view.h"
+#include "../nursery.h"
+#include "../settings.h"
+#include "../util/assert.h"
+#include "../util/files.h"
+#include "../util/hash.h"
+#include "../util/json.h"
+#include "../util/log.h"
+#include "../util/text.h"
+#include "../util/time.h"
+#include "activity.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

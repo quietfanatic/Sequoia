@@ -1,19 +1,19 @@
-#include "activities.h"
+#include "activity.h"
 
 #include <stdexcept>
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "model/actions.h"
-#include "model/transaction.h"
-#include "nursery.h"
-#include "util/assert.h"
-#include "util/files.h"
-#include "util/hash.h"
-#include "util/json.h"
-#include "util/log.h"
-#include "util/text.h"
-#include "Window.h"
+#include "../model/actions.h"
+#include "../model/transaction.h"
+#include "../nursery.h"
+#include "../util/assert.h"
+#include "../util/files.h"
+#include "../util/hash.h"
+#include "../util/json.h"
+#include "../util/log.h"
+#include "../util/text.h"
+#include "window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

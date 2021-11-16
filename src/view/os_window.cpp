@@ -1,8 +1,9 @@
-#include "Window.h"
+#include "os_window.h"
 
-#include "util/assert.h"
-#include "util/log.h"
-#include "util/text.h"
+#include "../util/assert.h"
+#include "../util/log.h"
+#include "../util/text.h"
+#include "window.h"
 
 using namespace std;
 
@@ -42,7 +43,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         window->close();
         return 0;
     case WM_DESTROY:
-         // Prevent activity's HWND from being destroyed.
+         // TODO: Prevent activity's HWND from being destroyed.
         return 0;
     case WM_NCDESTROY:
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);

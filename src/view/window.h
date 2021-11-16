@@ -6,10 +6,10 @@
 #include <wil/com.h>
 #include <windows.h>
 
-#include "model/tabs.h"
-#include "model/view.h"
-#include "OSWindow.h"
-#include "util/types.h"
+#include "../model/tabs.h"
+#include "../model/view.h"
+#include "../util/types.h"
+#include "os_window.h"
 
 namespace json { struct Value; }
 

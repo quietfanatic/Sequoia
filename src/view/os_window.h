@@ -2,8 +2,6 @@
 
 #include <windows.h>
 
-struct Activity;
-
 struct Window;
 
 struct OSWindow {

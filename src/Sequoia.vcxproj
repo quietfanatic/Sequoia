@@ -140,7 +140,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="activities.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model/actions.cpp" />
     <ClCompile Include="model/database.cpp" />
@@ -150,7 +149,6 @@
     <ClCompile Include="model/transaction.cpp" />
     <ClCompile Include="model/view.cpp" />
     <ClCompile Include="nursery.cpp" />
-    <ClCompile Include="OSWindow.cpp" />
     <ClCompile Include="settings.cpp" />
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="util/assert.cpp" />
@@ -159,10 +157,11 @@
     <ClCompile Include="util/json.cpp" />
     <ClCompile Include="util/log.cpp" />
     <ClCompile Include="util/text.cpp" />
-    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="view/activity.cpp" />
+    <ClCompile Include="view/os_window.cpp" />
+    <ClCompile Include="view/window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="activities.h" />
     <ClInclude Include="model/actions.h" />
     <ClInclude Include="model/database.h" />
     <ClInclude Include="model/link.h" />
@@ -172,7 +171,6 @@
     <ClInclude Include="model/view.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="nursery.h" />
-    <ClInclude Include="OSWindow.h" />
     <ClInclude Include="settings.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="util/assert.h" />
@@ -183,7 +181,9 @@
     <ClInclude Include="util/log.h" />
     <ClInclude Include="util/types.h" />
     <ClInclude Include="util/text.h" />
-    <ClInclude Include="Window.h" />
+    <ClInclude Include="view/activity.h" />
+    <ClInclude Include="view/os_window.h" />
+    <ClInclude Include="view/window.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="res/*">

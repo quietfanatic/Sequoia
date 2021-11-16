@@ -5,7 +5,6 @@
 #include <WebView2ExperimentalEnvironmentOptions.h>
 #include <wrl.h>
 
-#include "activities.h"
 #include "model/page.h"
 #include "model/transaction.h"
 #include "model/view.h"
@@ -15,7 +14,8 @@
 #include "util/log.h"
 #include "util/json.h"
 #include "util/text.h"
-#include "Window.h"
+#include "view/activity.h"
+#include "view/window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

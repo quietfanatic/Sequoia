@@ -4,8 +4,8 @@
 #include <wil/com.h>
 #include <windows.h>
 
-#include "model/page.h"
-#include "util/types.h"
+#include "../model/page.h"
+#include "../util/types.h"
 
 struct Window;
 namespace json { struct Value; }
