@@ -81,11 +81,8 @@ void start_browser () {
     else {
          // Otherwise create a new window if none exists
         model::Transaction tr;
-        model::Page page;
-        page.url = "about:blank";
-        page.save();
         model::View view2;
-        view2.root_page = page.id;
+        view2.root_page = model::create_page("about:blank");
         view2.save();
     }
 }
@@ -125,11 +122,8 @@ int WINAPI WinMain (
          // TODO: allow multiple urls to open in same window
         if (positional_args.size() >= 1) {
             model::Transaction tr;
-            model::Page page;
-            page.url = positional_args[0];
-            page.save();
             model::View view;
-            view.root_page = page.id;
+            view.root_page = model::create_page(positional_args[0]);;
             view.save();
         }
 

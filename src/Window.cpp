@@ -354,7 +354,7 @@ void Window::message_from_shell (json::Value&& message) {
         model::LinkID parent_tab {message[1]};
         model::PageID parent_page = parent_tab ? parent_tab->to_page : view.root_page;
         model::Transaction tr;
-        model::Page child;
+        model::PageData child;
         child.url = "about:blank";
         child.save();
         model::Link link;

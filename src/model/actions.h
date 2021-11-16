@@ -20,12 +20,4 @@ void open_as_prev_sibling (
     PageID opener, LinkID next, const std::string& url, const std::string& title = ""
 );
 
-void enter_fullscreen (const View& view);
-void leave_fullscreen (const View& view);
-
-void change_page_url (PageID, const std::string&); // TODO: get rid of this
-void change_page_title (PageID, const std::string&);
-void change_page_favicon (PageID, const std::string&);
-void set_page_visited (PageID);
-
 } // namespace model

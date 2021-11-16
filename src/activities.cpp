@@ -62,7 +62,7 @@ Activity::Activity (model::PageID p) : page(p) {
             if (wcscmp(source.get(), L"about:blank") != 0) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                model::change_page_title(page, from_utf16(title.get()));
+                page->change_title(from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
@@ -96,10 +96,10 @@ Activity::Activity (model::PageID p) : page(p) {
              && wcscmp(source.get(), L"about:blank") != 0
             ) {
                 navigated_url = "";
-                model::change_page_url(page, from_utf16(source.get()));
+                page->change_url(from_utf16(source.get()));
             }
             else {
-                model::change_page_url(page, navigated_url);
+                page->change_url(navigated_url);
             }
 
             return S_OK;
@@ -110,6 +110,7 @@ Activity::Activity (model::PageID p) : page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
+             // TODO: store this on page
             currently_loading = false;
             page->updated();
             return S_OK;
@@ -166,43 +167,9 @@ Activity::Activity (model::PageID p) : page(p) {
         }).Get(), nullptr));
 
         navigate_url_or_search(page->url);
-        model::set_page_visited(page);
+         // TODO: only set this when focusing the page
+        page->change_visited();
     });
-
-     // Delete old activities
-     // TODO: configurable values
-     // TODO: This isn't quite working right
-     // TODO: Update for new schema
-//    while (activities_by_tab.size() > 80) {
-//        set<int64> keep_loaded;
-//         // Don't unload self!
-//        keep_loaded.emplace(tab);
-//         // Don't unload tabs focused by any windows
-//        for (auto w : get_all_unclosed_windows()) {
-//            keep_loaded.emplace(get_window_data(w)->focused_tab);
-//        }
-//         // Keep last n loaded tabs regardless
-//        for (auto t : get_last_visited_tabs(20)) {
-//            keep_loaded.emplace(t);
-//        }
-//         // Find last unstarred tab or last starred tab
-//        int64 victim_id = 0;
-//        TabData* victim_dat = nullptr;
-//        for (auto p : activities_by_tab) {
-//            if (keep_loaded.contains(p.first)) continue;
-//            auto dat = get_tab_data(p.first);
-//             // Not yet visited?  Not quite sure why this would happen.
-//            if (dat->visited_at == 0) continue;
-//            if (!victim_id
-//                || !dat->starred_at && victim_dat->starred_at
-//                || dat->visited_at < victim_dat->visited_at
-//            ) {
-//                victim_id = p.first;
-//                victim_dat = dat;
-//            }
-//        }
-//        delete activity_for_tab(victim_id);
-//    }
 }
 
 void Activity::message_from_webview(json::Value&& message) {
@@ -210,7 +177,7 @@ void Activity::message_from_webview(json::Value&& message) {
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
-        model::change_page_favicon(page, message[1]);
+        page->change_favicon_url(message[1]);
         break;
     }
     case x31_hash("click_link"): {
@@ -331,7 +298,7 @@ void Activity::navigate_url_or_search (const string& address) {
         }
     }
     else {
-        model::change_page_url(page, address);
+        page->change_url(address);
     }
 }
 
