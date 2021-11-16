@@ -24,7 +24,6 @@ struct Window {
     HWND shell_hwnd = nullptr;
     bool ready = false;
 
-    Activity* activity = nullptr;
     OSWindow os_window;
 
      // In DIPs
@@ -35,7 +34,6 @@ struct Window {
     bool fullscreen = false;
 
      // Window functions
-    void claim_activity (Activity*);
     void on_hidden ();
     void resize ();
     void enter_fullscreen ();
@@ -56,3 +54,5 @@ struct Window {
     ~Window();
 };
 
+Window* window_for_view (model::ViewID);
+Window* window_for_page (model::PageID);

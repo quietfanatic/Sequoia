@@ -108,6 +108,24 @@ void PageData::change_visited () const {
     data.visited_at = now();
     data.save();
 }
+void PageData::start_loading () const {
+    PageData data = *this;
+    data.loaded = true;
+    data.loading = true;
+    data.updated();
+}
+void PageData::finish_loading () const {
+    PageData data = *this;
+    data.loaded = true;
+    data.loading = false;
+    data.updated();
+}
+void PageData::unload () const {
+    PageData data = *this;
+    data.loaded = false;
+    data.loading = false;
+    data.updated();
+}
 
 PageID create_page (const string& url) {
     PageData data;

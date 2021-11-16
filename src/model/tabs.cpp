@@ -15,10 +15,8 @@ static void gen_tabs (
     int flags = 0;
     if (view.focused_tab == link) flags |= Tab::FOCUSED;
     if (page->visited_at) flags |= Tab::VISITED;
-    if (Activity* activity = activity_for_page(page)) {
-        if (activity->currently_loading) flags |= Tab::LOADING;
-        else flags |= Tab::LOADED;
-    }
+    if (page->loading) flags |= Tab::LOADING;
+    if (page->loaded && !page->loading) flags |= Tab::LOADED;
     if (link && link->trashed_at) flags |= Tab::TRASHED;
     if (children.size()) flags |= Tab::EXPANDABLE; // TODO: don't use if inverted
     if (view.expanded_tabs.count(link)) flags |= Tab::EXPANDED;

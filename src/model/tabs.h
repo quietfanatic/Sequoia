@@ -19,6 +19,7 @@ namespace model {
  //  to change eventually.  A LinkID of 0 represents the root tab of a view.
 struct Tab {
      // Must match constants in shell.js
+     // TODO: loaded and loading don't match bools in PageData
     enum Flags {
         FOCUSED = 1,
         VISITED = 2,

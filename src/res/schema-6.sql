@@ -27,18 +27,18 @@ PRAGMA user_version = 6;
  --  pages for the same URL.  TODO: Do we want to allow multiple URLs for one
  --  page if they only differ by fragment?
  -- _url: Currently TEXT but will be deduplicated in a separate table eventually
+ -- _title is the actual title from the HTML page.  It will be "" if this
+ --  page has not been loaded yet.
  -- _group doesn't semantically belong in this table, but since it's a
  --  one-to-many relationship, this is where it's easiest to put it.
- -- _title_id is the actual title from the HTML page.  It will be "" if this
- --  page has not been loaded yet.
 CREATE TABLE _pages (
     _id INTEGER PRIMARY KEY,
     _url_hash INTEGER NOT NULL,
     _url TEXT NOT NULL,
     _favicon_url TEXT NOT NULL,
     _title TEXT NOT NULL,
-    _group INTEGER NOT NULL,
     _visited_at REAL NOT NULL,
+    _group INTEGER NOT NULL,
     CHECK(_id > 0),
     CHECK(_visited_at >= 0)
 );
@@ -82,7 +82,6 @@ CREATE TABLE _links (
     CHECK(_from_page > 0),
     CHECK(_to_page > 0),
     CHECK(_position BETWEEN X'00' AND X'FF'),
-    CHECK(_from_page <> _to_page),
     CHECK(_created_at > 0),
     CHECK(_trashed_at >= 0)
 );

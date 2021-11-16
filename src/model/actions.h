@@ -20,4 +20,6 @@ void open_as_prev_sibling (
     PageID opener, LinkID next, const std::string& url, const std::string& title = ""
 );
 
+void message_from_page (PageID, const json::Value&);
+
 } // namespace model

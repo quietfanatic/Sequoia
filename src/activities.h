@@ -12,29 +12,26 @@ namespace json { struct Value; }
 
 struct Activity {
     model::PageID page;
-    Window* window = nullptr;
 
     wil::com_ptr<ICoreWebView2Controller> controller;
     wil::com_ptr<ICoreWebView2> webview;
     HWND webview_hwnd = nullptr;
-    bool can_go_back = false;
-    bool can_go_forward = false;
-    bool currently_loading = false;
 
-     // Workaround for special URLs not surviving a round-trip the navigation
-    std::string navigated_url;
+     // Store this so that we don't navigate from our own SourceChanged handler,
+     //  and also to work around special URLs not surviving a round-trip
+     //  through navigation
+    std::string current_url;
 
     Activity (model::PageID);
+    void update (model::PageID);
 
-    void resize (RECT available);
     bool navigate_url (const std::string& url);
     void navigate_search (const std::string& search);
-    void navigate_url_or_search (const std::string& address);
+    void navigate (const std::string& address);
 
-    void claimed_by_window (Window*);
-    void message_from_webview (json::Value&& message);
-    void message_to_webview (json::Value&& message);
+    void message_to_page (const json::Value& message);
 
+    void resize (RECT available);
     bool is_fullscreen ();
     void leave_fullscreen ();
 
@@ -42,4 +39,3 @@ struct Activity {
 };
 
 Activity* activity_for_page (model::PageID id);
-Activity* ensure_activity_for_page (model::PageID id);

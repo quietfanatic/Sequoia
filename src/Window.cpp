@@ -27,6 +27,11 @@ using namespace std;
 
 static unordered_map<model::ViewID, Window*> open_windows;
 
+ // TODO: implement this
+Window* window_for_page (model::PageID page) {
+    return open_windows.begin()->second;
+}
+
 Window::Window (const model::View& v) :
     view(v), os_window(this)
 {
@@ -67,23 +72,14 @@ Window::Window (const model::View& v) :
 };
 
 Window::~Window () {
-    if (activity) activity->claimed_by_window(nullptr);
     open_windows.erase(view.id);
     if (open_windows.empty()) quit();
 }
 
-void Window::claim_activity (Activity* a) {
-    if (a == activity) return;
-
-    if (activity) activity->claimed_by_window(nullptr);
-    activity = a;
-    if (activity) activity->claimed_by_window(this);
-
-    resize();
-}
-
 void Window::on_hidden () {
     LOG("Window::on_hidden");
+     // TODO: make sure this is actually our page
+    Activity* activity = activity_for_page(view.focused_page());
     if (activity && activity->controller) {
         activity->controller->put_IsVisible(FALSE);
     }
@@ -92,6 +88,8 @@ void Window::on_hidden () {
 }
 
 void Window::resize () {
+     // TODO: make sure this is actually our page
+    Activity* activity = activity_for_page(view.focused_page());
     if (activity && activity->controller) {
         activity->controller->put_IsVisible(TRUE);
     }
@@ -123,6 +121,8 @@ void Window::resize () {
 
 void Window::enter_fullscreen () {
     if (fullscreen) return;
+     // TODO: make sure this is actually our page
+    Activity* activity = activity_for_page(view.focused_page());
     if (!activity) return;
     fullscreen = true;
     os_window.enter_fullscreen();
@@ -134,6 +134,8 @@ void Window::leave_fullscreen () {
     fullscreen = false;
     shell_controller->put_IsVisible(TRUE);
     os_window.leave_fullscreen();
+     // TODO: make sure this is actually our page
+    Activity* activity = activity_for_page(view.focused_page());
     if (activity) activity->leave_fullscreen();
 }
 
@@ -188,62 +190,40 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     case 'N':
         if (ctrl && !alt) {
             if (shift) return [this]{
-//                model::Transaction tr;
-//                if (int64 w = get_last_closed_window()) {
-//                    unclose_window(w);
-//                    unclose_tab(get_window_data(w)->focused_tab);
-//                }
+                // TODO: unclose window
             };
             else return [this]{
-//                model::Transaction tr;
-//                int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
-//                int64 new_window = create_window(new_tab, new_tab);
+                // TODO: new window
             };
         }
         break;
     case 'T':
         if (ctrl && !alt) {
             if (shift) return [this]{
-//                model::Transaction tr;
-//                if (int64 tab = get_last_closed_tab()) {
-//                    unclose_tab(tab);
-//                    set_window_focused_tab(id, tab);
-//                    claim_activity(ensure_activity_for_tab(tab));
-//                }
+                // TODO: unclose tab
             };
             else return [this]{
-//                model::Transaction tr;
-//                int64 new_tab = create_tab(
-//                    get_window_data(id)->focused_tab,
-//                    TabRelation::LAST_CHILD,
-//                    "about:blank"
-//                );
-//                set_window_focused_tab(id, new_tab);
-//                claim_activity(ensure_activity_for_tab(new_tab));
+                // TODO: new tab
             };
         }
         break;
     case 'U':
         if (!shift && ctrl && !alt) return [this]{
-            if (activity) {
-                delete activity;
-            }
+            // TODO: unload
         };
         break;
     case 'W':
         if (!shift && ctrl && !alt) return [this]{
-//            close_tab_with_heritage(get_window_data(id)->focused_tab);
+            // TODO: close tab
         };
         break;
     case VK_TAB:
         if (ctrl && !alt) {
             if (shift) return [this]{
-//                int64 prev = get_prev_unclosed_tab(get_window_data(id)->focused_tab);
-//                if (prev) focus_tab(prev);
+                // TODO: prev tab
             };
             else return [this]{
-//                int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab);
-//                if (next) focus_tab(next);
+                // TODO: next tab
             };
         }
         break;
@@ -257,16 +237,14 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     case VK_UP:
         if (!shift && ctrl && !alt) {
             return [this]{
-//                int64 prev = get_prev_unclosed_tab(get_window_data(id)->focused_tab);
-//                if (prev) focus_tab(prev);
+                // TODO: prev tab
             };
         }
         break;
     case VK_DOWN:
         if (!shift && ctrl && !alt) {
             return [this]{
-//                int64 next = get_next_unclosed_tab(get_window_data(id)->focused_tab);
-//                if (next) focus_tab(next);
+                // TODO: next tab
             };
         }
         break;
@@ -298,30 +276,35 @@ void Window::message_from_shell (json::Value&& message) {
     }
     case x31_hash("navigate"): {
         model::Transaction tr;
-        claim_activity(ensure_activity_for_page(view.focused_page()));
-        activity->navigate_url_or_search(message[1]);
+        if (model::PageID page = view.focused_page()) {
+            page->change_url(message[1]);
+        }
         break;
     }
      // Toolbar buttons
     case x31_hash("back"): {
+        Activity* activity = activity_for_page(view.focused_page());
         if (activity && activity->webview) {
             activity->webview->GoBack();
         }
         break;
     }
     case x31_hash("forward"): {
+        Activity* activity = activity_for_page(view.focused_page());
         if (activity && activity->webview) {
             activity->webview->GoForward();
         }
         break;
     }
     case x31_hash("reload"): {
+        Activity* activity = activity_for_page(view.focused_page());
         if (activity && activity->webview) {
             activity->webview->Reload();
         }
         break;
     }
     case x31_hash("stop"): {
+        Activity* activity = activity_for_page(view.focused_page());
         if (activity && activity->webview) {
             activity->webview->Stop();
         }
@@ -347,7 +330,6 @@ void Window::message_from_shell (json::Value&& message) {
         model::View new_view = view;
         new_view.focused_tab = model::LinkID{message[1]};
         new_view.save();
-        claim_activity(ensure_activity_for_page(new_view.focused_page()));
         break;
     }
     case x31_hash("new_child"): {
@@ -367,7 +349,6 @@ void Window::message_from_shell (json::Value&& message) {
         new_view.focused_tab = link;
         new_view.expanded_tabs.insert(parent_tab);
         new_view.save();
-        claim_activity(ensure_activity_for_page(child));
         break;
     }
     case x31_hash("trash_tab"): {
@@ -435,8 +416,8 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("open_selected_links"): {
-        if (activity) {
-            activity->message_to_webview(json::array("open_selected_links"));
+        if (Activity* activity = activity_for_page(view.focused_page())) {
+            activity->message_to_page(json::array("open_selected_links"));
         }
         break;
     }

@@ -43,7 +43,6 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         return 0;
     case WM_DESTROY:
          // Prevent activity's HWND from being destroyed.
-        window->claim_activity(nullptr);
         return 0;
     case WM_NCDESTROY:
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);

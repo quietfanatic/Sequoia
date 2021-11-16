@@ -17,9 +17,12 @@ struct PageData {
      // Mutable but intrinsic
     std::string favicon_url;
     std::string title;
+    double visited_at = 0;
      // Extrinsic
     int64 group = 0; // NYI
-    double visited_at = 0;
+     // Temporary (not stored in DB)
+    bool loaded = false;
+    bool loading = false;
      // Uh...
     bool exists = true;
 
@@ -31,7 +34,9 @@ struct PageData {
     void change_favicon_url (const std::string&) const;
     void change_title (const std::string&) const;
     void change_visited () const;
-    void erase () const;
+    void start_loading () const;
+    void finish_loading () const;
+    void unload () const;
 
     static const PageData* load (PageID);
     void save ();  // Write *this to database
