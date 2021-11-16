@@ -9,11 +9,10 @@ namespace model {
 
 using namespace std;
 
-static Page create_page (const string& url, Method method) {
+static Page create_page (const string& url) {
     Transaction tr;
     Page page;
     page.url = url;
-    page.method = method;
     page.save();
     return page;
 }
@@ -22,7 +21,7 @@ void open_as_first_child (
     PageID parent, const string& url, const string& title
 ) {
     Transaction tr;
-    Page child = create_page(url, Method::Get);
+    Page child = create_page(url);
     Link link;
     link.opener_page = parent;
     link.from_page = parent;
@@ -35,7 +34,7 @@ void open_as_last_child (
     PageID parent, const string& url, const std::string& title
 ) {
     Transaction tr;
-    Page child = create_page(url, Method::Get);
+    Page child = create_page(url);
     Link link;
     link.opener_page = parent;
     link.from_page = parent;
@@ -48,7 +47,7 @@ void open_as_next_sibling (
     PageID opener, LinkID prev, const string& url, const std::string& title
 ) {
     Transaction tr;
-    Page child = create_page(url, Method::Get);
+    Page child = create_page(url);
     Link link;
     link.opener_page = opener;
     link.from_page = prev->from_page;
@@ -61,7 +60,7 @@ void open_as_prev_sibling (
     PageID opener, LinkID next, const string& url, const std::string& title
 ) {
     Transaction tr;
-    Page child = create_page(url, Method::Get);
+    Page child = create_page(url);
     Link link;
     link.opener_page = opener;
     link.from_page = next->from_page;

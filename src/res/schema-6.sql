@@ -27,17 +27,6 @@ PRAGMA user_version = 6;
  --  pages for the same URL.  TODO: Do we want to allow multiple URLs for one
  --  page if they only differ by fragment?
  -- _url: Currently TEXT but will be deduplicated in a separate table eventually
- -- _method:
- --    - 0: Unknown or other
- --    - 1: GET
- --    - 2: POST
- --    - 3: PUT
- --    - 4: DELETE
- --    - more may be added later
- --    - Typically only GET pages will be deduplicated.
- --    - Getting the HTTP method from NavigationStarting is NYI in WV2, so we
- --    -  may have to peel this information out of WebResourceRequested as a
- --    -  workaround.
  -- _group doesn't semantically belong in this table, but since it's a
  --  one-to-many relationship, this is where it's easiest to put it.
  -- _title_id is the actual title from the HTML page.  It will be "" if this
@@ -46,11 +35,10 @@ CREATE TABLE _pages (
     _id INTEGER PRIMARY KEY,
     _url_hash INTEGER NOT NULL,
     _url TEXT NOT NULL,
-    _method INTEGER NOT NULL,
-    _group INTEGER NOT NULL,
     _favicon_url TEXT NOT NULL,
-    _visited_at REAL NOT NULL,
     _title TEXT NOT NULL,
+    _group INTEGER NOT NULL,
+    _visited_at REAL NOT NULL,
     CHECK(_id > 0),
     CHECK(_visited_at >= 0)
 );

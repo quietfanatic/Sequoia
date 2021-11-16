@@ -356,7 +356,6 @@ void Window::message_from_shell (json::Value&& message) {
         model::Transaction tr;
         model::Page child;
         child.url = "about:blank";
-        child.method = model::Method::Get;
         child.save();
         model::Link link;
         link.opener_page = parent_page;
