@@ -4,7 +4,7 @@
 #include <string>
 #include <windows.h>
 
-#include "util/types.h"
+#include "../util/types.h"
 
  // If the nursery already exists in another process, returns it
 HWND existing_nursery ();

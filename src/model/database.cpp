@@ -5,7 +5,7 @@
 #include <string>
 #include <sqlite3.h>
 
-#include "../settings.h"
+#include "../control/profile.h"
 #include "../util/db_support.h"
 #include "../util/files.h"
 #include "../util/log.h"

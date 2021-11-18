@@ -5,12 +5,12 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "../main.h"
+#include "../control/main.h"
 #include "../model/link.h"
 #include "../model/transaction.h"
 #include "../model/view.h"
-#include "../nursery.h"
-#include "../settings.h"
+#include "../control/nursery.h"
+#include "../control/profile.h"
 #include "../util/assert.h"
 #include "../util/files.h"
 #include "../util/hash.h"

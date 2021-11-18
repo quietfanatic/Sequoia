@@ -140,7 +140,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="control/main.cpp" />
+    <ClCompile Include="control/nursery.cpp" />
+    <ClCompile Include="control/profile.cpp" />
     <ClCompile Include="model/actions.cpp" />
     <ClCompile Include="model/database.cpp" />
     <ClCompile Include="model/link.cpp" />
@@ -148,8 +150,6 @@
     <ClCompile Include="model/tabs.cpp" />
     <ClCompile Include="model/transaction.cpp" />
     <ClCompile Include="model/view.cpp" />
-    <ClCompile Include="nursery.cpp" />
-    <ClCompile Include="settings.cpp" />
     <ClCompile Include="sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="util/assert.cpp" />
     <ClCompile Include="util/bifractor.cpp" />
@@ -162,6 +162,9 @@
     <ClCompile Include="view/window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="control/main.h" />
+    <ClInclude Include="control/nursery.h" />
+    <ClInclude Include="control/profile.h" />
     <ClInclude Include="model/actions.h" />
     <ClInclude Include="model/database.h" />
     <ClInclude Include="model/link.h" />
@@ -169,9 +172,6 @@
     <ClInclude Include="model/tabs.h" />
     <ClInclude Include="model/transaction.h" />
     <ClInclude Include="model/view.h" />
-    <ClInclude Include="main.h" />
-    <ClInclude Include="nursery.h" />
-    <ClInclude Include="settings.h" />
     <ClInclude Include="sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="util/assert.h" />
     <ClInclude Include="util/bifractor.h" />

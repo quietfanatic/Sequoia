@@ -6,7 +6,7 @@
 
 #include "../model/actions.h"
 #include "../model/transaction.h"
-#include "../nursery.h"
+#include "../control/nursery.h"
 #include "../util/assert.h"
 #include "../util/files.h"
 #include "../util/hash.h"

@@ -5,17 +5,17 @@
 #include <WebView2ExperimentalEnvironmentOptions.h>
 #include <wrl.h>
 
-#include "model/page.h"
-#include "model/transaction.h"
-#include "model/view.h"
-#include "settings.h"
-#include "util/assert.h"
-#include "util/hash.h"
-#include "util/log.h"
-#include "util/json.h"
-#include "util/text.h"
-#include "view/activity.h"
-#include "view/window.h"
+#include "../model/page.h"
+#include "../model/transaction.h"
+#include "../model/view.h"
+#include "../util/assert.h"
+#include "../util/hash.h"
+#include "../util/log.h"
+#include "../util/json.h"
+#include "../util/text.h"
+#include "../view/activity.h"
+#include "../view/window.h"
+#include "profile.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
