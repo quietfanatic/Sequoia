@@ -21,6 +21,6 @@ static inline void run_all_tests () {
 }
 static inline void run_test (const std::string& name) {
     auto iter = all_tests().find(name);
-    A(iter != all_tests().end());
+    AA(iter != all_tests().end());
     iter->second();
 }

@@ -127,22 +127,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="../util/assert.cpp" />
-    <ClCompile Include="../util/bifractor.cpp" />
-    <ClCompile Include="../util/json.cpp" />
-    <ClCompile Include="../util/text.cpp" />
-    <ClCompile Include="bifractor_test.cpp" />
-    <ClCompile Include="json_test.cpp" />
-    <ClCompile Include="test_main.cpp" />
-    <ClCompile Include="tests.cpp" />
+    <ClCompile Include="../src/util/assert.cpp" />
+    <ClCompile Include="../src/util/bifractor.cpp" />
+    <ClCompile Include="../src/util/json.cpp" />
+    <ClCompile Include="../src/util/text.cpp" />
+    <ClCompile Include="../src/test/bifractor_test.cpp" />
+    <ClCompile Include="../src/test/json_test.cpp" />
+    <ClCompile Include="../src/test/test_main.cpp" />
+    <ClCompile Include="../src/test/tests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../util/assert.h" />
-    <ClInclude Include="../util/bifractor.h" />
-    <ClInclude Include="../util/json.h" />
-    <ClInclude Include="../util/text.h" />
-    <ClInclude Include="tap.h" />
-    <ClInclude Include="tests.h" />
+    <ClInclude Include="../src/util/assert.h" />
+    <ClInclude Include="../src/util/bifractor.h" />
+    <ClInclude Include="../src/util/json.h" />
+    <ClInclude Include="../src/util/text.h" />
+    <ClInclude Include="../src/test/tap.h" />
+    <ClInclude Include="../src/test/tests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
