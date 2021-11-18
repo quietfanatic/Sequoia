@@ -1,7 +1,5 @@
 /msbuild/.vs
 /msbuild/packages
-/msbuild/Debug
-/msbuild/Release
-/msbuild/x64
 /msbuild/*.user
+/tmp
 /out

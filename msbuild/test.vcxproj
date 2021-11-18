@@ -52,6 +52,22 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <IntDir>../tmp/test/debug_x86/</IntDir>
+    <OutDir>../tmp/test/debug_x86/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <IntDir>../tmp/test/release_x86/</IntDir>
+    <OutDir>../tmp/test/release_x86/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <IntDir>../tmp/test/debug_x64/</IntDir>
+    <OutDir>../tmp/test/debug_x64/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <IntDir>../tmp/test/release_x64/</IntDir>
+    <OutDir>../tmp/test/release_x64/</OutDir>
+  </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
