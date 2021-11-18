@@ -7,6 +7,7 @@
 
 #include "../control/actions.h"
 #include "../control/main.h"
+#include "../control/profile.h"
 #include "../model/link.h"
 #include "../model/transaction.h"
 #include "../model/view.h"

@@ -16,3 +16,5 @@ void load_profile ();
 void load_settings ();
 
 void save_settings ();
+
+void register_as_browser ();
