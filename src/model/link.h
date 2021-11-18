@@ -40,4 +40,17 @@ std::vector<LinkID> get_links_from_page (PageID page);
 std::vector<LinkID> get_links_to_page (PageID page);
 LinkID get_last_trashed_link ();
 
+void open_as_first_child (
+    PageID parent, const std::string& url, const std::string& title = ""
+);
+void open_as_last_child (
+    PageID parent, const std::string& url, const std::string& title = ""
+);
+void open_as_next_sibling (
+    PageID opener, LinkID prev, const std::string& url, const std::string& title = ""
+);
+void open_as_prev_sibling (
+    PageID opener, LinkID next, const std::string& url, const std::string& title = ""
+);
+
 } // namespace model

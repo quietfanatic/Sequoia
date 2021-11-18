@@ -1,68 +1,15 @@
 #include "actions.h"
 
 #include "../util/hash.h"
-#include "link.h"
-#include "page.h"
-#include "transaction.h"
+#include "../model/link.h"
+#include "../model/page.h"
+#include "../model/transaction.h"
 
-namespace model {
+namespace control {
 
 using namespace std;
 
-void open_as_first_child (
-    PageID parent, const string& url, const string& title
-) {
-    Transaction tr;
-    PageID child = create_page(url);
-    Link link;
-    link.opener_page = parent;
-    link.from_page = parent;
-    link.move_first_child(parent);
-    link.to_page = child;
-    link.title = title;
-    link.save();
-}
-void open_as_last_child (
-    PageID parent, const string& url, const std::string& title
-) {
-    Transaction tr;
-    PageID child = create_page(url);
-    Link link;
-    link.opener_page = parent;
-    link.from_page = parent;
-    link.move_last_child(parent);
-    link.to_page = child;
-    link.title = title;
-    link.save();
-}
-void open_as_next_sibling (
-    PageID opener, LinkID prev, const string& url, const std::string& title
-) {
-    Transaction tr;
-    PageID child = create_page(url);
-    Link link;
-    link.opener_page = opener;
-    link.from_page = prev->from_page;
-    link.move_after(prev);
-    link.to_page = child;
-    link.title = title;
-    link.save();
-}
-void open_as_prev_sibling (
-    PageID opener, LinkID next, const string& url, const std::string& title
-) {
-    Transaction tr;
-    PageID child = create_page(url);
-    Link link;
-    link.opener_page = opener;
-    link.from_page = next->from_page;
-    link.move_before(next);
-    link.to_page = child;
-    link.title = title;
-    link.save();
-}
-
-void message_from_page (PageID page, const json::Value& message) {
+void message_from_page (model::PageID page, const json::Value& message) {
     const string& command = message[0];
 
     switch (x31_hash(command)) {
@@ -119,4 +66,4 @@ void message_from_page (PageID page, const json::Value& message) {
     }
 }
 
-} // namespace model
+} // namespace control

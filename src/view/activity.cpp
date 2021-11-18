@@ -4,7 +4,8 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "../model/actions.h"
+#include "../control/actions.h"
+#include "../model/link.h"
 #include "../model/transaction.h"
 #include "../control/nursery.h"
 #include "../util/assert.h"
@@ -114,7 +115,7 @@ Activity::Activity (model::PageID p) : page(p) {
             wil::unique_cotaskmem_string raw;
             args->get_WebMessageAsJson(&raw);
             json::Value message = json::parse(from_utf16(raw.get()));
-            model::message_from_page(page, message);
+            control::message_from_page(page, message);
             return S_OK;
         }).Get(), nullptr));
 
