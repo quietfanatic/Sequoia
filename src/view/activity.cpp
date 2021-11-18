@@ -37,7 +37,7 @@ Activity::Activity (model::PageID p) : page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
-            page->start_loading();
+            control::start_loading_page(page);
             return S_OK;
         }).Get(), nullptr));
 
@@ -52,7 +52,7 @@ Activity::Activity (model::PageID p) : page(p) {
             if (wcscmp(source.get(), L"about:blank") != 0) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                page->change_title(from_utf16(title.get()));
+                control::change_page_title(page, from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
@@ -72,7 +72,7 @@ Activity::Activity (model::PageID p) : page(p) {
             ) {
                 current_url = from_utf16(source.get());
                 if (page->url != current_url) {
-                    page->change_url(current_url);
+                    control::change_page_url(page, current_url);
                 }
             }
 
@@ -84,7 +84,7 @@ Activity::Activity (model::PageID p) : page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
-            page->finish_loading();
+            control::finish_loading_page(page);
             return S_OK;
         }).Get(), nullptr));
 
@@ -97,7 +97,7 @@ Activity::Activity (model::PageID p) : page(p) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            model::open_as_last_child(page, from_utf16(url.get()));
+            control::open_as_last_child(page, from_utf16(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -145,7 +145,7 @@ Activity::Activity (model::PageID p) : page(p) {
 
         navigate(page->url);
          // TODO: only set this when focusing the page
-        page->change_visited();
+        control::change_page_visited(page);
     });
 }
 
@@ -213,7 +213,7 @@ void Activity::navigate (const string& address) {
         }
     }
     else {
-        page->change_url(current_url = address);
+        control::change_page_url(page, current_url = address);
     }
 }
 

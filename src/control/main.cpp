@@ -17,6 +17,7 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "../view/window.h"
+#include "actions.h"
 #include "nursery.h"
 #include "profile.h"
 
@@ -81,7 +82,7 @@ void start_browser () {
          // Otherwise create a new window if none exists
         model::Transaction tr;
         model::View view2;
-        view2.root_page = model::create_page("about:blank");
+        view2.root_page = control::create_page("about:blank");
         view2.save();
     }
 }
@@ -122,7 +123,7 @@ int WINAPI WinMain (
         if (positional_args.size() >= 1) {
             model::Transaction tr;
             model::View view;
-            view.root_page = model::create_page(positional_args[0]);;
+            view.root_page = control::create_page(positional_args[0]);
             view.save();
         }
 

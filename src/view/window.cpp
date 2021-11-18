@@ -5,6 +5,7 @@
 #include <WebView2.h>
 #include <wrl.h>
 
+#include "../control/actions.h"
 #include "../control/main.h"
 #include "../model/link.h"
 #include "../model/transaction.h"
@@ -277,7 +278,7 @@ void Window::message_from_shell (json::Value&& message) {
     case x31_hash("navigate"): {
         model::Transaction tr;
         if (model::PageID page = view.focused_page()) {
-            page->change_url(message[1]);
+            control::change_page_url(page, message[1]);
         }
         break;
     }

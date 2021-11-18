@@ -1,6 +1,7 @@
 #include "actions.h"
 
 #include "../util/hash.h"
+#include "../util/time.h"
 #include "../model/link.h"
 #include "../model/page.h"
 #include "../model/transaction.h"
@@ -8,13 +9,113 @@
 namespace control {
 
 using namespace std;
+using namespace model;
 
-void message_from_page (model::PageID page, const json::Value& message) {
+PageID create_page (const string& url) {
+    PageData data;
+    data.url = url;
+    data.save();
+    return data.id;
+}
+
+void change_page_url (PageID page, const std::string& url) {
+    PageData data = *page;
+    data.url = url;
+    data.save();
+}
+void change_page_favicon_url (PageID page, const std::string& url) {
+    PageData data = *page;
+    data.favicon_url = url;
+    data.save();
+}
+void change_page_title (PageID page, const std::string& title) {
+    PageData data = *page;
+    data.title = title;
+    data.save();
+}
+void change_page_visited (PageID page) {
+    PageData data = *page;
+    data.visited_at = now();
+    data.save();
+}
+void start_loading_page (PageID page) {
+    PageData data = *page;
+    data.loaded = true;
+    data.loading = true;
+    data.updated();
+}
+void finish_loading_page (PageID page) {
+    PageData data = *page;
+    data.loaded = true;
+    data.loading = false;
+    data.updated();
+}
+void unload_page (PageID page) {
+    PageData data = *page;
+    data.loaded = false;
+    data.loading = false;
+    data.updated();
+}
+
+void open_as_first_child (
+    PageID parent, const string& url, const string& title
+) {
+    Transaction tr;
+    PageID child = create_page(url);
+    Link link;
+    link.opener_page = parent;
+    link.from_page = parent;
+    link.move_first_child(parent);
+    link.to_page = child;
+    link.title = title;
+    link.save();
+}
+void open_as_last_child (
+    PageID parent, const string& url, const std::string& title
+) {
+    Transaction tr;
+    PageID child = create_page(url);
+    Link link;
+    link.opener_page = parent;
+    link.from_page = parent;
+    link.move_last_child(parent);
+    link.to_page = child;
+    link.title = title;
+    link.save();
+}
+void open_as_next_sibling (
+    PageID opener, LinkID prev, const string& url, const std::string& title
+) {
+    Transaction tr;
+    PageID child = create_page(url);
+    Link link;
+    link.opener_page = opener;
+    link.from_page = prev->from_page;
+    link.move_after(prev);
+    link.to_page = child;
+    link.title = title;
+    link.save();
+}
+void open_as_prev_sibling (
+    PageID opener, LinkID next, const string& url, const std::string& title
+) {
+    Transaction tr;
+    PageID child = create_page(url);
+    Link link;
+    link.opener_page = opener;
+    link.from_page = next->from_page;
+    link.move_before(next);
+    link.to_page = child;
+    link.title = title;
+    link.save();
+}
+
+void message_from_page (PageID page, const json::Value& message) {
     const string& command = message[0];
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
-        page->change_favicon_url(message[1]);
+        change_page_favicon_url(page, message[1]);
         break;
     }
     case x31_hash("click_link"): {
@@ -40,10 +141,10 @@ void message_from_page (model::PageID page, const json::Value& message) {
 //                link.move_after(page);
             }
             else if (shift) {
-                model::open_as_first_child(page, url, title);
+                open_as_first_child(page, url, title);
             }
             else {
-                model::open_as_last_child(page, url, title);
+                open_as_last_child(page, url, title);
             }
         }
         break;

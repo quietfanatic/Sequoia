@@ -84,56 +84,6 @@ void PageData::updated () const {
     current_update.pages.insert(*this);
 }
 
-void PageData::change_url (const string& url) const {
-    AA(id);
-    PageData data = *this;
-    data.url = url;
-    data.save();
-}
-void PageData::change_favicon_url (const string& url) const {
-    AA(id);
-    PageData data = *this;
-    data.favicon_url = url;
-    data.save();
-}
-void PageData::change_title (const string& title) const {
-    AA(id);
-    PageData data = *this;
-    data.title = title;
-    data.save();
-}
-void PageData::change_visited () const {
-    AA(id);
-    PageData data = *this;
-    data.visited_at = now();
-    data.save();
-}
-void PageData::start_loading () const {
-    PageData data = *this;
-    data.loaded = true;
-    data.loading = true;
-    data.updated();
-}
-void PageData::finish_loading () const {
-    PageData data = *this;
-    data.loaded = true;
-    data.loading = false;
-    data.updated();
-}
-void PageData::unload () const {
-    PageData data = *this;
-    data.loaded = false;
-    data.loading = false;
-    data.updated();
-}
-
-PageID create_page (const string& url) {
-    PageData data;
-    data.url = url;
-    data.save();
-    return data.id;
-}
-
 vector<PageID> get_pages_with_url (const string& url) {
     LOG("get_pages_with_url", url);
     static State<PageID>::Ment<int64, string> sel = R"(

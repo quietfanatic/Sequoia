@@ -15,6 +15,7 @@
 #include "../util/text.h"
 #include "../view/activity.h"
 #include "../view/window.h"
+#include "actions.h"
 #include "profile.h"
 
 using namespace Microsoft::WRL;
@@ -46,7 +47,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
             ReplyMessage(0);
             model::Transaction tr;
             model::View view;
-            view.root_page = model::create_page(message[1]);
+            view.root_page = control::create_page(message[1]);
             view.save();
             return 0;
         }
