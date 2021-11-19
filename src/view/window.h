@@ -16,13 +16,16 @@ namespace json { struct Value; }
 struct ICoreWebView2AcceleratorKeyPressedEventArgs;
 
 struct Window {
-    model::ViewData view;
+    model::ViewID view;
     model::TabTree tabs;
 
     wil::com_ptr<ICoreWebView2Controller> shell_controller;
     wil::com_ptr<ICoreWebView2> shell;
     HWND shell_hwnd = nullptr;
     bool ready = false;
+
+     // reflects view->fullscreen
+    bool currently_fullscreen = false;
 
     OSWindow os_window;
 
@@ -31,13 +34,9 @@ struct Window {
     double toolbar_height = 28;
     double main_menu_width = 0;
 
-    bool fullscreen = false;
-
      // Window functions
     void on_hidden ();
     void resize ();
-    void enter_fullscreen ();
-    void leave_fullscreen ();
     void close();
 
      // Controller functions
@@ -45,12 +44,11 @@ struct Window {
     std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
     void message_from_shell (json::Value&& message);
 
-     // View functions
     void send_view ();
-    void send_update (const model::Update&);
+    void update (model::ViewID, const model::Update&);
     void message_to_shell (json::Value&& message);
 
-    Window (const model::ViewData&);
+    Window (const model::ViewID&);
     ~Window();
 };
 

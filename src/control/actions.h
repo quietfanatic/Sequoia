@@ -67,6 +67,10 @@ void delete_tab (model::ViewID, model::LinkID);
 void expand_tab (model::ViewID, model::LinkID);
 void contract_tab (model::ViewID, model::LinkID);
 
+///// Window-like view actions
+
+void change_view_fullscreen (model::ViewID, bool);
+
 ///// Messages
 // TODO: move to own file
 

@@ -25,6 +25,8 @@ struct ViewData {
     double created_at = 0;
     double trashed_at = 0;
     std::unordered_set<LinkID> expanded_tabs;
+     // Temporary (not stored in db)
+    bool fullscreen = false;
      // Bookkeeping
     bool exists = true;
 

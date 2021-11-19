@@ -136,9 +136,11 @@ Activity::Activity (model::PageID p) : page(p) {
             Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
                 [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-            if (Window* window = window_for_page(page)) {
-                if (!is_fullscreen()) window->enter_fullscreen();
-                else window->leave_fullscreen();
+            if (page->viewing_view) {
+                 // TODO: remove cast
+                control::change_view_fullscreen(
+                    model::ViewID{page->viewing_view}, is_fullscreen()
+                );
             }
             return S_OK;
         }).Get(), nullptr));

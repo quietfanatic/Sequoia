@@ -221,6 +221,12 @@ void contract_tab (ViewID view, LinkID tab) {
     data.save();
 }
 
+void change_view_fullscreen (ViewID view, bool fullscreen) {
+    model::ViewData data = *view;
+    data.fullscreen = fullscreen;
+    data.updated();
+}
+
 ///// Messages
 // TODO: move to own file
 

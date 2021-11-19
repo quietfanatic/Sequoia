@@ -26,17 +26,9 @@ using namespace std;
 
 ///// WINDOW STUFF
 
-static unordered_map<model::ViewID, Window*> open_windows;
-
- // TODO: implement this
-Window* window_for_page (model::PageID page) {
-    return open_windows.begin()->second;
-}
-
-Window::Window (const model::ViewData& v) :
+Window::Window (const model::ViewID& v) :
     view(v), os_window(this)
 {
-    open_windows.emplace(view.id, this);
      // TODO: Fix possible use-after-free of this
     new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         shell_controller = wvc;
@@ -72,15 +64,12 @@ Window::Window (const model::ViewData& v) :
     });
 };
 
-Window::~Window () {
-    open_windows.erase(view.id);
-    if (open_windows.empty()) quit();
-}
+Window::~Window () = default;
 
 void Window::on_hidden () {
     LOG("Window::on_hidden");
      // TODO: make sure this is actually our page
-    Activity* activity = activity_for_page(view.focused_page());
+    Activity* activity = activity_for_page(view->focused_page());
     if (activity && activity->controller) {
         activity->controller->put_IsVisible(FALSE);
     }
@@ -90,7 +79,7 @@ void Window::on_hidden () {
 
 void Window::resize () {
      // TODO: make sure this is actually our page
-    Activity* activity = activity_for_page(view.focused_page());
+    Activity* activity = activity_for_page(view->focused_page());
     if (activity && activity->controller) {
         activity->controller->put_IsVisible(TRUE);
     }
@@ -110,7 +99,7 @@ void Window::resize () {
     auto dpi = GetDpiForWindow(os_window.hwnd);
     AW(dpi);
     double scale = dpi / 96.0;
-    if (!fullscreen) {
+    if (!currently_fullscreen) {
         bounds.top += uint(toolbar_height * scale);
         double side_width = sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
@@ -118,26 +107,6 @@ void Window::resize () {
     if (activity) {
         activity->resize(bounds);
     }
-}
-
-void Window::enter_fullscreen () {
-    if (fullscreen) return;
-     // TODO: make sure this is actually our page
-    Activity* activity = activity_for_page(view.focused_page());
-    if (!activity) return;
-    fullscreen = true;
-    os_window.enter_fullscreen();
-    shell_controller->put_IsVisible(FALSE);
-}
-
-void Window::leave_fullscreen () {
-    if (!fullscreen) return;
-    fullscreen = false;
-    shell_controller->put_IsVisible(TRUE);
-    os_window.leave_fullscreen();
-     // TODO: make sure this is actually our page
-    Activity* activity = activity_for_page(view.focused_page());
-    if (activity) activity->leave_fullscreen();
 }
 
 void Window::close () {
@@ -177,7 +146,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
-            fullscreen ? leave_fullscreen() : enter_fullscreen();
+            control::change_view_fullscreen(view, !currently_fullscreen);
         };
         break;
     case 'L':
@@ -229,8 +198,8 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         break;
     case VK_ESCAPE:
         if (!shift && !ctrl && !alt) {
-            if (fullscreen) return [this]{
-                leave_fullscreen();
+            if (currently_fullscreen) return [this]{
+                control::change_view_fullscreen(view, false);
             };
         }
         break;
@@ -280,28 +249,28 @@ void Window::message_from_shell (json::Value&& message) {
     }
      // Toolbar buttons
     case x31_hash("back"): {
-        Activity* activity = activity_for_page(view.focused_page());
+        Activity* activity = activity_for_page(view->focused_page());
         if (activity && activity->webview) {
             activity->webview->GoBack();
         }
         break;
     }
     case x31_hash("forward"): {
-        Activity* activity = activity_for_page(view.focused_page());
+        Activity* activity = activity_for_page(view->focused_page());
         if (activity && activity->webview) {
             activity->webview->GoForward();
         }
         break;
     }
     case x31_hash("reload"): {
-        Activity* activity = activity_for_page(view.focused_page());
+        Activity* activity = activity_for_page(view->focused_page());
         if (activity && activity->webview) {
             activity->webview->Reload();
         }
         break;
     }
     case x31_hash("stop"): {
-        Activity* activity = activity_for_page(view.focused_page());
+        Activity* activity = activity_for_page(view->focused_page());
         if (activity && activity->webview) {
             activity->webview->Stop();
         }
@@ -380,7 +349,7 @@ void Window::message_from_shell (json::Value&& message) {
     }
      // Main menu
     case x31_hash("fullscreen"): {
-        fullscreen ? leave_fullscreen() : enter_fullscreen();
+        control::change_view_fullscreen(view, currently_fullscreen);
         break;
     }
     case x31_hash("register_as_browser"): {
@@ -388,7 +357,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("open_selected_links"): {
-        if (Activity* activity = activity_for_page(view.focused_page())) {
+        if (Activity* activity = activity_for_page(view->focused_page())) {
             activity->message_to_page(json::array("open_selected_links"));
         }
         break;
@@ -407,33 +376,6 @@ void Window::message_from_shell (json::Value&& message) {
         throw;
     }
 }
-
-///// VIEW STUFF
-
-struct WindowUpdater : model::Observer {
-    void Observer_after_commit (
-        const model::Update& update
-    ) override {
-        for (model::ViewID v : update.views) {
-            auto iter = open_windows.find(v);
-            Window* window = iter == open_windows.end() ? nullptr : iter->second;
-            if (v->exists && !v->closed_at) {
-                if (window) {
-                    window->send_update(update);
-                }
-                else {
-                    window = new Window (*v);
-                     // TODO: auto load focused tab
-                }
-            }
-            else if (window) {
-                LOG("Destroying window", v);
-                AW(DestroyWindow(window->os_window.hwnd));
-            }
-        }
-    }
-};
-static WindowUpdater window_updater;
 
 static json::Array make_tab_json (
     const model::ViewData& view, model::LinkID link, const model::Tab& tab
@@ -463,38 +405,55 @@ static json::Array make_tab_json (
 }
 
 void Window::send_view () {
-    tabs = create_tab_tree(view);
+    tabs = create_tab_tree(*view);
     json::Array tab_updates;
     tab_updates.reserve(tabs.size());
     for (auto& [id, tab] : tabs) {
-        tab_updates.emplace_back(make_tab_json(view, id, tab));
+        tab_updates.emplace_back(make_tab_json(*view, id, tab));
     }
     message_to_shell(json::array("view", tab_updates));
 }
 
  // Send only tabs that have changed
-void Window::send_update (const model::Update& update) {
-     // First update our cached view
-    model::LinkID old_focused_tab = view.focused_tab;
-    if (update.views.count(view.id)) view = *view.id;
+void Window::update (model::ViewID new_view, const model::Update& update) {
+    view = new_view;
+     // Update window stuff.
+    if (view->fullscreen != currently_fullscreen) {
+        currently_fullscreen = view->fullscreen;
+        if (view->fullscreen) {
+             // TODO: make sure this is actually our page
+            Activity* activity = activity_for_page(view->focused_page());
+            if (!activity) return;
+            os_window.enter_fullscreen();
+            shell_controller->put_IsVisible(FALSE);
+        }
+        else {
+            shell_controller->put_IsVisible(TRUE);
+            os_window.leave_fullscreen();
+             // TODO: make sure this is actually our page
+            Activity* activity = activity_for_page(view->focused_page());
+            if (activity) activity->leave_fullscreen();
+        }
+    }
+    model::LinkID old_focused_tab = view->focused_tab;
      // Generate new tab collection
     model::TabTree old_tabs = move(tabs);
-    tabs = create_tab_tree(view);
+    tabs = create_tab_tree(*view);
      // Send changed tabs to shell
     if (shell) {
         model::TabChanges changes = get_changed_tabs(old_tabs, tabs, update);
         json::Array tab_updates;
         tab_updates.reserve(changes.size());
         for (auto& [id, tab] : changes) {
-            tab_updates.emplace_back(make_tab_json(view, id, tab));
+            tab_updates.emplace_back(make_tab_json(*view, id, tab));
         }
         if (tab_updates.size()) {
             message_to_shell(json::array("update", tab_updates));
         }
     }
      // Update window title if necessary
-    model::PageID focused_page = view.focused_page();
-    bool focus_changed = view.focused_tab != old_focused_tab;
+    model::PageID focused_page = view->focused_page();
+    bool focus_changed = view->focused_tab != old_focused_tab;
     if (!focus_changed) for (model::PageID p : update.pages) {
         if (p == focused_page) {
             focus_changed = true;
@@ -505,8 +464,6 @@ void Window::send_update (const model::Update& update) {
         const string& title = focused_page->title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
     }
-     // TODO: set UI focus?
-    if (!activity_for_page(focused_page)) leave_fullscreen();
 }
 
 void Window::message_to_shell (json::Value&& message) {
@@ -514,4 +471,52 @@ void Window::message_to_shell (json::Value&& message) {
     auto s = json::stringify(message);
     LOG("message_to_shell", s);
     shell->PostWebMessageAsJson(to_utf16(s).c_str());
+}
+
+
+///// Window registry
+
+static unordered_map<model::ViewID, Window*> windows_by_view;
+
+struct WindowRegistry : model::Observer {
+    void Observer_after_commit (
+        const model::Update& update
+    ) override {
+         // Window's constructor and update should not ever reference any other
+         // windows, so we don't need to be paranoid about ordering.
+        for (model::ViewID view : update.views) {
+            if (view->exists && !view->closed_at) {
+                Window*& window = windows_by_view[view];
+                if (window) window->update(view, update);
+                else window = new Window (view);
+            }
+            else {
+                auto iter = windows_by_view.find(view);
+                if (iter != windows_by_view.end()) {
+                     // Window is owned by the win32 system so don't delete
+                     // it yet.
+                    LOG("Destroying window", view);
+                    AW(DestroyWindow(iter->second->os_window.hwnd));
+                    windows_by_view.erase(iter);
+                }
+            }
+        }
+    }
+};
+static WindowRegistry window_registry;
+
+Window* window_for_view (model::ViewID view) {
+    auto iter = windows_by_view.find(view);
+    if (iter != windows_by_view.end()) return iter->second;
+    else return nullptr;
+}
+
+Window* window_for_page (model::PageID page) {
+    if (page->viewing_view) {
+         // TODO: remove cast
+        Window* window = window_for_view(model::ViewID{page->viewing_view});
+        AA(window);
+        return window;
+    }
+    else return nullptr;
 }

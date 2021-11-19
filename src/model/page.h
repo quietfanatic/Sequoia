@@ -23,6 +23,8 @@ struct PageData {
      // Temporary (not stored in DB)
     bool loaded = false;
     bool loading = false;
+     // TODO: make ViewID!
+    int64 viewing_view;
      // Bookkeeping
     bool exists = true;
 
