@@ -66,7 +66,7 @@ void open_as_first_child (
 ) {
     Transaction tr;
     PageID child = create_page(url);
-    Link link;
+    LinkData link;
     link.opener_page = parent;
     link.from_page = parent;
     link.move_first_child(parent);
@@ -79,7 +79,7 @@ void open_as_last_child (
 ) {
     Transaction tr;
     PageID child = create_page(url);
-    Link link;
+    LinkData link;
     link.opener_page = parent;
     link.from_page = parent;
     link.move_last_child(parent);
@@ -92,7 +92,7 @@ void open_as_next_sibling (
 ) {
     Transaction tr;
     PageID child = create_page(url);
-    Link link;
+    LinkData link;
     link.opener_page = opener;
     link.from_page = prev->from_page;
     link.move_after(prev);
@@ -105,7 +105,7 @@ void open_as_prev_sibling (
 ) {
     Transaction tr;
     PageID child = create_page(url);
-    Link link;
+    LinkData link;
     link.opener_page = opener;
     link.from_page = next->from_page;
     link.move_before(next);
@@ -116,35 +116,35 @@ void open_as_prev_sibling (
 
 void trash_link (LinkID link) {
      // TODO: unfocus tab in any views that are focusing it
-    Link data = *link;
+    LinkData data = *link;
     data.trashed_at = now();
     data.save();
 }
 void delete_link (LinkID link) {
      // TODO: unfocus tab in any views that are focusing it
-    Link data = *link;
+    LinkData data = *link;
     if (data.trashed_at) {
         data.exists = false;
         data.save();
     }
 }
 void move_link_before (LinkID link, LinkID next) {
-    Link data = *link;
+    LinkData data = *link;
     data.move_before(next);
     data.save();
 }
 void move_link_after (LinkID link, LinkID prev) {
-    Link data = *link;
+    LinkData data = *link;
     data.move_after(prev);
     data.save();
 }
 void move_link_first_child (LinkID link, PageID parent) {
-    Link data = *link;
+    LinkData data = *link;
     data.move_first_child(parent);
     data.save();
 }
 void move_link_last_child (LinkID link, PageID parent) {
-    Link data = *link;
+    LinkData data = *link;
     data.move_last_child(parent);
     data.save();
 }
@@ -153,17 +153,17 @@ void move_link_last_child (LinkID link, PageID parent) {
 
 void new_view_with_new_page (const std::string& url) {
     Transaction tr;
-    View data;
+    ViewData data;
     data.root_page = create_page(url);
     data.save();
 }
 void close_view (ViewID view) {
-    View data = *view;
+    ViewData data = *view;
     data.closed_at = now();
     data.save();
 }
 void unclose_view (ViewID view) {
-    View data = *view;
+    ViewData data = *view;
     data.closed_at = 0;
     data.save();
 }
@@ -175,7 +175,7 @@ void navigate_focused_page (ViewID view, const std::string& url) {
 }
 
 void focus_tab (ViewID view, LinkID tab) {
-    model::View data = *view;
+    model::ViewData data = *view;
     data.focused_tab = tab;
     data.save();
 }
@@ -189,13 +189,13 @@ void open_as_last_child_in_view (
     model::PageData child;
     child.url = url;
     child.save();
-    model::Link link;
+    model::LinkData link;
     link.opener_page = parent_page;
     link.from_page = parent_page;
     link.to_page = child;
     link.move_last_child(parent_page);
     link.save();
-    model::View new_view = *view;
+    model::ViewData new_view = *view;
     new_view.focused_tab = link;
     new_view.expanded_tabs.insert(parent_tab);
     new_view.save();
@@ -211,12 +211,12 @@ void delete_tab (ViewID view, LinkID tab) {
 }
 
 void expand_tab (ViewID view, LinkID tab) {
-    model::View data = *view;
+    model::ViewData data = *view;
     data.expanded_tabs.insert(tab);
     data.save();
 }
 void contract_tab (ViewID view, LinkID tab) {
-    model::View data = *view;
+    model::ViewData data = *view;
     data.expanded_tabs.erase(tab);
     data.save();
 }

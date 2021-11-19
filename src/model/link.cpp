@@ -16,16 +16,16 @@ using namespace std;
 
 ///// Links
 
-unordered_map<LinkID, Link> link_cache;
+unordered_map<LinkID, LinkData> link_cache;
 
-const Link* Link::load (LinkID id) {
+const LinkData* LinkData::load (LinkID id) {
     AA(id > 0);
-    Link& r = link_cache[id];
+    LinkData& r = link_cache[id];
     if (r.id) {
         AA(r.id == id);
         return &r;
     }
-    LOG("Link::load", id);
+    LOG("LinkData::load", id);
     static State<PageID, PageID, PageID, Bifractor, string, double, double>::Ment<LinkID> sel = R"(
 SELECT _opener_page, _from_page, _to_page, _position, _title, _created_at, _trashed_at
 FROM _links WHERE _id = ?
@@ -46,8 +46,8 @@ FROM _links WHERE _id = ?
     return &r;
 }
 
-void Link::save () {
-    LOG("Link::save", id);
+void LinkData::save () {
+    LOG("LinkData::save", id);
     Transaction tr;
     if (exists) {
         if (!created_at) {
@@ -91,13 +91,13 @@ DELETE FROM _view_links WHERE _link = ?1
     updated();
 }
 
-void Link::updated () {
+void LinkData::updated () {
     AA(id);
     current_update.links.insert(*this);
 }
 
-void Link::move_before (LinkID next_link) {
-    LOG("Link::move_before", id, next_link);
+void LinkData::move_before (LinkID next_link) {
+    LOG("LinkData::move_before", id, next_link);
     static State<PageID, Bifractor, optional<Bifractor>>::Ment<LinkID> sel = R"(
 SELECT n._from_page, n._position, (
     SELECT _position FROM _links p
@@ -111,8 +111,8 @@ FROM _links n WHERE n._id = ?
     position = Bifractor(get<2>(row).value_or(0), get<1>(row), 0xc0);
 }
 
-void Link::move_after (LinkID prev_link) {
-    LOG("Link::move_after", id, prev_link);
+void LinkData::move_after (LinkID prev_link) {
+    LOG("LinkData::move_after", id, prev_link);
     static State<PageID, Bifractor, optional<Bifractor>>::Ment<LinkID> sel = R"(
 SELECT p._from_page, p._position, (
     SELECT _position FROM _links n
@@ -126,8 +126,8 @@ FROM _links p WHERE p._id = ?
     position = Bifractor(get<1>(row), get<2>(row).value_or(1), 0x40);
 }
 
-void Link::move_first_child (PageID from_page) {
-    LOG("Link::move_first_child", id, from_page);
+void LinkData::move_first_child (PageID from_page) {
+    LOG("LinkData::move_first_child", id, from_page);
     static State<Bifractor>::Ment<PageID> sel = R"(
 SELECT _position FROM _links WHERE _from_page = ?
 ORDER BY _position ASC LIMIT 1
@@ -137,8 +137,8 @@ ORDER BY _position ASC LIMIT 1
     position = Bifractor(0, row.value_or(1), 0xf8);
 }
 
-void Link::move_last_child (PageID from_page) {
-    LOG("Link::move_last_child", id, from_page);
+void LinkData::move_last_child (PageID from_page) {
+    LOG("LinkData::move_last_child", id, from_page);
     static State<Bifractor>::Ment<PageID> sel = R"(
 SELECT _position FROM _links WHERE _from_page = ?
 ORDER BY _position DESC LIMIT 1

@@ -16,7 +16,7 @@ namespace json { struct Value; }
 struct ICoreWebView2AcceleratorKeyPressedEventArgs;
 
 struct Window {
-    model::View view;
+    model::ViewData view;
     model::TabTree tabs;
 
     wil::com_ptr<ICoreWebView2Controller> shell_controller;
@@ -50,7 +50,7 @@ struct Window {
     void send_update (const model::Update&);
     void message_to_shell (json::Value&& message);
 
-    Window (const model::View&);
+    Window (const model::ViewData&);
     ~Window();
 };
 

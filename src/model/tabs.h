@@ -36,7 +36,7 @@ struct Tab {
 
 using TabTree = std::unordered_map<LinkID, Tab>;
 
-TabTree create_tab_tree (const View& view);
+TabTree create_tab_tree (const ViewData& view);
 
  // A removed tab is represented by a tab with 0 for its PageID.  This is kind
  //  of dumb and may change.

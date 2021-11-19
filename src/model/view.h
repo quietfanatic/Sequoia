@@ -13,9 +13,9 @@
 
 namespace model {
 
-struct View;
-using ViewID = IDHandle<View>;
-struct View {
+struct ViewData;
+using ViewID = IDHandle<ViewData>;
+struct ViewData {
      // Immutable
     ViewID id;
      // Mutable
@@ -32,7 +32,7 @@ struct View {
         return focused_tab ? focused_tab->to_page : root_page;
     }
 
-    static const View* load (ViewID);
+    static const ViewData* load (ViewID);
     void save ();
     void updated ();
 };

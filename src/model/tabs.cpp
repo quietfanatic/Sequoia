@@ -5,7 +5,7 @@ namespace model {
 using namespace std;
 
 static void gen_tabs (
-    unordered_map<LinkID, Tab>& tabs, const View& view,
+    unordered_map<LinkID, Tab>& tabs, const ViewData& view,
     LinkID link, PageID page, LinkID parent
 ) {
     auto children = get_links_from_page(page);
@@ -28,7 +28,7 @@ static void gen_tabs (
     }
 }
 
-TabTree create_tab_tree (const View& view) {
+TabTree create_tab_tree (const ViewData& view) {
     TabTree r;
     gen_tabs(r, view, LinkID{}, view.root_page, LinkID{});
     return r;

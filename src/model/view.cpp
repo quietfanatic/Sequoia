@@ -15,16 +15,16 @@ namespace model {
 
 using namespace std;
 
-unordered_map<ViewID, View> view_cache;
+unordered_map<ViewID, ViewData> view_cache;
 
-const View* View::load (ViewID id) {
+const ViewData* ViewData::load (ViewID id) {
     AA(id > 0);
-    View& r = view_cache[id];
+    ViewData& r = view_cache[id];
     if (r.id) {
         AA(r.id == id);
         return &r;
     }
-    LOG("View::load", id);
+    LOG("ViewData::load", id);
     static State<PageID, LinkID, double, double, double, string>::Ment<ViewID> sel = R"(
 SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs FROM _views WHERE _id = ?
     )";
@@ -46,8 +46,8 @@ SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded
     return &r;
 }
 
-void View::save () {
-    LOG("View::save", id);
+void ViewData::save () {
+    LOG("ViewData::save", id);
     Transaction tr;
     if (exists) {
         if (!created_at) {
@@ -83,7 +83,7 @@ DELETE FROM _views WHERE _id = ?
     updated();
 }
 
-void View::updated () {
+void ViewData::updated () {
     AA(id);
     current_update.views.insert(*this);
 }
@@ -102,7 +102,7 @@ ViewID get_last_closed_view () {
 SELECT _id FROM _views
 WHERE _closed_at IS NOT NULL ORDER BY _closed_at DESC LIMIT 1
     )";
-    View r;
+    ViewData r;
     return sel.run_optional().value_or(ViewID{});
 }
 

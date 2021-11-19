@@ -33,7 +33,7 @@ Window* window_for_page (model::PageID page) {
     return open_windows.begin()->second;
 }
 
-Window::Window (const model::View& v) :
+Window::Window (const model::ViewData& v) :
     view(v), os_window(this)
 {
     open_windows.emplace(view.id, this);
@@ -436,7 +436,7 @@ struct WindowUpdater : model::Observer {
 static WindowUpdater window_updater;
 
 static json::Array make_tab_json (
-    const model::View& view, model::LinkID link, const model::Tab& tab
+    const model::ViewData& view, model::LinkID link, const model::Tab& tab
 ) {
      // Sending just id means tab should be removed
     if (!tab.page) {

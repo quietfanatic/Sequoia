@@ -12,9 +12,9 @@ namespace model {
 
 ///// LINKS
 
-struct Link;
-using LinkID = IDHandle<Link>;
-struct Link {
+struct LinkData;
+using LinkID = IDHandle<LinkData>;
+struct LinkData {
      // Immutable
     LinkID id;
     PageID opener_page;
@@ -28,7 +28,7 @@ struct Link {
      // Bookkeeping
     bool exists = true;
 
-    static const Link* load (LinkID);
+    static const LinkData* load (LinkID);
     void save ();
     void updated ();
 
