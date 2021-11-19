@@ -15,14 +15,17 @@ namespace model {
 struct Link;
 using LinkID = IDHandle<Link>;
 struct Link {
+     // Immutable
     LinkID id;
     PageID opener_page;
+     // Mutable
     PageID from_page;
     PageID to_page;
     Bifractor position;
     std::string title;
     double created_at = 0;
     double trashed_at = 0;
+     // Bookkeeping
     bool exists = true;
 
     static const Link* load (LinkID);

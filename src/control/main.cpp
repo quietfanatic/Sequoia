@@ -69,20 +69,16 @@ void start_browser () {
             if (v->closed_at) continue;
              // Create directly instead of going through WindowUpdater,
              //  so that focused tabs are not loaded
+             // TODO: just force an update of some sort, or talk to
+             //  WindowUpdater directly
             new Window(*v);
         }
     }
-    else if (model::ViewID v = model::get_last_closed_view()) {
-        model::View view = *v;
-        view.closed_at = 0;
-        view.save();  // Should spawn a Window
+    else if (model::ViewID view = model::get_last_closed_view()) {
+        control::unclose_view(view);
     }
     else {
-         // Otherwise create a new window if none exists
-        model::Transaction tr;
-        model::View view2;
-        view2.root_page = control::create_page("about:blank");
-        view2.save();
+        control::new_view_with_new_page("about:blank");
     }
 }
 
@@ -120,10 +116,7 @@ int WINAPI WinMain (
 
          // TODO: allow multiple urls to open in same window
         if (positional_args.size() >= 1) {
-            model::Transaction tr;
-            model::View view;
-            view.root_page = control::create_page(positional_args[0]);
-            view.save();
+            control::new_view_with_new_page(positional_args[0]);
         }
 
          // Run message loop

@@ -45,10 +45,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         switch (x31_hash(command)) {
         case x31_hash("new_window"): {
             ReplyMessage(0);
-            model::Transaction tr;
-            model::View view;
-            view.root_page = control::create_page(message[1]);
-            view.save();
+            control::new_view_with_new_page(message[1]);
             return 0;
         }
         default: return 1;

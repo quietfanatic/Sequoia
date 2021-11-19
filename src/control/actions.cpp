@@ -11,7 +11,9 @@ namespace control {
 using namespace std;
 using namespace model;
 
-PageID create_page (const string& url) {
+///// Page-focused actions
+
+static PageID create_page (const string& url) {
     PageData data;
     data.url = url;
     data.save();
@@ -56,6 +58,8 @@ void unload_page (PageID page) {
     data.loading = false;
     data.updated();
 }
+
+///// Link-focused actions
 
 void open_as_first_child (
     PageID parent, const string& url, const string& title
@@ -109,6 +113,116 @@ void open_as_prev_sibling (
     link.title = title;
     link.save();
 }
+
+void trash_link (LinkID link) {
+     // TODO: unfocus tab in any views that are focusing it
+    Link data = *link;
+    data.trashed_at = now();
+    data.save();
+}
+void delete_link (LinkID link) {
+     // TODO: unfocus tab in any views that are focusing it
+    Link data = *link;
+    if (data.trashed_at) {
+        data.exists = false;
+        data.save();
+    }
+}
+void move_link_before (LinkID link, LinkID next) {
+    Link data = *link;
+    data.move_before(next);
+    data.save();
+}
+void move_link_after (LinkID link, LinkID prev) {
+    Link data = *link;
+    data.move_after(prev);
+    data.save();
+}
+void move_link_first_child (LinkID link, PageID parent) {
+    Link data = *link;
+    data.move_first_child(parent);
+    data.save();
+}
+void move_link_last_child (LinkID link, PageID parent) {
+    Link data = *link;
+    data.move_last_child(parent);
+    data.save();
+}
+
+///// View-focused actions
+
+void new_view_with_new_page (const std::string& url) {
+    Transaction tr;
+    View data;
+    data.root_page = create_page(url);
+    data.save();
+}
+void close_view (ViewID view) {
+    View data = *view;
+    data.closed_at = now();
+    data.save();
+}
+void unclose_view (ViewID view) {
+    View data = *view;
+    data.closed_at = 0;
+    data.save();
+}
+
+void navigate_focused_page (ViewID view, const std::string& url) {
+    if (PageID page = view->focused_page()) {
+        change_page_url(page, url);
+    }
+}
+
+void focus_tab (ViewID view, LinkID tab) {
+    model::View data = *view;
+    data.focused_tab = tab;
+    data.save();
+}
+
+void open_as_last_child_in_view (
+    ViewID view, LinkID parent_tab,
+    const std::string& url
+) {
+    model::PageID parent_page = parent_tab ? parent_tab->to_page : view->root_page;
+    model::Transaction tr;
+    model::PageData child;
+    child.url = url;
+    child.save();
+    model::Link link;
+    link.opener_page = parent_page;
+    link.from_page = parent_page;
+    link.to_page = child;
+    link.move_last_child(parent_page);
+    link.save();
+    model::View new_view = *view;
+    new_view.focused_tab = link;
+    new_view.expanded_tabs.insert(parent_tab);
+    new_view.save();
+}
+
+void trash_tab (ViewID view, LinkID tab) {
+    if (tab) trash_link(tab);
+    else close_view(view);
+}
+void delete_tab (ViewID view, LinkID tab) {
+    if (tab) delete_link(tab);
+    else close_view(view);
+}
+
+void expand_tab (ViewID view, LinkID tab) {
+    model::View data = *view;
+    data.expanded_tabs.insert(tab);
+    data.save();
+}
+void contract_tab (ViewID view, LinkID tab) {
+    model::View data = *view;
+    data.expanded_tabs.erase(tab);
+    data.save();
+}
+
+///// Messages
+// TODO: move to own file
 
 void message_from_page (PageID page, const json::Value& message) {
     const string& command = message[0];

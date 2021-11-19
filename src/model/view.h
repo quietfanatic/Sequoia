@@ -16,16 +16,21 @@ namespace model {
 struct View;
 using ViewID = IDHandle<View>;
 struct View {
+     // Immutable
     ViewID id;
+     // Mutable
     PageID root_page;
     LinkID focused_tab;
     double closed_at = 0;
     double created_at = 0;
     double trashed_at = 0;
-    bool exists = true;
     std::unordered_set<LinkID> expanded_tabs;
+     // Bookkeeping
+    bool exists = true;
 
-    PageID focused_page () { return focused_tab ? focused_tab->to_page : root_page; }
+    PageID focused_page () const {
+        return focused_tab ? focused_tab->to_page : root_page;
+    }
 
     static const View* load (ViewID);
     void save ();

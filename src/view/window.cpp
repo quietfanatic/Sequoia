@@ -19,7 +19,6 @@
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
-#include "../util/time.h"
 #include "activity.h"
 
 using namespace Microsoft::WRL;
@@ -142,8 +141,7 @@ void Window::leave_fullscreen () {
 }
 
 void Window::close () {
-    view.closed_at = now();
-    view.save();
+    control::close_view(view);
 }
 
 ///// CONTROLLER STUFF
@@ -277,10 +275,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("navigate"): {
-        model::Transaction tr;
-        if (model::PageID page = view.focused_page()) {
-            control::change_page_url(page, message[1]);
-        }
+        control::navigate_focused_page(view, message[1]);
         break;
     }
      // Toolbar buttons
@@ -328,84 +323,59 @@ void Window::message_from_shell (json::Value&& message) {
     }
      // Tab actions
     case x31_hash("focus_tab"): {
-        model::Transaction tr;
-        model::View new_view = view;
-        new_view.focused_tab = model::LinkID{message[1]};
-        new_view.save();
+        control::focus_tab(view, model::LinkID{message[1]});
         break;
     }
     case x31_hash("new_child"): {
-        model::LinkID parent_tab {message[1]};
-        model::PageID parent_page = parent_tab ? parent_tab->to_page : view.root_page;
-        model::Transaction tr;
-        model::PageData child;
-        child.url = "about:blank";
-        child.save();
-        model::Link link;
-        link.opener_page = parent_page;
-        link.from_page = parent_page;
-        link.to_page = child;
-        link.move_last_child(parent_page);
-        link.save();
-        model::View new_view = view;
-        new_view.focused_tab = link;
-        new_view.expanded_tabs.insert(parent_tab);
-        new_view.save();
+        control::open_as_last_child_in_view(view, model::LinkID{message[1]}, "about:blank");
         break;
     }
     case x31_hash("trash_tab"): {
-        model::Link link = *model::LinkID{message[1]};
-        link.trashed_at = now();
-        link.save();
-         // TODO: delete activities that aren't visible in any views
+        control::trash_tab(view, model::LinkID{message[1]});
         break;
     }
     case x31_hash("delete_tab"): {
-        model::Link link = *model::LinkID{message[1]};
-        if (link.trashed_at) {
-            link.exists = false;
-            link.save();
-        }
+        control::delete_tab(view, model::LinkID{message[1]});
         break;
     }
     case x31_hash("move_tab_before"): {
-        model::Link link = *model::LinkID{message[1]};
-        model::LinkID ref {message[2]};
-        link.move_before(ref);
-        link.save();
+        model::LinkID link {message[1]};
+        model::LinkID target {message[2]};
+        if (link && target) {
+            control::move_link_before(link, target);
+        }
         break;
     }
     case x31_hash("move_tab_after"): {
-        model::Link link = *model::LinkID{message[1]};
-        model::LinkID ref {message[2]};
-        link.move_after(ref);
-        link.save();
+        model::LinkID link {message[1]};
+        model::LinkID target {message[2]};
+        if (link && target) {
+            control::move_link_after(link, target);
+        }
         break;
     }
     case x31_hash("move_tab_first_child"): {
-        model::Link link = *model::LinkID{message[1]};
-        model::PageID ref {message[2]};
-        link.move_first_child(ref);
-        link.save();
+        model::LinkID link {message[1]};
+        model::PageID parent {message[2]};
+        if (link) {
+            control::move_link_first_child(link, parent);
+        }
         break;
     }
     case x31_hash("move_tab_last_child"): {
-        model::Link link = *model::LinkID{message[1]};
-        model::PageID ref {message[2]};
-        link.move_last_child(ref);
-        link.save();
+        model::LinkID link {message[1]};
+        model::PageID parent {message[2]};
+        if (link) {
+            control::move_link_last_child(link, parent);
+        }
         break;
     }
     case x31_hash("expand_tab"): {
-        model::View new_view = view;
-        new_view.expanded_tabs.insert(model::LinkID{message[1]});
-        new_view.save();
+        control::expand_tab(view, model::LinkID{message[1]});
         break;
     }
     case x31_hash("contract_tab"): {
-        model::View new_view = view;
-        new_view.expanded_tabs.erase(model::LinkID{message[1]});
-        new_view.save();
+        control::contract_tab(view, model::LinkID{message[1]});
         break;
     }
      // Main menu
