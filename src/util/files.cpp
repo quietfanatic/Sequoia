@@ -16,7 +16,7 @@ const string exe_path = from_utf16(exe_path16);
 
 const string exe_folder = []{
     string r = exe_path;
-    size_t i = r.find_last_of(L'\\');
+    size_t i = r.find_last_of('\\');
     return r.substr(0, i);
 }();
 

@@ -1,11 +1,9 @@
 #include "activity.h"
 
 #include <stdexcept>
-#include <WebView2.h>
 #include <wrl.h>
 
 #include "../control/actions.h"
-#include "../model/link.h"
 #include "../model/transaction.h"
 #include "../control/nursery.h"
 #include "../util/assert.h"
@@ -112,9 +110,11 @@ Activity::Activity (model::PageID p) : page(p) {
                     ICoreWebView2WebMessageReceivedEventArgs* args
                 )
         {
-            wil::unique_cotaskmem_string raw;
-            args->get_WebMessageAsJson(&raw);
-            json::Value message = json::parse(from_utf16(raw.get()));
+            wil::unique_cotaskmem_string raw16;
+            args->get_WebMessageAsJson(&raw16);
+            string raw = from_utf16(raw16.get());
+            LOG("Activity::message_from_webview", raw);
+            json::Value message = json::parse(raw);
             control::message_from_page(page, message);
             return S_OK;
         }).Get(), nullptr));
@@ -126,10 +126,29 @@ Activity::Activity (model::PageID p) : page(p) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            if (Window* window = window_for_page(page)) {
-                return window->on_AcceleratorKeyPressed(sender, args);
+            Window* window = window_for_page(page);
+            if (!window) return S_OK;
+            COREWEBVIEW2_KEY_EVENT_KIND kind;
+            AH(args->get_KeyEventKind(&kind));
+            switch (kind) {
+                case COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN: break;
+                case COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN: break;
+                default: return S_OK;
             }
-            else return S_OK;
+            UINT key; AH(args->get_VirtualKey(&key));
+            auto handle = window->get_key_handler(
+                key,
+                GetKeyState(VK_SHIFT) < 0,
+                GetKeyState(VK_CONTROL) < 0,
+                GetKeyState(VK_MENU) < 0
+            );
+            if (handle) {
+                AH(args->put_Handled(TRUE));
+                INT l; AH(args->get_KeyEventLParam(&l));
+                bool repeated = l & (1 << 30);
+                if (!repeated) handle();
+            }
+            return S_OK;
         }).Get(), nullptr));
 
         AH(webview->add_ContainsFullScreenElementChanged(
@@ -151,35 +170,17 @@ Activity::Activity (model::PageID p) : page(p) {
     });
 }
 
-void Activity::message_to_page (const json::Value& message) {
+void Activity::message_to_webview (const json::Value& message) {
     if (!webview) return;
     auto s = json::stringify(message);
     LOG("message_to_webview", s);
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
-void Activity::update (model::PageID new_page) {
-     // Currently new_page should never be different from page, but semantically
-     //  we'd just do this in that case.
-    page = new_page;
-     // TODO: do this stuff in window
-    if (Window* window = window_for_page(page)) {
-        AH(controller->put_IsVisible(TRUE));
-         // TODO: use put_ParentWindow
-        SetParent(webview_hwnd, window->os_window.hwnd);
-    }
-    else {
-        AH(controller->put_IsVisible(FALSE));
-         // TODO: suspend?
-        SetParent(webview_hwnd, HWND_MESSAGE);
-    }
+void Activity::page_updated () {
     if (page->url != current_url) {
         navigate(page->url);
     }
-}
-
-void Activity::resize (RECT bounds) {
-    if (controller) controller->put_Bounds(bounds);
 }
 
 bool Activity::navigate_url (const string& url) {
@@ -192,6 +193,7 @@ bool Activity::navigate_url (const string& url) {
     if (hr != E_INVALIDARG) AH(hr);
     return false;
 }
+
 void Activity::navigate_search (const string& search) {
     LOG("navigate_search", page, search);
      // Escape URL characters
@@ -245,13 +247,13 @@ Activity* activity_for_page (model::PageID id) {
     else return iter->second;
 }
 
-struct ActivityUpdater : model::Observer {
+struct ActivityRegistry : model::Observer {
     void Observer_after_commit (const model::Update& update) override {
         for (model::PageID page : update.pages) {
             if (page->exists && page->loaded) {
                 Activity*& activity = activities_by_page[page];
                 if (activity) {
-                    activity->update(page);
+                    activity->page_updated();
                 }
                 else {
                     activity = new Activity (page);
@@ -267,4 +269,4 @@ struct ActivityUpdater : model::Observer {
         }
     }
 };
-static ActivityUpdater activity_updater;
+static ActivityRegistry activity_registry;

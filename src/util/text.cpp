@@ -26,6 +26,7 @@ wstring to_utf16 (const char* in) {
 }
 
 char to_hex_digit (uint8 nyb) {
+    AA(nyb < 16);
     switch (nyb) {
     default: return '0' + nyb;
     case 0xa:

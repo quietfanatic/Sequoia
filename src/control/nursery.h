@@ -1,8 +1,11 @@
 #pragma once
 
+#include <windows.h>
+#include <combaseapi.h>
+#include <WebView2.h>
+
 #include <functional>
 #include <string>
-#include <windows.h>
 
 #include "../util/types.h"
 

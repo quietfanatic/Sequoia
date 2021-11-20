@@ -1,8 +1,9 @@
 #include "nursery.h"
 
-#include <wil/com.h>  // For some reason ICoreWebView22.h errors if this isn't included first???
+#include <combaseapi.h> // Needs to be included before WebView2.h
 #include <WebView2.h>
 #include <WebView2ExperimentalEnvironmentOptions.h>
+#include <wil/com.h>
 #include <wrl.h>
 
 #include "../model/page.h"
@@ -57,6 +58,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
 
 void init_nursery () {
     AA(!nursery_hwnd);
+    AH(OleInitialize(nullptr));
 
     wstring window_title = L"Sequoia Nursery for " + to_utf16(profile_name);
 

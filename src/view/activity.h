@@ -2,6 +2,7 @@
 
 #include <string>
 #include <wil/com.h>
+#include <WebView2.h>
 #include <windows.h>
 
 #include "../model/page.h"
@@ -23,15 +24,14 @@ struct Activity {
     std::string current_url;
 
     Activity (model::PageID);
-    void update (model::PageID);
+    void page_updated ();
 
     bool navigate_url (const std::string& url);
     void navigate_search (const std::string& search);
     void navigate (const std::string& address);
 
-    void message_to_page (const json::Value& message);
+    void message_to_webview (const json::Value& message);
 
-    void resize (RECT available);
     bool is_fullscreen ();
     void leave_fullscreen ();
 
