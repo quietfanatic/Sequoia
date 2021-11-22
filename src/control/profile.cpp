@@ -5,13 +5,14 @@
 
 #include <windows.h>
 
-#include "main.h"
 #include "../util/assert.h"
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
+ // TODO: make this not necessary
+#include "../view/main.h"
 
 using namespace std;
 

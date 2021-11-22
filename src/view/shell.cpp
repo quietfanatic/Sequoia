@@ -4,8 +4,6 @@
 #include <wrl.h>
 
 #include "../control/actions.h"
-#include "../control/main.h"
-#include "../control/nursery.h"
 #include "../control/profile.h"
 #include "../model/link.h"
 #include "../model/page.h"
@@ -15,6 +13,8 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "activity.h"
+#include "main.h"
+#include "nursery.h"
 #include "window.h"
 
 using namespace Microsoft::WRL;

@@ -9,13 +9,10 @@
 #include <wrl.h>
 
 #include "../control/actions.h"
-#include "../control/main.h"
 #include "../control/profile.h"
 #include "../model/link.h"
 #include "../model/transaction.h"
 #include "../model/view.h"
-#include "../control/nursery.h"
-#include "../control/profile.h"
 #include "../util/assert.h"
 #include "../util/files.h"
 #include "../util/hash.h"
@@ -23,6 +20,8 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "activity.h"
+#include "main.h"
+#include "nursery.h"
 #include "shell.h"
 
 using namespace Microsoft::WRL;

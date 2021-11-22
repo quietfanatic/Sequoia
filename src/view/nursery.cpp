@@ -6,6 +6,8 @@
 #include <wil/com.h>
 #include <wrl.h>
 
+#include "../control/actions.h"
+#include "../control/profile.h"
 #include "../model/page.h"
 #include "../model/transaction.h"
 #include "../model/view.h"
@@ -14,10 +16,8 @@
 #include "../util/log.h"
 #include "../util/json.h"
 #include "../util/text.h"
-#include "../view/activity.h"
-#include "../view/window.h"
-#include "actions.h"
-#include "profile.h"
+#include "activity.h"
+#include "window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

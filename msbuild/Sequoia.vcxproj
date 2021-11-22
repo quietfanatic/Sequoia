@@ -157,8 +157,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="../src/control/actions.cpp" />
-    <ClCompile Include="../src/control/main.cpp" />
-    <ClCompile Include="../src/control/nursery.cpp" />
     <ClCompile Include="../src/control/profile.cpp" />
     <ClCompile Include="../src/model/database.cpp" />
     <ClCompile Include="../src/model/link.cpp" />
@@ -174,14 +172,14 @@
     <ClCompile Include="../src/util/log.cpp" />
     <ClCompile Include="../src/util/text.cpp" />
     <ClCompile Include="../src/view/activity.cpp" />
+    <ClCompile Include="../src/view/main.cpp" />
+    <ClCompile Include="../src/view/nursery.cpp" />
     <ClCompile Include="../src/view/os_window.cpp" />
     <ClCompile Include="../src/view/shell.cpp" />
     <ClCompile Include="../src/view/window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../src/control/actions.h" />
-    <ClInclude Include="../src/control/main.h" />
-    <ClInclude Include="../src/control/nursery.h" />
     <ClInclude Include="../src/control/profile.h" />
     <ClInclude Include="../src/model/database.h" />
     <ClInclude Include="../src/model/link.h" />
@@ -199,6 +197,8 @@
     <ClInclude Include="../src/util/types.h" />
     <ClInclude Include="../src/util/text.h" />
     <ClInclude Include="../src/view/activity.h" />
+    <ClInclude Include="../src/view/main.h" />
+    <ClInclude Include="../src/view/nursery.h" />
     <ClInclude Include="../src/view/os_window.h" />
     <ClInclude Include="../src/view/shell.h" />
     <ClInclude Include="../src/view/window.h" />

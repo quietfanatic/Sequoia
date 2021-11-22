@@ -5,13 +5,13 @@
 
 #include "../control/actions.h"
 #include "../model/transaction.h"
-#include "../control/nursery.h"
 #include "../util/assert.h"
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
+#include "nursery.h"
 #include "window.h"
 
 using namespace Microsoft::WRL;
