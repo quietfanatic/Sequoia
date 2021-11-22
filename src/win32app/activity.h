@@ -31,6 +31,7 @@ struct Activity {
     void navigate (const std::string& address);
 
     void message_to_webview (const json::Value& message);
+    void message_from_webview (const json::Value& message);
 
     bool is_fullscreen ();
     void leave_fullscreen ();

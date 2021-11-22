@@ -71,9 +71,4 @@ void contract_tab (model::ViewID, model::LinkID);
 
 void change_view_fullscreen (model::ViewID, bool);
 
-///// Messages
-// TODO: move to own file
-
-void message_from_page (model::PageID, const json::Value&);
-
 } // namespace control
