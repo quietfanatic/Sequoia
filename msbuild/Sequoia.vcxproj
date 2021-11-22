@@ -171,12 +171,12 @@
     <ClCompile Include="../src/util/json.cpp" />
     <ClCompile Include="../src/util/log.cpp" />
     <ClCompile Include="../src/util/text.cpp" />
-    <ClCompile Include="../src/view/activity.cpp" />
-    <ClCompile Include="../src/view/main.cpp" />
-    <ClCompile Include="../src/view/nursery.cpp" />
-    <ClCompile Include="../src/view/os_window.cpp" />
-    <ClCompile Include="../src/view/shell.cpp" />
-    <ClCompile Include="../src/view/window.cpp" />
+    <ClCompile Include="../src/win32app/activity.cpp" />
+    <ClCompile Include="../src/win32app/main.cpp" />
+    <ClCompile Include="../src/win32app/nursery.cpp" />
+    <ClCompile Include="../src/win32app/os_window.cpp" />
+    <ClCompile Include="../src/win32app/shell.cpp" />
+    <ClCompile Include="../src/win32app/window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../src/control/actions.h" />
@@ -196,12 +196,12 @@
     <ClInclude Include="../src/util/log.h" />
     <ClInclude Include="../src/util/types.h" />
     <ClInclude Include="../src/util/text.h" />
-    <ClInclude Include="../src/view/activity.h" />
-    <ClInclude Include="../src/view/main.h" />
-    <ClInclude Include="../src/view/nursery.h" />
-    <ClInclude Include="../src/view/os_window.h" />
-    <ClInclude Include="../src/view/shell.h" />
-    <ClInclude Include="../src/view/window.h" />
+    <ClInclude Include="../src/win32app/activity.h" />
+    <ClInclude Include="../src/win32app/main.h" />
+    <ClInclude Include="../src/win32app/nursery.h" />
+    <ClInclude Include="../src/win32app/os_window.h" />
+    <ClInclude Include="../src/win32app/shell.h" />
+    <ClInclude Include="../src/win32app/window.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="../src/res/*">
