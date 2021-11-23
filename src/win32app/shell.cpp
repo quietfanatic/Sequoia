@@ -3,8 +3,7 @@
 #include <windows.h>
 #include <wrl.h>
 
-#include "../control/actions.h"
-#include "../control/profile.h"
+#include "../model/actions.h"
 #include "../model/link.h"
 #include "../model/page.h"
 #include "../util/files.h"
@@ -15,6 +14,7 @@
 #include "activity.h"
 #include "main.h"
 #include "nursery.h"
+#include "profile.h"
 #include "window.h"
 
 using namespace Microsoft::WRL;
@@ -150,7 +150,7 @@ void Shell::message_from_webview (const json::Value& message) {
         break;
     }
     case x31_hash("navigate"): {
-        control::navigate_focused_page(view, message[1]);
+        model::navigate_focused_page(view, message[1]);
         break;
     }
      // Toolbar buttons
@@ -188,26 +188,26 @@ void Shell::message_from_webview (const json::Value& message) {
     }
      // Tab actions
     case x31_hash("focus_tab"): {
-        control::focus_tab(view, model::LinkID{message[1]});
+        model::focus_tab(view, model::LinkID{message[1]});
         break;
     }
     case x31_hash("new_child"): {
-        control::open_as_last_child_in_view(view, model::LinkID{message[1]}, "about:blank");
+        model::open_as_last_child_in_view(view, model::LinkID{message[1]}, "about:blank");
         break;
     }
     case x31_hash("trash_tab"): {
-        control::trash_tab(view, model::LinkID{message[1]});
+        model::trash_tab(view, model::LinkID{message[1]});
         break;
     }
     case x31_hash("delete_tab"): {
-        control::delete_tab(view, model::LinkID{message[1]});
+        model::delete_tab(view, model::LinkID{message[1]});
         break;
     }
     case x31_hash("move_tab_before"): {
         model::LinkID link {message[1]};
         model::LinkID target {message[2]};
         if (link && target) {
-            control::move_link_before(link, target);
+            model::move_link_before(link, target);
         }
         break;
     }
@@ -215,7 +215,7 @@ void Shell::message_from_webview (const json::Value& message) {
         model::LinkID link {message[1]};
         model::LinkID target {message[2]};
         if (link && target) {
-            control::move_link_after(link, target);
+            model::move_link_after(link, target);
         }
         break;
     }
@@ -223,7 +223,7 @@ void Shell::message_from_webview (const json::Value& message) {
         model::LinkID link {message[1]};
         model::PageID parent {message[2]};
         if (link) {
-            control::move_link_first_child(link, parent);
+            model::move_link_first_child(link, parent);
         }
         break;
     }
@@ -231,21 +231,21 @@ void Shell::message_from_webview (const json::Value& message) {
         model::LinkID link {message[1]};
         model::PageID parent {message[2]};
         if (link) {
-            control::move_link_last_child(link, parent);
+            model::move_link_last_child(link, parent);
         }
         break;
     }
     case x31_hash("expand_tab"): {
-        control::expand_tab(view, model::LinkID{message[1]});
+        model::expand_tab(view, model::LinkID{message[1]});
         break;
     }
     case x31_hash("contract_tab"): {
-        control::contract_tab(view, model::LinkID{message[1]});
+        model::contract_tab(view, model::LinkID{message[1]});
         break;
     }
      // Main menu
     case x31_hash("fullscreen"): {
-        control::change_view_fullscreen(view, !view->fullscreen);
+        model::change_view_fullscreen(view, !view->fullscreen);
         break;
     }
     case x31_hash("register_as_browser"): {

@@ -5,7 +5,6 @@
 #include <string>
 #include <sqlite3.h>
 
-#include "../control/profile.h"
 #include "../util/db_support.h"
 #include "../util/files.h"
 #include "../util/log.h"
@@ -17,13 +16,12 @@ namespace model {
 
 using namespace std;
 
-void init_db () {
+void init_db (const std::string& db_path) {
     if (db) return;
-    string db_file = profile_folder + "/state6.sqlite";
-    LOG("init_db", db_file);
-    bool exists = filesystem::exists(db_file) && filesystem::file_size(db_file) > 0;
+    LOG("init_db", db_path);
+    bool exists = filesystem::exists(db_path) && filesystem::file_size(db_path) > 0;
 
-    AS(sqlite3_open(db_file.c_str(), &db));
+    AS(sqlite3_open(db_path.c_str(), &db));
 
     if (exists) {
          // Migrate database to new schema if necessary

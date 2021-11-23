@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <wrl.h>
 
-#include "../control/actions.h"
+#include "../model/actions.h"
 #include "../model/transaction.h"
 #include "../util/assert.h"
 #include "../util/files.h"
@@ -35,7 +35,7 @@ Activity::Activity (model::PageID p) : page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
-            control::start_loading_page(page);
+            model::start_loading_page(page);
             return S_OK;
         }).Get(), nullptr));
 
@@ -50,7 +50,7 @@ Activity::Activity (model::PageID p) : page(p) {
             if (wcscmp(source.get(), L"about:blank") != 0) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                control::change_page_title(page, from_utf16(title.get()));
+                model::change_page_title(page, from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
@@ -70,7 +70,7 @@ Activity::Activity (model::PageID p) : page(p) {
             ) {
                 current_url = from_utf16(source.get());
                 if (page->url != current_url) {
-                    control::change_page_url(page, current_url);
+                    model::change_page_url(page, current_url);
                 }
             }
 
@@ -82,7 +82,7 @@ Activity::Activity (model::PageID p) : page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
-            control::finish_loading_page(page);
+            model::finish_loading_page(page);
             return S_OK;
         }).Get(), nullptr));
 
@@ -95,7 +95,7 @@ Activity::Activity (model::PageID p) : page(p) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            control::open_as_last_child(page, from_utf16(url.get()));
+            model::open_as_last_child(page, from_utf16(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -157,7 +157,7 @@ Activity::Activity (model::PageID p) : page(p) {
         {
             if (page->viewing_view) {
                  // TODO: remove cast
-                control::change_view_fullscreen(
+                model::change_view_fullscreen(
                     model::ViewID{page->viewing_view}, is_fullscreen()
                 );
             }
@@ -166,7 +166,7 @@ Activity::Activity (model::PageID p) : page(p) {
 
         navigate(page->url);
          // TODO: only set this when focusing the page
-        control::change_page_visited(page);
+        model::change_page_visited(page);
     });
 }
 
@@ -182,7 +182,7 @@ void Activity::message_from_webview (const json::Value& message) {
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
-        control::change_page_favicon_url(page, message[1]);
+        model::change_page_favicon_url(page, message[1]);
         break;
     }
     case x31_hash("click_link"): {
@@ -208,10 +208,10 @@ void Activity::message_from_webview (const json::Value& message) {
 //                link.move_after(page);
             }
             else if (shift) {
-                control::open_as_first_child(page, url, title);
+                model::open_as_first_child(page, url, title);
             }
             else {
-                control::open_as_last_child(page, url, title);
+                model::open_as_last_child(page, url, title);
             }
         }
         break;
@@ -274,7 +274,7 @@ void Activity::navigate (const string& address) {
         }
     }
     else {
-        control::change_page_url(page, current_url = address);
+        model::change_page_url(page, current_url = address);
     }
 }
 

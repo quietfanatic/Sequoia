@@ -6,10 +6,9 @@
 #include "../model/page.h"
 #include "../model/transaction.h"
 
-namespace control {
+namespace model {
 
 using namespace std;
-using namespace model;
 
 ///// Page-focused actions
 
@@ -20,17 +19,17 @@ static PageID create_page (const string& url) {
     return data.id;
 }
 
-void change_page_url (PageID page, const std::string& url) {
+void change_page_url (PageID page, const string& url) {
     PageData data = *page;
     data.url = url;
     data.save();
 }
-void change_page_favicon_url (PageID page, const std::string& url) {
+void change_page_favicon_url (PageID page, const string& url) {
     PageData data = *page;
     data.favicon_url = url;
     data.save();
 }
-void change_page_title (PageID page, const std::string& title) {
+void change_page_title (PageID page, const string& title) {
     PageData data = *page;
     data.title = title;
     data.save();
@@ -75,7 +74,7 @@ void open_as_first_child (
     link.save();
 }
 void open_as_last_child (
-    PageID parent, const string& url, const std::string& title
+    PageID parent, const string& url, const string& title
 ) {
     Transaction tr;
     PageID child = create_page(url);
@@ -88,7 +87,7 @@ void open_as_last_child (
     link.save();
 }
 void open_as_next_sibling (
-    PageID opener, LinkID prev, const string& url, const std::string& title
+    PageID opener, LinkID prev, const string& url, const string& title
 ) {
     Transaction tr;
     PageID child = create_page(url);
@@ -101,7 +100,7 @@ void open_as_next_sibling (
     link.save();
 }
 void open_as_prev_sibling (
-    PageID opener, LinkID next, const string& url, const std::string& title
+    PageID opener, LinkID next, const string& url, const string& title
 ) {
     Transaction tr;
     PageID child = create_page(url);
@@ -151,7 +150,7 @@ void move_link_last_child (LinkID link, PageID parent) {
 
 ///// View-focused actions
 
-void new_view_with_new_page (const std::string& url) {
+void new_view_with_new_page (const string& url) {
     Transaction tr;
     ViewData data;
     data.root_page = create_page(url);
@@ -168,7 +167,7 @@ void unclose_view (ViewID view) {
     data.save();
 }
 
-void navigate_focused_page (ViewID view, const std::string& url) {
+void navigate_focused_page (ViewID view, const string& url) {
     if (PageID page = view->focused_page()) {
         change_page_url(page, url);
     }
@@ -182,7 +181,7 @@ void focus_tab (ViewID view, LinkID tab) {
 
 void open_as_last_child_in_view (
     ViewID view, LinkID parent_tab,
-    const std::string& url
+    const string& url
 ) {
     model::PageID parent_page = parent_tab ? parent_tab->to_page : view->root_page;
     model::Transaction tr;
@@ -227,4 +226,4 @@ void change_view_fullscreen (ViewID view, bool fullscreen) {
     data.updated();
 }
 
-} // namespace control
+} // namespace model

@@ -12,7 +12,7 @@
 #include "../util/log.h"
 #include "../util/text.h"
  // TODO: make this not necessary
-#include "../win32app/main.h"
+#include "main.h"
 
 using namespace std;
 

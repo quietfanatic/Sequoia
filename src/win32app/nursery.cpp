@@ -6,8 +6,7 @@
 #include <wil/com.h>
 #include <wrl.h>
 
-#include "../control/actions.h"
-#include "../control/profile.h"
+#include "../model/actions.h"
 #include "../model/page.h"
 #include "../model/transaction.h"
 #include "../model/view.h"
@@ -17,6 +16,7 @@
 #include "../util/json.h"
 #include "../util/text.h"
 #include "activity.h"
+#include "profile.h"
 #include "window.h"
 
 using namespace Microsoft::WRL;
@@ -46,7 +46,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         switch (x31_hash(command)) {
         case x31_hash("new_window"): {
             ReplyMessage(0);
-            control::new_view_with_new_page(message[1]);
+            model::new_view_with_new_page(message[1]);
             return 0;
         }
         default: return 1;

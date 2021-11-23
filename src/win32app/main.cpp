@@ -6,8 +6,7 @@
 #include <windows.h>
 #include <wrl.h>
 
-#include "../control/actions.h"
-#include "../control/profile.h"
+#include "../model/actions.h"
 #include "../model/database.h"
 #include "../model/page.h"
 #include "../model/transaction.h"
@@ -19,6 +18,7 @@
 #include "../util/text.h"
 #include "window.h"
 #include "nursery.h"
+#include "profile.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -75,10 +75,10 @@ void start_browser () {
         }
     }
     else if (model::ViewID view = model::get_last_closed_view()) {
-        control::unclose_view(view);
+        model::unclose_view(view);
     }
     else {
-        control::new_view_with_new_page("about:blank");
+        model::new_view_with_new_page("about:blank");
     }
 }
 
@@ -111,12 +111,12 @@ int WINAPI WinMain (
 
         init_nursery();
         load_settings();
-        model::init_db();
+        model::init_db(profile_folder + "/state6.sqlite");
         start_browser();
 
          // TODO: allow multiple urls to open in same window
         if (positional_args.size() >= 1) {
-            control::new_view_with_new_page(positional_args[0]);
+            model::new_view_with_new_page(positional_args[0]);
         }
 
          // Run message loop

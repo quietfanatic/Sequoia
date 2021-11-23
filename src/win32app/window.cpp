@@ -8,8 +8,7 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "../control/actions.h"
-#include "../control/profile.h"
+#include "../model/actions.h"
 #include "../model/link.h"
 #include "../model/transaction.h"
 #include "../model/view.h"
@@ -75,14 +74,14 @@ void Window::resize () {
 }
 
 void Window::close () {
-    control::close_view(view);
+    model::close_view(view);
 }
 
 std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, bool alt) {
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
-            control::change_view_fullscreen(view, !view->fullscreen);
+            model::change_view_fullscreen(view, !view->fullscreen);
         };
         break;
     case 'L':
@@ -136,7 +135,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     case VK_ESCAPE:
         if (!shift && !ctrl && !alt) {
             if (view->fullscreen) return [this]{
-                control::change_view_fullscreen(view, false);
+                model::change_view_fullscreen(view, false);
             };
         }
         break;
