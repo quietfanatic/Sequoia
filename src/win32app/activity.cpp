@@ -27,7 +27,7 @@ Activity::Activity (model::PageID p) : page(p) {
         wil::com_ptr<ICoreWebView2Settings> settings;
 
         if (Window* window = window_for_page(page)) {
-            window->resize();
+            window->reflow();
         }
 
         AH(webview->add_NavigationStarting(

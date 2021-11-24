@@ -28,7 +28,7 @@ Shell::Shell (model::ViewID v) : view(v) {
         webview_hwnd = hwnd;
 
         if (Window* window = window_for_view(view)) {
-            window->resize();
+            window->reflow();
         }
         webview->Navigate(to_utf16(exe_relative("res/shell.html"sv)).c_str());
 
@@ -145,7 +145,7 @@ void Shell::message_from_webview (const json::Value& message) {
     case x31_hash("resize"): {
          // TODO: set sidebar width or something
         if (Window* window = window_for_view(view)) {
-            window->resize();
+            window->reflow();
         }
         break;
     }

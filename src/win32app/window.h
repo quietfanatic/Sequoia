@@ -1,9 +1,9 @@
 #pragma once
 
 #include <functional>
+#include <windows.h>
 
 #include "../model/view.h"
-#include "os_window.h"
 
 struct Window {
     model::ViewID view;
@@ -11,18 +11,14 @@ struct Window {
      // For comparison during updates
     model::ViewData current_view_data;
 
-     // TODO: merge this in here
-    OSWindow os_window;
-
+    HWND hwnd;
+    WINDOWPLACEMENT placement_before_fullscreen;
      // In DIPs (scaled by dpi).  TODO: store these in model
     double sidebar_width = 240;
     double toolbar_height = 28;
     double main_menu_width = 0;
 
-     // TODO: merge these into wndproc after merging OSWindow in
-    void on_hidden ();
-    void resize ();
-    void close();
+    void reflow ();
 
     std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
 

@@ -26,37 +26,56 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
+static LRESULT CALLBACK WndProcStatic (HWND, UINT, WPARAM, LPARAM);
+
 Window::Window (const model::ViewID& view) :
-    view(view), current_view_data(*view), os_window(this)
+    view(view), current_view_data(*view)
 {
-    resize();
+    static auto class_name = L"Sequoia";
+    static bool init = []{
+        WNDCLASSEXW c {};
+        c.cbSize = sizeof(WNDCLASSEX);
+        c.style = CS_HREDRAW | CS_VREDRAW;
+        c.lpfnWndProc = WndProcStatic;
+        c.hInstance = GetModuleHandle(nullptr);
+        c.hCursor = LoadCursor(NULL, IDC_ARROW);
+        c.lpszClassName = class_name;
+        AW(RegisterClassExW(&c));
+        return true;
+    }();
+    hwnd = CreateWindowW(
+        class_name,
+        L"Sequoia",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        1920, 1200,
+        nullptr,
+        nullptr,
+        GetModuleHandle(nullptr),
+        nullptr
+    );
+    AW(hwnd);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
+    ShowWindow(hwnd, SW_SHOWDEFAULT);
+
+    reflow();
 };
 
-Window::~Window () = default;
-
-void Window::on_hidden () {
-    LOG("Window::on_hidden"sv);
-     // TODO: make sure this is actually our page
-    Activity* activity = activity_for_page(view->focused_page());
-    if (activity && activity->controller) {
-        activity->controller->put_IsVisible(FALSE);
-    }
-    Shell* shell = shell_for_view(view);
-    if (shell && shell->controller) {
-        shell->controller->put_IsVisible(FALSE);
-    }
+Window::~Window () {
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);
+    DestroyWindow(hwnd);
 }
 
-void Window::resize () {
+void Window::reflow () {
     RECT bounds;
-    GetClientRect(os_window.hwnd, &bounds);
+    GetClientRect(hwnd, &bounds);
     Shell* shell = shell_for_view(view);
     if (shell && shell->controller) {
-        AH(shell->controller->put_ParentWindow(os_window.hwnd));
+        AH(shell->controller->put_ParentWindow(hwnd));
         AH(shell->controller->put_Bounds(bounds));
         AH(shell->controller->put_IsVisible(!view->fullscreen));
     }
-    auto dpi = GetDpiForWindow(os_window.hwnd);
+    auto dpi = GetDpiForWindow(hwnd);
     AW(dpi);
     double scale = dpi / 96.0;
     if (!view->fullscreen) {
@@ -67,14 +86,60 @@ void Window::resize () {
      // TODO: make sure this is actually our page
     Activity* activity = activity_for_page(view->focused_page());
     if (activity && activity->controller) {
-        AH(activity->controller->put_ParentWindow(os_window.hwnd));
+        AH(activity->controller->put_ParentWindow(hwnd));
         AH(activity->controller->put_Bounds(bounds));
         AH(activity->controller->put_IsVisible(TRUE));
     }
 }
 
-void Window::close () {
-    model::close_view(view);
+static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
+    auto window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    if (!window) return DefWindowProc(hwnd, message, w, l);
+    switch (message) {
+        case WM_SIZE:
+            switch (w) {
+                case SIZE_MINIMIZED: {
+                    LOG("Window minimized"sv);
+                     // TODO: make sure this is actually our page
+                    Activity* activity = activity_for_page(window->view->focused_page());
+                    if (activity && activity->controller) {
+                        activity->controller->put_IsVisible(FALSE);
+                    }
+                    Shell* shell = shell_for_view(window->view);
+                    if (shell && shell->controller) {
+                        shell->controller->put_IsVisible(FALSE);
+                    }
+                }
+                default:
+                    window->reflow();
+                    break;
+            }
+            return 0;
+        case WM_DPICHANGED:
+            window->reflow();
+            return 0;
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN: {
+             // Since our application is only webviews, I'm not sure we ever get here
+            auto handler = window->get_key_handler(
+                uint(w),
+                GetKeyState(VK_SHIFT) < 0,
+                GetKeyState(VK_CONTROL) < 0,
+                GetKeyState(VK_MENU) < 0
+            );
+            if (handler) {
+                bool repeated = l & (1 << 30);
+                if (!repeated) handler();
+                return 0;
+            }
+            break;
+        }
+        case WM_CLOSE:
+             // TODO: respond to session manager messages
+            model::close_view(window->view);
+            return 0;
+    }
+    return DefWindowProc(hwnd, message, w, l);
 }
 
 std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, bool alt) {
@@ -160,12 +225,28 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
 void Window::view_updated () {
     if (view->fullscreen != current_view_data.fullscreen) {
         if (view->fullscreen) {
-            os_window.enter_fullscreen();
-            resize();
+            MONITORINFO monitor = {sizeof(MONITORINFO)};
+            AW(GetWindowPlacement(hwnd, &placement_before_fullscreen));
+            AW(GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor));
+            DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+            SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(hwnd, HWND_TOP,
+                monitor.rcMonitor.left, monitor.rcMonitor.top,
+                monitor.rcMonitor.right - monitor.rcMonitor.left,
+                monitor.rcMonitor.bottom - monitor.rcMonitor.top,
+                SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+            );
+            reflow();
         }
         else {
-            os_window.leave_fullscreen();
-            resize();
+            DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+            SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
+            SetWindowPlacement(hwnd, &placement_before_fullscreen);
+            SetWindowPos(
+                hwnd, nullptr, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+            );
+            reflow();
              // TODO: make sure this is actually our activity
             Activity* activity = activity_for_page(view->focused_page());
             if (activity) activity->leave_fullscreen();
@@ -179,7 +260,8 @@ void Window::view_updated () {
 
 void Window::page_updated () {
     const string& title = view->focused_page()->title;
-    os_window.set_title(title.empty() ? "Sequoia"sv : (title + " – Sequoia"sv));
+    String display = title.empty() ? "Sequoia"s : (title + " – Sequoia"sv);
+    AW(SetWindowTextW(hwnd, to_utf16(display).c_str()));
 }
 
 ///// Window registry
@@ -202,10 +284,7 @@ struct WindowRegistry : model::Observer {
                     window->view_updated();
                 }
                 else {
-                     // Window is owned by the win32 system so don't delete
-                     // it yet.
-                    LOG("Destroying window"sv, view);
-                    AW(DestroyWindow(window->os_window.hwnd));
+                    delete window;
                     erase_windows.emplace_back(view);
                 }
             }
