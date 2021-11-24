@@ -12,7 +12,7 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "activity.h"
-#include "main.h"
+#include "app.h"
 #include "nursery.h"
 #include "profile.h"
 #include "window.h"
@@ -20,17 +20,12 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-Shell::Shell (model::ViewID v) : view(v) {
+Shell::Shell (App* a, model::ViewID v) : app(a), view(v) {
      // TODO: Fix possible use-after-free of this
     new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
-
-        if (Window* window = window_for_view(view)) {
-            window->reflow();
-        }
-        webview->Navigate(to_utf16(exe_relative("res/shell.html"sv)).c_str());
 
         webview->add_WebMessageReceived(
             Callback<ICoreWebView2WebMessageReceivedEventHandler>(
@@ -54,7 +49,7 @@ Shell::Shell (model::ViewID v) : view(v) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            Window* window = window_for_view(view);
+            Window* window = app->window_for_view(view);
             if (!window) return S_OK;
             COREWEBVIEW2_KEY_EVENT_KIND kind;
             AH(args->get_KeyEventKind(&kind));
@@ -78,6 +73,12 @@ Shell::Shell (model::ViewID v) : view(v) {
             }
             return S_OK;
         }).Get(), nullptr));
+
+        webview->Navigate(to_utf16(exe_relative("res/shell.html"sv)).c_str());
+
+        if (Window* window = app->window_for_view(view)) {
+            window->reflow();
+        }
     });
 };
 
@@ -129,7 +130,7 @@ void Shell::message_from_webview (const json::Value& message) {
         message_to_webview(json::array(
             "settings"sv,
             json::object(
-                std::pair{"theme"sv, global_settings.theme}
+                std::pair{"theme"sv, app->settings.theme}
             )
         ));
         tabs = create_tab_tree(*view);
@@ -144,7 +145,7 @@ void Shell::message_from_webview (const json::Value& message) {
     }
     case x31_hash("resize"): {
          // TODO: set sidebar width or something
-        if (Window* window = window_for_view(view)) {
+        if (Window* window = app->window_for_view(view)) {
             window->reflow();
         }
         break;
@@ -155,28 +156,28 @@ void Shell::message_from_webview (const json::Value& message) {
     }
      // Toolbar buttons
     case x31_hash("back"): {
-        Activity* activity = activity_for_page(view->focused_page());
+        Activity* activity = app->activity_for_page(view->focused_page());
         if (activity && activity->webview) {
             activity->webview->GoBack();
         }
         break;
     }
     case x31_hash("forward"): {
-        Activity* activity = activity_for_page(view->focused_page());
+        Activity* activity = app->activity_for_page(view->focused_page());
         if (activity && activity->webview) {
             activity->webview->GoForward();
         }
         break;
     }
     case x31_hash("reload"): {
-        Activity* activity = activity_for_page(view->focused_page());
+        Activity* activity = app->activity_for_page(view->focused_page());
         if (activity && activity->webview) {
             activity->webview->Reload();
         }
         break;
     }
     case x31_hash("stop"): {
-        Activity* activity = activity_for_page(view->focused_page());
+        Activity* activity = app->activity_for_page(view->focused_page());
         if (activity && activity->webview) {
             activity->webview->Stop();
         }
@@ -249,17 +250,17 @@ void Shell::message_from_webview (const json::Value& message) {
         break;
     }
     case x31_hash("register_as_browser"): {
-        global_profile.register_as_browser();
+        app->profile.register_as_browser();
         break;
     }
     case x31_hash("open_selected_links"): {
-        if (Activity* activity = activity_for_page(view->focused_page())) {
+        if (Activity* activity = app->activity_for_page(view->focused_page())) {
             activity->message_to_webview(json::array("open_selected_links"sv));
         }
         break;
     }
     case x31_hash("quit"): {
-        quit();
+        app->quit();
         break;
     }
     default: {
@@ -298,35 +299,3 @@ void Shell::message_to_webview (const json::Value& message) {
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
-
-///// Shell registry
-
-static unordered_map<model::ViewID, Shell*> shells_by_view;
-
-struct ShellRegistry : model::Observer {
-    void Observer_after_commit (
-        const model::Update& update
-    ) override {
-        for (model::ViewID view : update.views) {
-            if (view->exists && !view->closed_at) {
-                Shell*& shell = shells_by_view[view];
-                if (shell) shell->update(update);
-                else shell = new Shell (view);
-            }
-            else {
-                auto iter = shells_by_view.find(view);
-                if (iter != shells_by_view.end()) {
-                    delete iter->second;
-                    shells_by_view.erase(iter);
-                }
-            }
-        }
-    }
-};
-static ShellRegistry shell_registry;
-
-Shell* shell_for_view (model::ViewID view) {
-    auto iter = shells_by_view.find(view);
-    if (iter != shells_by_view.end()) return iter->second;
-    else return nullptr;
-}

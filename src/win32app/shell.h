@@ -9,8 +9,10 @@
 
 namespace model { struct Update; }
 namespace json { struct Value; }
+struct App;
 
 struct Shell {
+    App* app;
     model::ViewID view;
     model::TabTree tabs;
 
@@ -19,7 +21,7 @@ struct Shell {
     HWND webview_hwnd = nullptr;
     bool ready = false;
 
-    Shell (model::ViewID);
+    Shell (App*, model::ViewID);
 
     void select_location ();
 

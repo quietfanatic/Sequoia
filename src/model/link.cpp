@@ -91,7 +91,7 @@ DELETE FROM _view_links WHERE _link = ?1
     updated();
 }
 
-void LinkData::updated () {
+void LinkData::updated () const {
     AA(id);
     current_update.links.insert(*this);
 }

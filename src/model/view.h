@@ -36,7 +36,7 @@ struct ViewData {
 
     static const ViewData* load (ViewID);
     void save ();
-    void updated ();
+    void updated () const;
 };
 
 std::vector<ViewID> get_open_views ();

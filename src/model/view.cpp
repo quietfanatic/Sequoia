@@ -83,7 +83,7 @@ DELETE FROM _views WHERE _id = ?
     updated();
 }
 
-void ViewData::updated () {
+void ViewData::updated () const {
     AA(id);
     current_update.views.insert(*this);
 }

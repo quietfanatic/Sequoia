@@ -19,7 +19,7 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "activity.h"
-#include "main.h"
+#include "app.h"
 #include "nursery.h"
 #include "shell.h"
 
@@ -28,8 +28,8 @@ using namespace std;
 
 static LRESULT CALLBACK WndProcStatic (HWND, UINT, WPARAM, LPARAM);
 
-Window::Window (const model::ViewID& view) :
-    view(view), current_view_data(*view)
+Window::Window (App* a, const model::ViewID& v) :
+    app(a), view(v), current_view_data(*v)
 {
     static auto class_name = L"Sequoia";
     static bool init = []{
@@ -57,8 +57,6 @@ Window::Window (const model::ViewID& view) :
     AW(hwnd);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
     ShowWindow(hwnd, SW_SHOWDEFAULT);
-
-    reflow();
 };
 
 Window::~Window () {
@@ -69,7 +67,7 @@ Window::~Window () {
 void Window::reflow () {
     RECT bounds;
     GetClientRect(hwnd, &bounds);
-    Shell* shell = shell_for_view(view);
+    Shell* shell = app->shell_for_view(view);
     if (shell && shell->controller) {
         AH(shell->controller->put_ParentWindow(hwnd));
         AH(shell->controller->put_Bounds(bounds));
@@ -84,7 +82,7 @@ void Window::reflow () {
         bounds.right -= uint(side_width * scale);
     }
      // TODO: make sure this is actually our page
-    Activity* activity = activity_for_page(view->focused_page());
+    Activity* activity = app->activity_for_page(view->focused_page());
     if (activity && activity->controller) {
         AH(activity->controller->put_ParentWindow(hwnd));
         AH(activity->controller->put_Bounds(bounds));
@@ -101,11 +99,13 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
                      // TODO: make sure this is actually our page
-                    Activity* activity = activity_for_page(window->view->focused_page());
+                    Activity* activity = window->app->activity_for_page(
+                        window->view->focused_page()
+                    );
                     if (activity && activity->controller) {
                         activity->controller->put_IsVisible(FALSE);
                     }
-                    Shell* shell = shell_for_view(window->view);
+                    Shell* shell = window->app->shell_for_view(window->view);
                     if (shell && shell->controller) {
                         shell->controller->put_IsVisible(FALSE);
                     }
@@ -152,7 +152,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     case 'L':
         if (!shift && ctrl && !alt) return [this]{
              // Skip model for this
-            if (Shell* shell = shell_for_view(view)) {
+            if (Shell* shell = app->shell_for_view(view)) {
                 shell->select_location();
             }
         };
@@ -248,7 +248,7 @@ void Window::view_updated () {
             );
             reflow();
              // TODO: make sure this is actually our activity
-            Activity* activity = activity_for_page(view->focused_page());
+            Activity* activity = app->activity_for_page(view->focused_page());
             if (activity) activity->leave_fullscreen();
         }
     }
@@ -264,53 +264,3 @@ void Window::page_updated () {
     AW(SetWindowTextW(hwnd, to_utf16(display).c_str()));
 }
 
-///// Window registry
-
-static unordered_map<model::ViewID, Window*> windows_by_view;
-
-struct WindowRegistry : model::Observer {
-    void Observer_after_commit (
-        const model::Update& update
-    ) override {
-         // Iterate over windows instead over update.views, since a window can
-         //  also care if its page changes (for the title)
-         // Window's constructor and update should not ever reference any other
-         //  windows, so we don't need to be paranoid about ordering.
-         // But don't mess with windows_by_view until we're done iterating it
-        std::vector<model::ViewID> erase_windows;
-        for (auto [view, window] : windows_by_view) {
-            if (update.views.count(view)) {
-                if (view->exists && !view->closed_at) {
-                    window->view_updated();
-                }
-                else {
-                    delete window;
-                    erase_windows.emplace_back(view);
-                }
-            }
-            else if (update.pages.count(view->focused_page())) {
-                window->page_updated();
-            }
-        }
-        for (auto view : erase_windows) {
-            windows_by_view.erase(view);
-        }
-    }
-};
-static WindowRegistry window_registry;
-
-Window* window_for_view (model::ViewID view) {
-    auto iter = windows_by_view.find(view);
-    if (iter != windows_by_view.end()) return iter->second;
-    else return nullptr;
-}
-
-Window* window_for_page (model::PageID page) {
-    if (page->viewing_view) {
-         // TODO: remove cast
-        Window* window = window_for_view(model::ViewID{page->viewing_view});
-        AA(window);
-        return window;
-    }
-    else return nullptr;
-}

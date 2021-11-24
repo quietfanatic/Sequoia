@@ -7,10 +7,11 @@
 #include "../model/page.h"
 #include "../util/types.h"
 
-struct Window;
 namespace json { struct Value; }
+struct App;
 
 struct Activity {
+    App* app;
     model::PageID page;
 
     wil::com_ptr<ICoreWebView2Controller> controller;
@@ -22,7 +23,7 @@ struct Activity {
      //  through navigation
     String current_url;
 
-    Activity (model::PageID);
+    Activity (App*, model::PageID);
     void page_updated ();
 
     bool navigate_url (Str url);

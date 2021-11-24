@@ -11,23 +11,20 @@
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
+#include "app.h"
 #include "nursery.h"
 #include "window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
 
-Activity::Activity (model::PageID p) : page(p) {
+Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
     LOG("new Activity"sv, this, page);
 
     new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
-
-        if (Window* window = window_for_page(page)) {
-            window->reflow();
-        }
 
         AH(webview->add_NavigationStarting(
             Callback<ICoreWebView2NavigationStartingEventHandler>([this](
@@ -123,7 +120,7 @@ Activity::Activity (model::PageID p) : page(p) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            Window* window = window_for_page(page);
+            Window* window = app->window_for_page(page);
             if (!window) return S_OK;
             COREWEBVIEW2_KEY_EVENT_KIND kind;
             AH(args->get_KeyEventKind(&kind));
@@ -161,9 +158,9 @@ Activity::Activity (model::PageID p) : page(p) {
             return S_OK;
         }).Get(), nullptr));
 
-        navigate(page->url);
-         // TODO: only set this when focusing the page
-        model::change_page_visited(page);
+        if (Window* window = app->window_for_page(page)) {
+            window->reflow();
+        }
     });
 }
 
@@ -290,37 +287,3 @@ Activity::~Activity () {
     LOG("delete Activity"sv, this);
     if (controller) controller->Close();
 }
-
-///// Activity registry
-
-static unordered_map<model::PageID, Activity*> activities_by_page;
-
-Activity* activity_for_page (model::PageID id) {
-    auto iter = activities_by_page.find(id);
-    if (iter == activities_by_page.end()) return nullptr;
-    else return iter->second;
-}
-
-struct ActivityRegistry : model::Observer {
-    void Observer_after_commit (const model::Update& update) override {
-        for (model::PageID page : update.pages) {
-            if (page->exists && page->loaded) {
-                Activity*& activity = activities_by_page[page];
-                if (activity) {
-                    activity->page_updated();
-                }
-                else {
-                    activity = new Activity (page);
-                }
-            }
-            else {
-                auto iter = activities_by_page.find(page);
-                if (iter != activities_by_page.end()) {
-                    delete iter->second;
-                    activities_by_page.erase(iter);
-                }
-            }
-        }
-    }
-};
-static ActivityRegistry activity_registry;

@@ -5,7 +5,10 @@
 
 #include "../model/view.h"
 
+struct App;
+
 struct Window {
+    App* app;
     model::ViewID view;
 
      // For comparison during updates
@@ -25,7 +28,7 @@ struct Window {
     void view_updated ();
     void page_updated ();
 
-    Window (const model::ViewID&);
+    Window (App*, const model::ViewID&);
     ~Window();
 };
 

@@ -30,7 +30,7 @@ struct LinkData {
 
     static const LinkData* load (LinkID);
     void save ();
-    void updated ();
+    void updated () const;
 
      // These modify *this but do not save it
     void move_before (LinkID next_link);
