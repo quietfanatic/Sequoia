@@ -1,12 +1,13 @@
 #pragma once
+
 #include "types.h"
 
 #define ASSERT [](bool res){ assert(res); }
 
-void show_assert_error (const char* file, int line);
-void show_hr_error (const char* file, int line, uint32 hr);
-void show_string_error (const char* file, int line, const char* mess);
-void show_windows_error (const char* file, int line);
+void show_assert_error (Str file, int line);
+void show_hr_error (Str file, int line, uint32 hr);
+void show_string_error (Str file, int line, Str mess);
+void show_windows_error (Str file, int line);
 
 #define AA [](bool res){ if (!res){ show_assert_error(__FILE__, __LINE__); } }
 #define AH [](uint32 hr){ if (hr != 0) { show_hr_error(__FILE__, __LINE__, hr); } }

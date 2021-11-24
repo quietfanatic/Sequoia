@@ -16,42 +16,43 @@
 
 using namespace std;
 
-std::string profile_name = "default";
+String profile_name = "default"s;
 bool profile_folder_specified = false;
-std::string profile_folder;
+String profile_folder;
 
 namespace settings {
 
-std::string theme = "dark";
+String theme = "dark"s;
 
 }
 
 void load_profile () {
     for (auto& arg : named_args) {
-        if (arg.first == "profile") {
+        if (arg.first == "profile"sv) {
             profile_name = arg.second;
         }
-        else if (arg.first == "profile-folder") {
+        else if (arg.first == "profile-folder"sv) {
             profile_folder = arg.second;
         }
     }
     if (profile_folder.empty()) {
-        profile_folder = exe_relative("profiles/" + profile_name);
+        profile_folder = exe_relative("profiles/"sv + profile_name);
     }
     else if (profile_name.empty()) {
-        show_string_error(__FILE__, __LINE__, "Cannot provide profile-folder argument without also providing profile argument.");
+        show_string_error(__FILE__, __LINE__, "Cannot provide profile-folder argument without also providing profile argument."sv);
     }
     else {
         profile_folder_specified = true;
     }
-    profile_folder = from_utf16(filesystem::absolute(profile_folder));
+    String16 profile_folder_16 = filesystem::absolute(profile_folder);
+    profile_folder = from_utf16(profile_folder_16);
     filesystem::create_directories(profile_folder);
 }
 
 void load_settings () {
-    init_log(profile_folder + "/debug.log");
-    LOG("Using profile folder:", profile_folder);
-    string settings_file = profile_folder + "/settings.json";
+    init_log(profile_folder + "/debug.log"sv);
+    LOG("Using profile folder:"sv, profile_folder);
+    String settings_file = profile_folder + "/settings.json"sv;
     if (!filesystem::exists(settings_file)) return;
     json::Object settings = json::parse(slurp(settings_file));
     AA(!settings.empty());
@@ -62,7 +63,7 @@ void load_settings () {
             break;
         }
         default:
-            show_string_error(__FILE__, __LINE__, ("Unrecognized setting name: " + pair.first).c_str());
+            show_string_error(__FILE__, __LINE__, "Unrecognized setting name: "sv + pair.first);
         }
     }
 }
@@ -73,14 +74,14 @@ void save_settings () {
 void register_as_browser () {
      // Might want to add like a commit hash or something?
 #ifdef NDEBUG
-    wstring app_name = L"Sequoia";
+    String16 app_name = L"Sequoia"s;
 #else
-    wstring app_name = L"Sequoia-Debug";
+    String16 app_name = L"Sequoia-Debug"s;
 #endif
-    wstring app_class = app_name + L"-App";
-    wstring smi_k = L"Software\\Clients\\StartMenuInternet\\" + app_name;
-    wstring caps_k = smi_k + L"\\Capabilities";
-    wstring class_k = L"Software\\Classes\\" + app_class;
+    String16 app_class = app_name + L"-App"sv;
+    String16 smi_k = L"Software\\Clients\\StartMenuInternet\\"sv + app_name;
+    String16 caps_k = smi_k + L"\\Capabilities"sv;
+    String16 class_k = L"Software\\Classes\\"sv + app_class;
 
     auto set_reg_sz = [](const wstring& subkey, const wchar_t* name, const wstring& value) {
         AWE(RegSetKeyValueW(
@@ -95,22 +96,22 @@ void register_as_browser () {
         L"A browser-like application for tab hoarders."
     );
     for (auto& ext : {L".htm", L".html", L".shtml", L".svg", L".xht", L".xhtml"}) {
-        set_reg_sz(caps_k + L"\\FileAssociations", ext, app_name + L"-App");
+        set_reg_sz(caps_k + L"\\FileAssociations"sv, ext, app_name + L"-App"sv);
     }
-    set_reg_sz(caps_k + L"\\StartMenu", L"StartMenuInternet", app_name);
+    set_reg_sz(caps_k + L"\\StartMenu"sv, L"StartMenuInternet", app_name);
     for (auto& scheme : {L"ftp", L"http", L"https"}) {
-        set_reg_sz(caps_k + L"\\URLAssociations", scheme, app_name + L"-App");
+        set_reg_sz(caps_k + L"\\URLAssociations"sv, scheme, app_name + L"-App"sv);
     }
 
     wstring command_line = L'"' + exe_path16 + L'"';
-    if (profile_name != "default") {
-        command_line += L" --profile \"" + to_utf16(profile_name) + L"\"";
+    if (profile_name != "default"sv) {
+        command_line += L" --profile \""sv + to_utf16(profile_name) + L"\""sv;
     }
     if (profile_folder_specified) {
-        command_line += L" --profile_folder \"" + to_utf16(profile_folder) + L"\"";
+        command_line += L" --profile_folder \""sv + to_utf16(profile_folder) + L"\""sv;
     }
 
-    set_reg_sz(smi_k + L"\\shell\\open\\command", nullptr, command_line);
-    set_reg_sz(class_k + L"\\shell\\open\\command", nullptr, command_line + L" -- \"%1\"");
-    set_reg_sz(L"Software\\RegisteredApplications", (app_class).c_str(), caps_k);
+    set_reg_sz(smi_k + L"\\shell\\open\\command"sv, nullptr, command_line);
+    set_reg_sz(class_k + L"\\shell\\open\\command"sv, nullptr, command_line + L" -- \"%1\""sv);
+    set_reg_sz(L"Software\\RegisteredApplications"s, app_class.c_str(), caps_k);
 }

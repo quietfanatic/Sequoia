@@ -11,10 +11,10 @@ using namespace std::chrono;
 
 std::ostream* logstream;
 
-void init_log (const std::string& filename) {
+void init_log (Str filename) {
     AA(!logstream);
     AA(!filename.empty());
-    logstream = new ofstream (filename);
+    logstream = new ofstream (String(filename));
 }
 
 uint64 logging_timestamp () {

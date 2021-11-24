@@ -48,7 +48,7 @@ Bifractor::Bifractor (const Bifractor& a, const Bifractor& b, uint bias) {
         }
         }
     }
-    throw std::logic_error("Tried to bisect two Bifractors that were equal.");
+    throw Error("Tried to bisect two Bifractors that were equal."sv);
 }
 
 Bifractor::Bifractor (const void* bytes_ptr, size_t bytes_size) : size(bytes_size) {

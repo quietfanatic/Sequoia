@@ -22,7 +22,7 @@ struct LinkData {
     PageID from_page;
     PageID to_page;
     Bifractor position;
-    std::string title;
+    String title;
     double created_at = 0;
     double trashed_at = 0;
      // Bookkeeping

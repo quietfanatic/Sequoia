@@ -30,7 +30,7 @@ Shell::Shell (model::ViewID v) : view(v) {
         if (Window* window = window_for_view(view)) {
             window->resize();
         }
-        webview->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
+        webview->Navigate(to_utf16(exe_relative("res/shell.html"sv)).c_str());
 
         webview->add_WebMessageReceived(
             Callback<ICoreWebView2WebMessageReceivedEventHandler>(
@@ -42,7 +42,7 @@ Shell::Shell (model::ViewID v) : view(v) {
             wil::unique_cotaskmem_string raw16;
             args->get_WebMessageAsJson(&raw16);
             string raw = from_utf16(raw16.get());
-            LOG("Shell::message_from_webview", raw);
+            LOG("Shell::message_from_webview"sv, raw);
             message_from_webview(json::parse(raw));
             return S_OK;
         }).Get(), nullptr);
@@ -89,7 +89,7 @@ Shell::~Shell () {
 
 void Shell::select_location () {
     if (!ready) return;
-    message_to_webview(json::array("select_location"));
+    message_to_webview(json::array("select_location"sv));
     AH(controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
 }
 
@@ -112,7 +112,7 @@ static json::Array make_tab_json (
     return json::array(
         link,
         link ? json::Value(tab.parent) : json::Value(nullptr),
-        link ? link->position.hex() : "80",
+        link ? link->position.hex() : "80"sv,
         tab.page->url,
         tab.page->favicon_url,
         title,
@@ -127,10 +127,10 @@ void Shell::message_from_webview (const json::Value& message) {
     switch (x31_hash(command.c_str())) {
     case x31_hash("ready"): {
         message_to_webview(json::array(
-            "settings",
-            json::Object{
-                std::pair{"theme", settings::theme}
-            }
+            "settings"sv,
+            json::object(
+                std::pair{"theme"sv, settings::theme}
+            )
         ));
         tabs = create_tab_tree(*view);
         json::Array tab_updates;
@@ -138,7 +138,7 @@ void Shell::message_from_webview (const json::Value& message) {
         for (auto& [id, tab] : tabs) {
             tab_updates.emplace_back(make_tab_json(*view, id, tab));
         }
-        message_to_webview(json::array("view", tab_updates));
+        message_to_webview(json::array("view"sv, tab_updates));
         ready = true;
         break;
     }
@@ -192,7 +192,7 @@ void Shell::message_from_webview (const json::Value& message) {
         break;
     }
     case x31_hash("new_child"): {
-        model::open_as_last_child_in_view(view, model::LinkID{message[1]}, "about:blank");
+        model::open_as_last_child_in_view(view, model::LinkID{message[1]}, "about:blank"sv);
         break;
     }
     case x31_hash("trash_tab"): {
@@ -254,7 +254,7 @@ void Shell::message_from_webview (const json::Value& message) {
     }
     case x31_hash("open_selected_links"): {
         if (Activity* activity = activity_for_page(view->focused_page())) {
-            activity->message_to_webview(json::array("open_selected_links"));
+            activity->message_to_webview(json::array("open_selected_links"sv));
         }
         break;
     }
@@ -263,12 +263,12 @@ void Shell::message_from_webview (const json::Value& message) {
         break;
     }
     default: {
-        throw Error("Unknown message from shell: " + command);
+        throw Error("Unknown message from shell: "sv + command);
     }
     }
 
     } catch (exception& e) {
-        show_string_error(__FILE__, __LINE__, (string("Uncaught exception: ") + e.what()).c_str());
+        show_string_error(__FILE__, __LINE__, "Uncaught exception: "sv + e.what());
         throw;
     }
 }
@@ -286,7 +286,7 @@ void Shell::update (const model::Update& update) {
             tab_updates.emplace_back(make_tab_json(*view, id, tab));
         }
         if (tab_updates.size()) {
-            message_to_webview(json::array("update", tab_updates));
+            message_to_webview(json::array("update"sv, tab_updates));
         }
     }
 }
@@ -294,7 +294,7 @@ void Shell::update (const model::Update& update) {
 void Shell::message_to_webview (const json::Value& message) {
     if (!webview) return;
     auto s = json::stringify(message);
-    LOG("message_to_webview", s);
+    LOG("message_to_webview"sv, s);
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 

@@ -2,6 +2,8 @@
 
 #include <windows.h>
 
+#include "../util/types.h"
+
 struct Window;
 
 struct OSWindow {
@@ -11,7 +13,7 @@ struct OSWindow {
 
     OSWindow(Window* window);
 
-    void set_title (const char*);
+    void set_title (Str);
     void enter_fullscreen ();
     void leave_fullscreen ();
     void close ();  // Will delete this

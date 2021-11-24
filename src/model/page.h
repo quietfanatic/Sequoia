@@ -13,10 +13,10 @@ using PageID = IDHandle<PageData>;
 struct PageData {
      // Immutable
     PageID id;
-    std::string url;
+    String url;
      // Mutable but intrinsic
-    std::string favicon_url;
-    std::string title;
+    String favicon_url;
+    String title;
     double visited_at = 0;
      // Extrinsic
     int64 group = 0; // NYI
@@ -34,6 +34,6 @@ struct PageData {
     void updated () const;  // Send to Observers without saving
 };
 
-std::vector<PageID> get_pages_with_url (const std::string& url);
+std::vector<PageID> get_pages_with_url (Str url);
 
 } // namespace model

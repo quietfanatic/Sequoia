@@ -64,9 +64,9 @@ struct Statement {
     int result_code = 0;
 
     Statement (sqlite3_stmt* handle) : handle(handle) { }
-    Statement (const char* sql, bool transient = false) {
+    Statement (Str sql, bool transient = false) {
         auto flags = transient ? 0 : SQLITE_PREPARE_PERSISTENT;
-        AS(sqlite3_prepare_v3(db, sql, -1, flags, &handle, nullptr));
+        AS(sqlite3_prepare_v3(db, sql.data(), int(sql.size()), flags, &handle, nullptr));
     }
 
     void bind_param (int index, char v) { AS(sqlite3_bind_int(handle, index, v)); }
@@ -85,9 +85,9 @@ struct Statement {
     void bind_param (int index, const char* v) {
         AS(sqlite3_bind_text(handle, index, v, -1, SQLITE_TRANSIENT));
     }
-    void bind_param (int index, const std::string& v) {
+    void bind_param (int index, Str v) {
          // STATIC might be better for most use cases
-        AS(sqlite3_bind_text(handle, index, v.c_str(), int(v.size()), SQLITE_TRANSIENT));
+        AS(sqlite3_bind_text(handle, index, v.data(), int(v.size()), SQLITE_TRANSIENT));
     }
     void bind_param (int index, const Bifractor& v) {
         AS(sqlite3_bind_blob(handle, index, v.bytes(), int(v.size), SQLITE_TRANSIENT));
@@ -117,7 +117,7 @@ struct Statement {
     template <class T>
     T read_column (int index) {
         if constexpr (std::is_enum_v<T>) {
-             // Who though having {} warn about narrowing conversions was a good idea
+             // Who thought having {} warn about narrowing conversions was a good idea
             return T{std::underlying_type_t<T>(sqlite3_column_int64(handle, index))};
         }
         else if constexpr (std::is_floating_point_v<T>) {
@@ -137,7 +137,7 @@ struct Statement {
         }
     }
     template <>
-    std::string read_column<std::string> (int index) {
+    String read_column<String> (int index) {
         auto p = reinterpret_cast<const char*>(sqlite3_column_text(handle, index));
         return p ? p : "";
     }
@@ -182,7 +182,7 @@ struct Ment : Statement {
     static constexpr std::index_sequence_for<Cols...> cols_indexes = {};
     static constexpr std::index_sequence_for<Params...> params_indexes = {};
 
-    using Statement::Statement; // inherit constructor
+    using Statement::Statement;
 
     template <size_t... indexes>
     void bind_with_indexes (const Params&... params, std::index_sequence<indexes...>) {

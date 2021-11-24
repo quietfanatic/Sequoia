@@ -11,7 +11,6 @@
 #pragma once
 
 #include <new>
-#include <string>
 #include <ostream>
 
 #include "types.h"
@@ -32,7 +31,7 @@ struct Bifractor {
         else return ptr;
     }
 
-    std::string hex () const;
+    String hex () const;
 
      // Manufacturing
     Bifractor (bool one = false) : size(1) {

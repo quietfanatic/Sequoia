@@ -23,17 +23,17 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-std::vector<std::string> positional_args;
-std::vector<std::pair<std::string, std::string>> named_args;
+vector<String> positional_args;
+vector<pair<String, String>> named_args;
 
 void parse_args (int argc, char** argv) {
     bool no_more_named = false;
     for (int i = 1; i < argc; i++) {
-        string arg = argv[i];
+        Str arg = argv[i];
         if (no_more_named) {
             positional_args.emplace_back(arg);
         }
-        else if (arg == "--") {
+        else if (arg == "--"sv) {
             no_more_named = true;
         }
         else if (arg.size() >= 1 && arg[0] == '-') {
@@ -44,11 +44,11 @@ void parse_args (int argc, char** argv) {
                     break;
                 }
             }
-            string name = arg.substr(start, sep - start);
+            Str name = arg.substr(start, sep - start);
             if (sep == arg.size()) {
                 i += 1;
                 if (i == argc) {
-                    throw std::logic_error("Missing value for a named parameter");
+                    throw Error("Missing value for named parameter "sv + name);
                 }
                 named_args.emplace_back(name, argv[i]);
             }
@@ -78,7 +78,7 @@ void start_browser () {
         model::unclose_view(view);
     }
     else {
-        model::new_view_with_new_page("about:blank");
+        model::new_view_with_new_page("about:blank"sv);
     }
 }
 
@@ -98,9 +98,9 @@ int WINAPI WinMain (
          //  instead of starting a new instance.
          // TODO: Is there a race condition here?
         if (HWND nursery = existing_nursery()) {
-            const string& url = positional_args.size() >= 1 ? positional_args[0] : "about:blank";
+            Str url = positional_args.size() >= 1 ? positional_args[0] : "about:blank"sv;
             string message = json::stringify(json::array(
-                "new_window", url
+                "new_window"sv, url
             ));
             COPYDATASTRUCT cpd {};
             cpd.cbData = DWORD(message.size() + 1);  // Include NUL terminator
@@ -111,7 +111,7 @@ int WINAPI WinMain (
 
         init_nursery();
         load_settings();
-        model::init_db(profile_folder + "/state6.sqlite");
+        model::init_db(profile_folder + "/state6.sqlite"sv);
         start_browser();
 
          // TODO: allow multiple urls to open in same window
@@ -130,7 +130,7 @@ int WINAPI WinMain (
         return (int)msg.wParam;
     }
     catch (exception& e) {
-        show_string_error(__FILE__, __LINE__, (string("Uncaught exception: ") + e.what()).c_str());
+        show_string_error(__FILE__, __LINE__, "Uncaught exception: "sv + e.what());
         throw;
     }
 }

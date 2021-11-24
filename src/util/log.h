@@ -6,7 +6,7 @@
 
 extern std::ostream* logstream;
 
-void init_log (const std::string& filename);
+void init_log (Str filename);
 
 uint64 logging_timestamp ();
 

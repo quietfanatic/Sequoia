@@ -86,7 +86,7 @@ OSWindow::OSWindow (Window* window) : hwnd(create_hwnd()) {
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)window);
 }
 
-void OSWindow::set_title (const char* title) {
+void OSWindow::set_title (Str title) {
     AW(SetWindowTextW(hwnd, to_utf16(title).c_str()));
 }
 

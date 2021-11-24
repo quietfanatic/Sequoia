@@ -12,24 +12,24 @@ using namespace std;
 
 ///// Page-focused actions
 
-static PageID create_page (const string& url) {
+static PageID create_page (Str url) {
     PageData data;
     data.url = url;
     data.save();
     return data.id;
 }
 
-void change_page_url (PageID page, const string& url) {
+void change_page_url (PageID page, Str url) {
     PageData data = *page;
     data.url = url;
     data.save();
 }
-void change_page_favicon_url (PageID page, const string& url) {
+void change_page_favicon_url (PageID page, Str url) {
     PageData data = *page;
     data.favicon_url = url;
     data.save();
 }
-void change_page_title (PageID page, const string& title) {
+void change_page_title (PageID page, Str title) {
     PageData data = *page;
     data.title = title;
     data.save();
@@ -60,9 +60,7 @@ void unload_page (PageID page) {
 
 ///// Link-focused actions
 
-void open_as_first_child (
-    PageID parent, const string& url, const string& title
-) {
+void open_as_first_child (PageID parent, Str url, Str title) {
     Transaction tr;
     PageID child = create_page(url);
     LinkData link;
@@ -73,9 +71,7 @@ void open_as_first_child (
     link.title = title;
     link.save();
 }
-void open_as_last_child (
-    PageID parent, const string& url, const string& title
-) {
+void open_as_last_child (PageID parent, Str url, Str title) {
     Transaction tr;
     PageID child = create_page(url);
     LinkData link;
@@ -86,9 +82,7 @@ void open_as_last_child (
     link.title = title;
     link.save();
 }
-void open_as_next_sibling (
-    PageID opener, LinkID prev, const string& url, const string& title
-) {
+void open_as_next_sibling (PageID opener, LinkID prev, Str url, Str title) {
     Transaction tr;
     PageID child = create_page(url);
     LinkData link;
@@ -99,9 +93,7 @@ void open_as_next_sibling (
     link.title = title;
     link.save();
 }
-void open_as_prev_sibling (
-    PageID opener, LinkID next, const string& url, const string& title
-) {
+void open_as_prev_sibling (PageID opener, LinkID next, Str url, Str title) {
     Transaction tr;
     PageID child = create_page(url);
     LinkData link;
@@ -150,7 +142,7 @@ void move_link_last_child (LinkID link, PageID parent) {
 
 ///// View-focused actions
 
-void new_view_with_new_page (const string& url) {
+void new_view_with_new_page (Str url) {
     Transaction tr;
     ViewData data;
     data.root_page = create_page(url);
@@ -167,7 +159,7 @@ void unclose_view (ViewID view) {
     data.save();
 }
 
-void navigate_focused_page (ViewID view, const string& url) {
+void navigate_focused_page (ViewID view, Str url) {
     if (PageID page = view->focused_page()) {
         change_page_url(page, url);
     }
@@ -179,10 +171,7 @@ void focus_tab (ViewID view, LinkID tab) {
     data.save();
 }
 
-void open_as_last_child_in_view (
-    ViewID view, LinkID parent_tab,
-    const string& url
-) {
+void open_as_last_child_in_view (ViewID view, LinkID parent_tab, Str url) {
     model::PageID parent_page = parent_tab ? parent_tab->to_page : view->root_page;
     model::Transaction tr;
     model::PageData child;

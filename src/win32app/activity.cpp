@@ -18,7 +18,7 @@ using namespace Microsoft::WRL;
 using namespace std;
 
 Activity::Activity (model::PageID p) : page(p) {
-    LOG("new Activity", this, page);
+    LOG("new Activity"sv, this, page);
 
     new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         controller = wvc;
@@ -47,7 +47,7 @@ Activity::Activity (model::PageID p) : page(p) {
              // save the title in that case.
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
-            if (wcscmp(source.get(), L"about:blank") != 0) {
+            if (source.get() == L"about:blank"sv) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
                 model::change_page_title(page, from_utf16(title.get()));
@@ -65,9 +65,7 @@ Activity::Activity (model::PageID p) : page(p) {
              // save the url in that case.
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
-            if (wcscmp(source.get(), L"") != 0
-             && wcscmp(source.get(), L"about:blank") != 0
-            ) {
+            if (source.get() != L""sv && source.get() != L"about:blank"sv) {
                 current_url = from_utf16(source.get());
                 if (page->url != current_url) {
                     model::change_page_url(page, current_url);
@@ -100,7 +98,7 @@ Activity::Activity (model::PageID p) : page(p) {
             return S_OK;
         }).Get(), nullptr));
 
-        static std::wstring injection = to_utf16(slurp(exe_relative("res/injection.js")));
+        static std::wstring injection = to_utf16(slurp(exe_relative("res/injection.js"sv)));
         AH(webview->AddScriptToExecuteOnDocumentCreated(injection.c_str(), nullptr));
 
         AH(webview->add_WebMessageReceived(
@@ -113,7 +111,7 @@ Activity::Activity (model::PageID p) : page(p) {
             wil::unique_cotaskmem_string raw16;
             args->get_WebMessageAsJson(&raw16);
             string raw = from_utf16(raw16.get());
-            LOG("Activity::message_from_webview", raw);
+            LOG("Activity::message_from_webview"sv, raw);
             json::Value message = json::parse(raw);
             message_from_webview(message);
             return S_OK;
@@ -173,12 +171,12 @@ Activity::Activity (model::PageID p) : page(p) {
 void Activity::message_to_webview (const json::Value& message) {
     if (!webview) return;
     auto s = json::stringify(message);
-    LOG("message_to_webview", s);
+    LOG("message_to_webview"sv, s);
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
 void Activity::message_from_webview (const json::Value& message) {
-    const string& command = message[0];
+    Str command = message[0];
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
@@ -222,14 +220,14 @@ void Activity::message_from_webview (const json::Value& message) {
 //        const json::Array& children = message[1];
 //        Transaction tr;
 //        for (auto& child : children) {
-//            const string& url = child[0];
-//            const string& title = child[1];
+//            Str url = child[0];
+//            Str title = child[1];
 //            create_tab(tab, TabRelation::LAST_CHILD, url, title);
 //        }
         break;
     }
     default: {
-        throw logic_error("Unknown message name");
+        throw Error("Unknown message name"sv);
     }
     }
 }
@@ -240,8 +238,8 @@ void Activity::page_updated () {
     }
 }
 
-bool Activity::navigate_url (const string& url) {
-    LOG("navigate_url", page, url);
+bool Activity::navigate_url (Str url) {
+    LOG("navigate_url"sv, page, url);
     auto hr = webview->Navigate(to_utf16(url).c_str());
     if (SUCCEEDED(hr)) {
         current_url = url;
@@ -251,15 +249,15 @@ bool Activity::navigate_url (const string& url) {
     return false;
 }
 
-void Activity::navigate_search (const string& search) {
-    LOG("navigate_search", page, search);
+void Activity::navigate_search (Str search) {
+    LOG("navigate_search"sv, page, search);
      // Escape URL characters
-    string url = "https://duckduckgo.com/?q=" + escape_url(search);
+    String url = "https://duckduckgo.com/?q="sv + escape_url(search);
      // If the search URL is invalid, treat it as a bug
     AA(navigate_url(url));
 }
 
-void Activity::navigate (const string& address) {
+void Activity::navigate (Str address) {
     if (webview) {
         if (navigate_url(address)) return;
         if (address.find(' ') != string::npos
@@ -268,7 +266,7 @@ void Activity::navigate (const string& address) {
             navigate_search(address);
         }
         else {
-            string url = "http://" + address;
+            String url = "http://"sv + address;
             if (navigate_url(url)) return;
             navigate_search(address);
         }
@@ -286,11 +284,11 @@ bool Activity::is_fullscreen () {
 
 void Activity::leave_fullscreen () {
     if (!is_fullscreen()) return;
-    webview->ExecuteScript(to_utf16("document.exitFullscreen()").c_str(), nullptr);
+    webview->ExecuteScript(to_utf16("document.exitFullscreen()"sv).c_str(), nullptr);
 }
 
 Activity::~Activity () {
-    LOG("delete Activity", this);
+    LOG("delete Activity"sv, this);
     if (controller) controller->Close();
 }
 

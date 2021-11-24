@@ -25,10 +25,10 @@ const PageData* PageData::load (PageID id) {
         AA(r.id == id);
         return &r;
     }
-    LOG("PageData::load", id);
-    static State<string, int64, string, double, string>::Ment<PageID> sel = R"(
+    LOG("PageData::load"sv, id);
+    static State<String, int64, String, double, String>::Ment<PageID> sel = R"(
 SELECT _url, _group, _favicon_url, _visited_at, _title FROM _pages WHERE _id = ?
-    )";
+    )"sv;
      // TODO: Is it possible to avoid the extra copy?
      //  Probably, by simplifying the db support module
     if (auto row = sel.run_optional(id)) {
@@ -47,13 +47,13 @@ SELECT _url, _group, _favicon_url, _visited_at, _title FROM _pages WHERE _id = ?
 }
 
 void PageData::save () {
-    LOG("PageData::save", id);
+    LOG("PageData::save"sv, id);
     Transaction tr;
     if (exists) {
-        static State<>::Ment<optional<PageID>, int64, string, int64, string, double, string> ins = R"(
+        static State<>::Ment<optional<PageID>, int64, Str, int64, String, double, Str> ins = R"(
 INSERT OR REPLACE INTO _pages (_id, _url_hash, _url, _group, _favicon_url, _visited_at, _title)
 VALUES (?, ?, ?, ?, ?, ?, ?)
-        )";
+        )"sv;
         AA(url != "");
         ins.run_void(
             null_default(id),
@@ -72,7 +72,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
         AA(id > 0);
         static State<>::Ment<PageID> del = R"(
 DELETE FROM _pages WHERE _id = ?
-        )";
+        )"sv;
         del.run_void(id);
     }
     page_cache[id] = *this;
@@ -84,11 +84,11 @@ void PageData::updated () const {
     current_update.pages.insert(*this);
 }
 
-vector<PageID> get_pages_with_url (const string& url) {
+vector<PageID> get_pages_with_url (Str url) {
     LOG("get_pages_with_url", url);
-    static State<PageID>::Ment<int64, string> sel = R"(
+    static State<PageID>::Ment<int64, Str> sel = R"(
 SELECT _id FROM _pages WHERE _url_hash = ? AND _url = ?
-    )";
+    )"sv;
     return sel.run(x31_hash(url), url);
 }
 

@@ -5,23 +5,23 @@
 
 using namespace std;
 
-string from_utf16 (const wchar_t* in) {
-    if (!in[0]) return "";
-    int len = WideCharToMultiByte(CP_UTF8, 0, in, -1, nullptr, 0, nullptr, nullptr);
+string from_utf16 (Str16 in) {
+    if (in.empty()) return ""s;
+    int len = WideCharToMultiByte(CP_UTF8, 0, in.data(), -1, nullptr, 0, nullptr, nullptr);
     AW(len);
     string r (len-1, 0);
     auto buf = const_cast<char*>(r.data());
-    AW(WideCharToMultiByte(CP_UTF8, 0, in, -1, buf, len, nullptr, nullptr));
+    AW(WideCharToMultiByte(CP_UTF8, 0, in.data(), -1, buf, len, nullptr, nullptr));
     return r;
 }
 
-wstring to_utf16 (const char* in) {
-    if (!in[0]) return L"";
-    int len = MultiByteToWideChar(CP_UTF8, 0, in, -1, nullptr, 0);
+wstring to_utf16 (Str in) {
+    if (in.empty()) return L""s;
+    int len = MultiByteToWideChar(CP_UTF8, 0, in.data(), -1, nullptr, 0);
     AW(len);
     wstring r (len-1, 0);
     auto buf = const_cast<wchar_t*>(r.data());
-    AW(MultiByteToWideChar(CP_UTF8, 0, in, -1, buf, len));
+    AW(MultiByteToWideChar(CP_UTF8, 0, in.data(), -1, buf, len));
     return r;
 }
 
@@ -69,7 +69,7 @@ int8 from_hex_digit (char c) {
     }
 }
 
-string escape_url (const string& input) {
+string escape_url (Str input) {
     string r;
     for (auto c : input) {
         switch (c) {
@@ -90,7 +90,7 @@ string escape_url (const string& input) {
     return r;
 }
 
-string make_url_utf8 (const string& url) {
+string make_url_utf8 (Str url) {
     string r;
     for (size_t i = 0; i < url.size(); i++) {
         if (url[i] == '%' && i + 2 < url.size()) {

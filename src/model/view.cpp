@@ -24,10 +24,10 @@ const ViewData* ViewData::load (ViewID id) {
         AA(r.id == id);
         return &r;
     }
-    LOG("ViewData::load", id);
-    static State<PageID, LinkID, double, double, double, string>::Ment<ViewID> sel = R"(
+    LOG("ViewData::load"sv, id);
+    static State<PageID, LinkID, double, double, double, String>::Ment<ViewID> sel = R"(
 SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs FROM _views WHERE _id = ?
-    )";
+    )"sv;
     if (auto row = sel.run_optional(id)) {
         r.id = id;
         r.root_page = get<0>(*row);
@@ -47,17 +47,17 @@ SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded
 }
 
 void ViewData::save () {
-    LOG("ViewData::save", id);
+    LOG("ViewData::save"sv, id);
     Transaction tr;
     if (exists) {
         if (!created_at) {
             AA(!id);
             created_at = now();
         }
-        static State<>::Ment<optional<ViewID>, PageID, LinkID, double, double, double, string> ins = R"(
+        static State<>::Ment<optional<ViewID>, PageID, LinkID, double, double, double, Str> ins = R"(
 INSERT OR REPLACE INTO _views (_id, _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs)
 VALUES (?, ?, ?, ?, ?, ?, ?)
-        )";
+        )"sv;
         json::Array expanded_tabs_json;
         expanded_tabs_json.reserve(expanded_tabs.size());
         for (LinkID tab : expanded_tabs) expanded_tabs_json.push_back(int64{tab});
@@ -76,7 +76,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
         AA(id > 0);
         static State<>::Ment<ViewID> del = R"(
 DELETE FROM _views WHERE _id = ?
-        )";
+        )"sv;
         del.run_void(id);
     }
     view_cache[id] = *this;
@@ -89,19 +89,19 @@ void ViewData::updated () {
 }
 
 vector<ViewID> get_open_views () {
-    LOG("get_open_views");
+    LOG("get_open_views"sv);
     static State<ViewID>::Ment<> sel = R"(
 SELECT _id FROM _views WHERE _closed_at IS NULL
-    )";
+    )"sv;
     return sel.run();
 }
 
 ViewID get_last_closed_view () {
-    LOG("get_last_closed_view");
+    LOG("get_last_closed_view"sv);
     static State<ViewID>::Ment<> sel = R"(
 SELECT _id FROM _views
 WHERE _closed_at IS NOT NULL ORDER BY _closed_at DESC LIMIT 1
-    )";
+    )"sv;
     ViewData r;
     return sel.run_optional().value_or(ViewID{});
 }

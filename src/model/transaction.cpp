@@ -42,7 +42,7 @@ Transaction::Transaction () {
      // Don't start a transaction in an exception handler lol
     AA(!uncaught_exceptions());
     if (!transaction_depth) {
-        static State<>::Ment<> begin = "BEGIN";
+        static State<>::Ment<> begin = "BEGIN"sv;
         begin.run_void();
     }
     transaction_depth += 1;
@@ -51,12 +51,12 @@ Transaction::~Transaction () {
     transaction_depth -= 1;
     if (!transaction_depth) {
         if (uncaught_exceptions()) {
-            static State<>::Ment<> rollback = "ROLLBACK";
+            static State<>::Ment<> rollback = "ROLLBACK"sv;
             rollback.run_void();
             current_update = Update{};
         }
         else {
-            static State<>::Ment<> commit = "COMMIT";
+            static State<>::Ment<> commit = "COMMIT"sv;
             commit.run_void();
             update_observers();
         }

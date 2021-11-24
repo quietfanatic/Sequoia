@@ -35,7 +35,7 @@ Window::Window (const model::ViewID& view) :
 Window::~Window () = default;
 
 void Window::on_hidden () {
-    LOG("Window::on_hidden");
+    LOG("Window::on_hidden"sv);
      // TODO: make sure this is actually our page
     Activity* activity = activity_for_page(view->focused_page());
     if (activity && activity->controller) {
@@ -179,7 +179,7 @@ void Window::view_updated () {
 
 void Window::page_updated () {
     const string& title = view->focused_page()->title;
-    os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
+    os_window.set_title(title.empty() ? "Sequoia"sv : (title + " – Sequoia"sv));
 }
 
 ///// Window registry
@@ -204,7 +204,7 @@ struct WindowRegistry : model::Observer {
                 else {
                      // Window is owned by the win32 system so don't delete
                      // it yet.
-                    LOG("Destroying window", view);
+                    LOG("Destroying window"sv, view);
                     AW(DestroyWindow(window->os_window.hwnd));
                     erase_windows.emplace_back(view);
                 }

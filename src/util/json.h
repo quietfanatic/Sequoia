@@ -1,6 +1,8 @@
 #pragma once
+
 #include <cassert>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,6 +21,7 @@ struct Value;
 
 using Char = char;
 using String = std::string;
+using Str = std::string_view;
 using Array = std::vector<Value>;
 using Object = std::vector<std::pair<String, Value>>;
 
@@ -48,6 +51,7 @@ struct Value {
     Value (double v) : type(NUMBER), number(double(v)) { }
     Value (const Char* v) : type(STRING), string(new String(v)) { }
     Value (const String& v) : type(STRING), string(new String(v)) { }
+    Value (Str v) : type(STRING), string(new String(v)) { }
     Value (String&& v) : type(STRING), string(new String(std::move(v))) { }
     Value (const Array& v) : type(ARRAY), array(new Array(std::move(v))) { }
     Value (Array&& v) : type(ARRAY), array(new Array(std::move(v))) { }
@@ -95,6 +99,7 @@ struct Value {
     operator unsigned long long () const { assert(type == NUMBER); return unsigned long long(number); }
     operator float () const { assert(type == NUMBER); return float(number); }
     operator double () const { assert(type == NUMBER); return number; }
+    operator Str () const { assert(type == STRING); return *string; }
     operator const String& () const& { assert(type == STRING); return *string; }
     operator String&& () && { assert(type == STRING); return std::move(*string); }
     operator const Array& () const& { assert(type == ARRAY); return *array; }
@@ -121,7 +126,7 @@ struct Value {
         return std::move(const_cast<Value&>(*this)[i]);
     }
 
-    bool has (const String& key) {
+    bool has (Str key) {
         if (type != OBJECT) return false;
         for (auto& p : *object) {
             if (p.first == key) return true;
@@ -129,7 +134,7 @@ struct Value {
         return false;
     }
 
-    Value& operator[] (const String& key) & {
+    Value& operator[] (Str key) & {
         assert(type == OBJECT);
         for (auto& p : *object) {
             if (p.first == key) return p.second;
@@ -138,10 +143,10 @@ struct Value {
         static Value nothing;
         return nothing;
     }
-    const Value& operator[] (const String& key) const& {
+    const Value& operator[] (Str key) const& {
         return const_cast<const Value&>(const_cast<Value&>(*this)[key]);
     }
-    Value&& operator[] (const String& key) && {
+    Value&& operator[] (Str key) && {
         return std::move(const_cast<Value&>(*this)[key]);
     }
 
@@ -169,7 +174,7 @@ Array array (Args&&... args) {
     return r;
 }
 template <class... Args>
-Object object (std::pair<String, Args>&&... args) {
+Object object (std::pair<Str, Args>&&... args) {
     Object r;
     r.reserve(sizeof...(args));
     (r.emplace_back(std::move(args)), ...);
@@ -181,8 +186,7 @@ inline bool operator!= (const Value& a, const Value& b) { return !(a == b); }
 
 String stringify (const Value& v);
 
-Value parse (const String& s);
-Value parse (const Char* s);
+Value parse (Str s);
 
 } // namespace json
 

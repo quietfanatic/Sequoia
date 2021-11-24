@@ -22,7 +22,7 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-wstring edge_udf;
+String16 edge_udf;
 static wil::com_ptr<ICoreWebView2Environment> environment;
 HWND nursery_hwnd = nullptr;
 
@@ -30,10 +30,10 @@ wil::com_ptr<ICoreWebView2Controller> next_controller = nullptr;
 wil::com_ptr<ICoreWebView2> next_webview = nullptr;
 HWND next_hwnd = nullptr;
 
-static auto class_name = L"Sequoia Nursery";
+static const wchar_t* class_name = L"Sequoia Nursery";
 
 HWND existing_nursery () {
-    wstring window_title = L"Sequoia Nursery for " + to_utf16(profile_name);
+    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(profile_name);
 
     return FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str());
 }
@@ -60,9 +60,9 @@ void init_nursery () {
     AA(!nursery_hwnd);
     AH(OleInitialize(nullptr));
 
-    wstring window_title = L"Sequoia Nursery for " + to_utf16(profile_name);
+    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(profile_name);
 
-    edge_udf = to_utf16(profile_folder + "/edge-user-data");
+    edge_udf = to_utf16(profile_folder + "/edge-user-data"sv);
 
     static bool init = []{
         WNDCLASSEXW c {};
@@ -97,7 +97,7 @@ static void create (const function<void(ICoreWebView2Controller*, ICoreWebView2*
         Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
             [then](HRESULT hr, ICoreWebView2Controller* controller) -> HRESULT
    {
-        LOG("Nursery: new webview created");
+        LOG("Nursery: new webview created"sv);
         AH(hr);
         HWND hwnd = GetWindow(nursery_hwnd, GW_CHILD);
         AW(hwnd);
@@ -112,7 +112,7 @@ static void create (const function<void(ICoreWebView2Controller*, ICoreWebView2*
 
 static void queue () {
     create([](ICoreWebView2Controller* controller, ICoreWebView2* webview, HWND hwnd){
-        LOG("Nursery: new webview queued");
+        LOG("Nursery: new webview queued"sv);
         next_controller = controller;
         next_webview = webview;
         next_hwnd = hwnd;
@@ -120,10 +120,10 @@ static void queue () {
 }
 
 void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then) {
-    LOG("Nursery: new webview requested");
+    LOG("Nursery: new webview requested"sv);
     AA(nursery_hwnd);
     if (!environment) {
-        LOG("Nursery: creating environment");
+        LOG("Nursery: creating environment"sv);
         auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
         AH(options->put_AllowSingleSignOnUsingOSPrimaryAccount(TRUE));
         AH(CreateCoreWebView2EnvironmentWithOptions(
@@ -132,7 +132,7 @@ void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, 
                 [then](HRESULT hr, ICoreWebView2Environment* env) -> HRESULT
         {
             AH(hr);
-            LOG("Nursery: environment created");
+            LOG("Nursery: environment created"sv);
             environment = env;
             create(then);
             queue();
@@ -140,14 +140,14 @@ void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, 
         }).Get()));
     }
     else if (next_controller) {
-        LOG("Nursery: using queued webview");
+        LOG("Nursery: using queued webview"sv);
         auto controller = std::move(next_controller);
         auto webview = std::move(next_webview);
         then(controller.get(), webview.get(), next_hwnd);
         queue();
     }
     else {
-        LOG("Nursery: skipping queue");
+        LOG("Nursery: skipping queue"sv);
          // next_webview isn't ready yet.
          // Instead of trying to queue up an arbitrary number of callbacks, just make a
          // new webview ignoring the queue.

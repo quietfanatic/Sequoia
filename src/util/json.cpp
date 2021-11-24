@@ -190,13 +190,8 @@ struct Parser {
 };
 }
 
-Value parse (const String& s) {
-    return Parser{s.c_str(), s.c_str() + s.size()}.parse();
-}
-Value parse (const Char* s) {
-    const Char* end = s;
-    while (*end != 0) end++;
-    return Parser{s, end}.parse();
+Value parse (Str s) {
+    return Parser{s.data(), s.data() + s.size()}.parse();
 }
 
 String stringify (const Value& v) {
