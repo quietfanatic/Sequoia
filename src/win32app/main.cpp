@@ -13,6 +13,7 @@
 #include "../model/view.h"
 #include "../util/assert.h"
 #include "../util/files.h"
+#include "../util/hash.h"
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
@@ -23,44 +24,8 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-vector<String> positional_args;
-vector<pair<String, String>> named_args;
-
-void parse_args (int argc, char** argv) {
-    bool no_more_named = false;
-    for (int i = 1; i < argc; i++) {
-        Str arg = argv[i];
-        if (no_more_named) {
-            positional_args.emplace_back(arg);
-        }
-        else if (arg == "--"sv) {
-            no_more_named = true;
-        }
-        else if (arg.size() >= 1 && arg[0] == '-') {
-            size_t start = arg.size() >= 2 && arg[1] == '-' ? 2 : 1;
-            size_t sep;
-            for (sep = start; sep < arg.size(); sep++) {
-                if (arg[sep] == '=' || arg[sep] == ':') {
-                    break;
-                }
-            }
-            Str name = arg.substr(start, sep - start);
-            if (sep == arg.size()) {
-                i += 1;
-                if (i == argc) {
-                    throw Error("Missing value for named parameter "sv + name);
-                }
-                named_args.emplace_back(name, argv[i]);
-            }
-            else {
-                named_args.emplace_back(name, arg.substr(sep+1));
-            }
-        }
-        else {
-            positional_args.emplace_back(arg);
-        }
-    }
-}
+Settings global_settings;
+Profile global_profile;
 
 void start_browser () {
     vector<model::ViewID> views = model::get_open_views();
@@ -91,13 +56,64 @@ int WINAPI WinMain (
     try {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-        parse_args(__argc, __argv);
-        load_profile();
+         // Why is Windows so nonstandard
+        char** argv = __argv;
+        int argc = __argc;
+
+         // Parse arguments
+        vector<String> positional_args;
+        String arg_profile;
+        String arg_profile_folder;
+        bool no_more_named = false;
+        for (int i = 1; i < argc; i++) {
+            Str arg = argv[i];
+            if (no_more_named) {
+                positional_args.emplace_back(arg);
+            }
+            else if (arg == "--"sv) {
+                no_more_named = true;
+            }
+            else if (arg.size() >= 1 && arg[0] == '-') {
+                size_t start = arg.size() >= 2 && arg[1] == '-' ? 2 : 1;
+                size_t sep;
+                for (sep = start; sep < arg.size(); sep++) {
+                    if (arg[sep] == '=' || arg[sep] == ':') {
+                        break;
+                    }
+                }
+                Str name = arg.substr(start, sep - start);
+                Str value;
+                if (sep == arg.size()) {
+                    i += 1;
+                    if (i == argc) {
+                        throw Error("Missing value for named parameter "sv + name);
+                    }
+                    value = argv[i];
+                }
+                else {
+                    value = arg.substr(sep+1);
+                }
+                switch (x31_hash(name)) {
+                    case x31_hash("profile"):
+                        arg_profile = value;
+                        break;
+                    case x31_hash("profile-folder"):
+                        arg_profile_folder = value;
+                        break;
+                    default: throw Error("Unrecognized named parameter " + name);
+                }
+            }
+            else {
+                positional_args.emplace_back(arg);
+            }
+        }
+
+        global_profile = Profile(arg_profile, arg_profile_folder);
 
          // If a process is already running in this profile, send it a message
          //  instead of starting a new instance.
          // TODO: Is there a race condition here?
-        if (HWND nursery = existing_nursery()) {
+        if (HWND nursery = existing_nursery(global_profile)) {
             Str url = positional_args.size() >= 1 ? positional_args[0] : "about:blank"sv;
             string message = json::stringify(json::array(
                 "new_window"sv, url
@@ -109,9 +125,9 @@ int WINAPI WinMain (
             return 0;
         }
 
-        init_nursery();
-        load_settings();
-        model::init_db(profile_folder + "/state6.sqlite"sv);
+        init_nursery(global_profile);
+        global_settings = global_profile.load_settings();
+        model::init_db(global_profile.db_path());
         start_browser();
 
          // TODO: allow multiple urls to open in same window

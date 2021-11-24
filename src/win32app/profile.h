@@ -2,19 +2,20 @@
 
 #include "../util/types.h"
 
-extern String profile_name;
-extern bool profile_folder_specified;
-extern String profile_folder;
+ // TODO: move to model
+struct Settings {
+    String theme;
+};
 
-namespace settings {
+struct Profile {
+    String name;
+    bool folder_specified;
+    String folder;
 
-extern String theme;
+    Profile (Str name = ""sv, Str folder = ""sv);
 
-}
+    Settings load_settings ();
+    String db_path ();
+    void register_as_browser ();
+};
 
-void load_profile ();
-void load_settings ();
-
-void save_settings ();
-
-void register_as_browser ();

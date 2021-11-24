@@ -129,7 +129,7 @@ void Shell::message_from_webview (const json::Value& message) {
         message_to_webview(json::array(
             "settings"sv,
             json::object(
-                std::pair{"theme"sv, settings::theme}
+                std::pair{"theme"sv, global_settings.theme}
             )
         ));
         tabs = create_tab_tree(*view);
@@ -249,7 +249,7 @@ void Shell::message_from_webview (const json::Value& message) {
         break;
     }
     case x31_hash("register_as_browser"): {
-        register_as_browser();
+        global_profile.register_as_browser();
         break;
     }
     case x31_hash("open_selected_links"): {

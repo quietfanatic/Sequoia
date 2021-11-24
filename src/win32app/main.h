@@ -5,8 +5,9 @@
 
 #include "../util/types.h"
 
-extern std::vector<String> positional_args;
-extern std::vector<std::pair<String, String>> named_args;
-void parse_args (int argc, char** argv);
+#include "profile.h"
+ // TODO: make App object (also put settings in model)
+extern Settings global_settings;
+extern Profile global_profile;
 
 void quit ();

@@ -24,7 +24,6 @@ Activity::Activity (model::PageID p) : page(p) {
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
-        wil::com_ptr<ICoreWebView2Settings> settings;
 
         if (Window* window = window_for_page(page)) {
             window->reflow();

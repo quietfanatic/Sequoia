@@ -32,8 +32,8 @@ HWND next_hwnd = nullptr;
 
 static const wchar_t* class_name = L"Sequoia Nursery";
 
-HWND existing_nursery () {
-    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(profile_name);
+HWND existing_nursery (const Profile& profile) {
+    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(profile.name);
 
     return FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str());
 }
@@ -56,13 +56,13 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
     return DefWindowProc(hwnd, message, w, l);
 }
 
-void init_nursery () {
+void init_nursery (const Profile& profile) {
     AA(!nursery_hwnd);
     AH(OleInitialize(nullptr));
 
-    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(profile_name);
+    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(profile.name);
 
-    edge_udf = to_utf16(profile_folder + "/edge-user-data"sv);
+    edge_udf = to_utf16(profile.folder + "/edge-user-data"sv);
 
     static bool init = []{
         WNDCLASSEXW c {};

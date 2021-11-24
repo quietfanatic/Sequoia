@@ -16,62 +16,49 @@
 
 using namespace std;
 
-String profile_name = "default"s;
-bool profile_folder_specified = false;
-String profile_folder;
-
-namespace settings {
-
-String theme = "dark"s;
-
-}
-
-void load_profile () {
-    for (auto& arg : named_args) {
-        if (arg.first == "profile"sv) {
-            profile_name = arg.second;
-        }
-        else if (arg.first == "profile-folder"sv) {
-            profile_folder = arg.second;
-        }
+Profile::Profile (Str n, Str f) : name(n), folder(f) {
+    if (folder.empty()) {
+        if (name.empty()) name = "default"s;
+        folder = exe_relative("profiles/"sv + name);
     }
-    if (profile_folder.empty()) {
-        profile_folder = exe_relative("profiles/"sv + profile_name);
-    }
-    else if (profile_name.empty()) {
+    else if (name.empty()) {
         show_string_error(__FILE__, __LINE__, "Cannot provide profile-folder argument without also providing profile argument."sv);
     }
     else {
-        profile_folder_specified = true;
+        folder_specified = true;
     }
-    String16 profile_folder_16 = filesystem::absolute(profile_folder);
-    profile_folder = from_utf16(profile_folder_16);
-    filesystem::create_directories(profile_folder);
+     // This is so dumb
+    String16 folder_16 = filesystem::absolute(folder);
+    folder = from_utf16(folder_16);
+    filesystem::create_directories(folder);
 }
 
-void load_settings () {
-    init_log(profile_folder + "/debug.log"sv);
-    LOG("Using profile folder:"sv, profile_folder);
-    String settings_file = profile_folder + "/settings.json"sv;
-    if (!filesystem::exists(settings_file)) return;
-    json::Object settings = json::parse(slurp(settings_file));
-    AA(!settings.empty());
-    for (auto pair : settings) {
+Settings Profile::load_settings () {
+    init_log(folder + "/debug.log"sv);
+    LOG("Using profile folder:"sv, folder);
+    String settings_path = folder + "/settings.json"sv;
+    if (!filesystem::exists(settings_path)) return {};
+    json::Object json = json::parse(slurp(settings_path));
+    AA(!json.empty());
+    Settings r;
+    for (auto pair : json) {
         switch (x31_hash(pair.first)) {
         case x31_hash("theme"): {
-            settings::theme = string(pair.second);
+            r.theme = pair.second;
             break;
         }
         default:
             show_string_error(__FILE__, __LINE__, "Unrecognized setting name: "sv + pair.first);
         }
     }
-}
-void save_settings () {
-    AA(false); // NYI
+    return r;
 }
 
-void register_as_browser () {
+String Profile::db_path () {
+    return folder + "/state6.sqlite"sv;
+}
+
+void Profile::register_as_browser () {
      // Might want to add like a commit hash or something?
 #ifdef NDEBUG
     String16 app_name = L"Sequoia"s;
@@ -104,11 +91,11 @@ void register_as_browser () {
     }
 
     wstring command_line = L'"' + exe_path16 + L'"';
-    if (profile_name != "default"sv) {
-        command_line += L" --profile \""sv + to_utf16(profile_name) + L"\""sv;
+    if (name != "default"sv) {
+        command_line += L" --profile \""sv + to_utf16(name) + L"\""sv;
     }
-    if (profile_folder_specified) {
-        command_line += L" --profile_folder \""sv + to_utf16(profile_folder) + L"\""sv;
+    if (folder_specified) {
+        command_line += L" --profile_folder \""sv + to_utf16(folder) + L"\""sv;
     }
 
     set_reg_sz(smi_k + L"\\shell\\open\\command"sv, nullptr, command_line);
