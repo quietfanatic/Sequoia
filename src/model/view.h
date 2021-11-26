@@ -6,15 +6,13 @@
 
 #include "../util/assert.h"
 #include "../util/bifractor.h"
-#include "../util/db_support.h"
 #include "../util/types.h"
 #include "page.h"
 #include "link.h"
+#include "model.h"
 
 namespace model {
 
-struct ViewData;
-using ViewID = IDHandle<ViewData>;
 struct ViewData {
      // Immutable
     ViewID id;

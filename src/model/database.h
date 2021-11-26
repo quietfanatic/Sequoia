@@ -6,10 +6,10 @@
 
 #include "../util/types.h"
 
- // TODO: get this from profile module
-extern sqlite3* db;
-
 namespace model {
+
+ // TODO: put this in model object
+extern sqlite3* db;
 
 constexpr int CURRENT_SCHEMA_VERSION = 6;
 

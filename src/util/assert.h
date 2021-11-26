@@ -11,6 +11,6 @@ void show_windows_error (Str file, int line);
 
 #define AA [](bool res){ if (!res){ show_assert_error(__FILE__, __LINE__); } }
 #define AH [](uint32 hr){ if (hr != 0) { show_hr_error(__FILE__, __LINE__, hr); } }
-#define AS [](int rc){ if (rc != 0) { show_string_error(__FILE__, __LINE__, sqlite3_errmsg(db)); } }
+#define AS [](int rc){ if (rc != 0) { show_string_error(__FILE__, __LINE__, sqlite3_errstr(rc)); } }
 #define AW [](bool res){ if (!res){ show_windows_error(__FILE__, __LINE__); } }
 #define AWE [](LSTATUS ec){ if (ec != 0) { show_windows_error(__FILE__, __LINE__); } }

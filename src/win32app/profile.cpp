@@ -11,8 +11,6 @@
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
- // TODO: make this not necessary
-#include "main.h"
 
 using namespace std;
 

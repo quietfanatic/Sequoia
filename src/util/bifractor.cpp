@@ -7,6 +7,7 @@
 #include "text.h"
 
 std::string Bifractor::hex () const {
+    AA(size);
     std::string r (size*2, 0);
     for (size_t i = 0; i < size; i++) {
         r[i*2] = to_hex_digit(bytes()[i] >> 4);
@@ -16,6 +17,8 @@ std::string Bifractor::hex () const {
 }
 
 Bifractor::Bifractor (const Bifractor& a, const Bifractor& b, uint bias) {
+    AA(a.size);
+    AA(b.size);
     AA(a != b);
     size_t max_size = (a.size > b.size ? a.size : b.size) + 1;
 

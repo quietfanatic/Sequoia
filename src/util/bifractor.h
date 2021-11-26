@@ -13,6 +13,7 @@
 #include <new>
 #include <ostream>
 
+#include "assert.h"
 #include "types.h"
 
 struct Bifractor {
@@ -34,8 +35,10 @@ struct Bifractor {
     String hex () const;
 
      // Manufacturing
-    Bifractor (bool one = false) : size(1) {
-        imm[0] = one ? 0xff : 0x00;
+    Bifractor () : size(0), ptr(nullptr) { }
+    Bifractor (uint value) : size(1) {
+        AA(value == 0 || value == 1);
+        imm[0] = value ? 0xff : 0x00;
     }
     Bifractor (const Bifractor& a, const Bifractor& b, uint bias = 0x80);
 
@@ -76,6 +79,9 @@ static inline bool operator <= (const Bifractor& a, const Bifractor& b) {
 static inline bool operator == (const Bifractor& a, const Bifractor& b) {
     if (a.size != b.size) return false;
     return Bifractor::compare(a, b) == 0;
+}
+static inline bool operator != (const Bifractor& a, const Bifractor& b) {
+    return !(a == b);
 }
 static inline bool operator >= (const Bifractor& a, const Bifractor& b) {
     return Bifractor::compare(a, b) >= 0;

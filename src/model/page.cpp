@@ -8,6 +8,7 @@
 #include "../util/log.h"
 #include "../util/time.h"
 #include "database.h"
+#include "statement.h"
 #include "transaction.h"
 
 namespace model {
@@ -26,18 +27,18 @@ const PageData* PageData::load (PageID id) {
         return &r;
     }
     LOG("PageData::load"sv, id);
-    static State<String, int64, String, double, String>::Ment<PageID> sel = R"(
+    static Statement st_load (db, R"(
 SELECT _url, _group, _favicon_url, _visited_at, _title FROM _pages WHERE _id = ?
-    )"sv;
-     // TODO: Is it possible to avoid the extra copy?
-     //  Probably, by simplifying the db support module
-    if (auto row = sel.run_optional(id)) {
+    )"sv);
+    UseStatement st (st_load);
+    st.params(0, id);
+    if (st.optional()) {
         r.id = id;
-        r.url = get<0>(*row);
-        r.group = get<1>(*row);
-        r.favicon_url = get<2>(*row);
-        r.visited_at = get<3>(*row);
-        r.title = get<4>(*row);
+        r.url = Str(st[0]);
+        r.group = st[1];
+        r.favicon_url = Str(st[2]);
+        r.visited_at = st[3];
+        r.title = Str(st[4]);
         r.exists = true;
     }
     else {
@@ -50,30 +51,29 @@ void PageData::save () {
     LOG("PageData::save"sv, id);
     Transaction tr;
     if (exists) {
-        static State<>::Ment<optional<PageID>, int64, Str, int64, String, double, Str> ins = R"(
+        AA(url != "");
+        static Statement st_save (db, R"(
 INSERT OR REPLACE INTO _pages (_id, _url_hash, _url, _group, _favicon_url, _visited_at, _title)
 VALUES (?, ?, ?, ?, ?, ?, ?)
-        )"sv;
-        AA(url != "");
-        ins.run_void(
-            null_default(id),
-            x31_hash(url),
-            url,
-            group,
-            favicon_url,
-            visited_at,
-            title
+        )"sv);
+        UseStatement st (st_save);
+        st.params(
+            null_default(id), x31_hash(url), url, group,
+            favicon_url, visited_at, title
         );
+        st.run();
         if (!id) id = PageID{sqlite3_last_insert_rowid(db)};
         page_cache[id] = *this;
         updated();
     }
     else {
         AA(id > 0);
-        static State<>::Ment<PageID> del = R"(
+        static Statement st_delete (db, R"(
 DELETE FROM _pages WHERE _id = ?
-        )"sv;
-        del.run_void(id);
+        )"sv);
+        UseStatement st (st_delete);
+        st.params(id);
+        st.run();
     }
     page_cache[id] = *this;
     updated();
@@ -86,10 +86,12 @@ void PageData::updated () const {
 
 vector<PageID> get_pages_with_url (Str url) {
     LOG("get_pages_with_url", url);
-    static State<PageID>::Ment<int64, Str> sel = R"(
+    static Statement st_get (db, R"(
 SELECT _id FROM _pages WHERE _url_hash = ? AND _url = ?
-    )"sv;
-    return sel.run(x31_hash(url), url);
+    )"sv);
+    UseStatement st (st_get);
+    st.params(x31_hash(url), url);
+    return st.collect<PageID>();
 }
 
 } // namespace model

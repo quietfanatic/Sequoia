@@ -1,6 +1,7 @@
 #include "transaction.h"
 
-#include "../util/db_support.h"
+#include "model.h"
+#include "statement.h"
 
 namespace model {
 
@@ -38,12 +39,14 @@ static void update_observers () {
 
 static size_t transaction_depth = 0;
 
+extern sqlite3* db;
+
 Transaction::Transaction () {
      // Don't start a transaction in an exception handler lol
     AA(!uncaught_exceptions());
     if (!transaction_depth) {
-        static State<>::Ment<> begin = "BEGIN"sv;
-        begin.run_void();
+        static Statement st_begin (db, "BEGIN"sv);
+        UseStatement(st_begin).run();
     }
     transaction_depth += 1;
 }
@@ -51,13 +54,13 @@ Transaction::~Transaction () {
     transaction_depth -= 1;
     if (!transaction_depth) {
         if (uncaught_exceptions()) {
-            static State<>::Ment<> rollback = "ROLLBACK"sv;
-            rollback.run_void();
+            static Statement st_rollback (db, "ROLLBACK"sv);
+            UseStatement(st_rollback).run();
             current_update = Update{};
         }
         else {
-            static State<>::Ment<> commit = "COMMIT"sv;
-            commit.run_void();
+            static Statement st_commit (db, "COMMIT"sv);
+            UseStatement(st_commit).run();
             update_observers();
         }
     }

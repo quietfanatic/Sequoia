@@ -5,16 +5,16 @@
 #include <string>
 #include <sqlite3.h>
 
-#include "../util/db_support.h"
 #include "../util/files.h"
 #include "../util/log.h"
+#include "statement.h"
 #include "transaction.h"
-
-sqlite3* db = nullptr;
 
 namespace model {
 
 using namespace std;
+
+sqlite3* db = nullptr;
 
 void init_db (Str db_path) {
     if (db) return;
@@ -25,8 +25,10 @@ void init_db (Str db_path) {
 
     if (exists) {
          // Migrate database to new schema if necessary
-        State<int>::Ment<> get_version {"PRAGMA user_version", true};
-        int version = get_version.run_single();
+        Statement st_version (db, "PRAGMA user_version", true);
+        UseStatement st (st_version);
+        st.single();
+        int version = st[0];
         if (version == CURRENT_SCHEMA_VERSION) return;
 
         LOG("Migrating schema"sv, version, CURRENT_SCHEMA_VERSION);

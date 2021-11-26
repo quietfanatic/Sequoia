@@ -183,7 +183,9 @@
     <ClInclude Include="../src/control/profile.h" />
     <ClInclude Include="../src/model/database.h" />
     <ClInclude Include="../src/model/link.h" />
+    <ClInclude Include="../src/model/model.h" />
     <ClInclude Include="../src/model/page.h" />
+    <ClInclude Include="../src/model/statement.h" />
     <ClInclude Include="../src/model/tabs.h" />
     <ClInclude Include="../src/model/transaction.h" />
     <ClInclude Include="../src/model/view.h" />

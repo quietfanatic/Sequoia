@@ -4,16 +4,14 @@
 #include <vector>
 
 #include "../util/bifractor.h"
-#include "../util/db_support.h"
 #include "../util/types.h"
+#include "model.h"
 #include "page.h"
 
 namespace model {
 
 ///// LINKS
 
-struct LinkData;
-using LinkID = IDHandle<LinkData>;
 struct LinkData {
      // Immutable
     LinkID id;

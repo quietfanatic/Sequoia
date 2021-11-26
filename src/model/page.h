@@ -3,13 +3,11 @@
 #include <string>
 #include <vector>
 
-#include "../util/db_support.h"
 #include "../util/types.h"
+#include "model.h"
 
 namespace model {
 
-struct PageData;
-using PageID = IDHandle<PageData>;
 struct PageData {
      // Immutable
     PageID id;
