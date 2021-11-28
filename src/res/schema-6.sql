@@ -40,6 +40,7 @@ CREATE TABLE _pages (
     _visited_at REAL NOT NULL,
     _group INTEGER NOT NULL,
     CHECK(_id > 0),
+    CHECK(_url <> ''),
     CHECK(_visited_at >= 0)
 );
 CREATE INDEX _pages_by_url_hash ON _pages (
@@ -100,7 +101,7 @@ CREATE INDEX _trashed_links_by_trashed_at ON _links (
 CREATE TABLE _tags (
     _id INTEGER PRIMARY KEY,
     _name TEXT NOT NULL,
-    _trashed_at REAL NOT NULL
+    _trashed_at REAL NOT NULL,
     CHECK(_id > 0),
     CHECK(LENGTH(_name) > 0),
     CHECK(_trashed_at >= 0)

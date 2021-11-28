@@ -1,5 +1,9 @@
 #include "tabs.h"
 
+#include "page.h"
+#include "link.h"
+#include "view.h"
+
 namespace model {
 
 using namespace std;
@@ -9,13 +13,15 @@ static void gen_tabs (
     LinkID link, PageID page, LinkID parent
 ) {
     auto children = get_links_from_page(page);
+    auto page_data = load(page);
+    auto link_data = load(link);
 
     int flags = 0;
     if (view.focused_tab == link) flags |= Tab::FOCUSED;
-    if (page->visited_at) flags |= Tab::VISITED;
-    if (page->loading) flags |= Tab::LOADING;
-    if (page->loaded && !page->loading) flags |= Tab::LOADED;
-    if (link && link->trashed_at) flags |= Tab::TRASHED;
+    if (page_data->visited_at) flags |= Tab::VISITED;
+    if (page_data->state == PageState::LOADING) flags |= Tab::LOADING;
+    if (page_data->state == PageState::LOADED) flags |= Tab::LOADED;
+    if (link && link_data->trashed_at) flags |= Tab::TRASHED;
     if (children.size()) flags |= Tab::EXPANDABLE; // TODO: don't use if inverted
     if (view.expanded_tabs.count(link)) flags |= Tab::EXPANDED;
 
@@ -23,14 +29,16 @@ static void gen_tabs (
     if (view.expanded_tabs.count(link)) {
          // TODO: include get_links_to_page
         for (LinkID child : children) {
-            gen_tabs(tabs, view, child, child->to_page, link);
+            auto child_data = load(child);
+            gen_tabs(tabs, view, child, child_data->to_page, link);
         }
     }
 }
 
-TabTree create_tab_tree (const ViewData& view) {
+TabTree create_tab_tree (ViewID view) {
     TabTree r;
-    gen_tabs(r, view, LinkID{}, view.root_page, LinkID{});
+    auto view_data = load(view);
+    gen_tabs(r, *view_data, LinkID{}, view_data->root_page, LinkID{});
     return r;
 }
 

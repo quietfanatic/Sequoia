@@ -156,7 +156,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="../src/model/actions.cpp" />
     <ClCompile Include="../src/model/database.cpp" />
     <ClCompile Include="../src/model/link.cpp" />
     <ClCompile Include="../src/model/page.cpp" />
@@ -179,7 +178,6 @@
     <ClCompile Include="../src/win32app/window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../src/control/actions.h" />
     <ClInclude Include="../src/control/profile.h" />
     <ClInclude Include="../src/model/database.h" />
     <ClInclude Include="../src/model/link.h" />

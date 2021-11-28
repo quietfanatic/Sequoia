@@ -4,7 +4,7 @@
 #include <WebView2.h>
 #include <windows.h>
 
-#include "../model/page.h"
+#include "../model/model.h"
 #include "../util/types.h"
 
 namespace json { struct Value; }

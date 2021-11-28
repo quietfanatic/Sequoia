@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../model/link.h"
 #include "../model/page.h"
 #include "../model/transaction.h"
 #include "../model/view.h"

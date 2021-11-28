@@ -3,7 +3,6 @@
 #include <exception>
 #include <windows.h>
 
-#include "../model/actions.h"
 #include "../model/database.h"
 #include "../model/transaction.h"
 #include "activity.h"
@@ -26,7 +25,7 @@ int App::run (const vector<String>& urls) {
     if (!views.empty()) {
         model::Transaction tr;
         for (model::ViewID view : views) {
-            view->updated();
+            updated(view);
         }
     }
     else if (!urls.empty()) {
@@ -35,15 +34,15 @@ int App::run (const vector<String>& urls) {
     else if (model::ViewID view = model::get_last_closed_view()) {
          // TODO: unclose multiple views if they were closed in
          // quick succession
-        model::unclose_view(view);
+        unclose(view);
     }
     else {
-        model::new_view_with_new_page("about:blank"sv);
+        model::create_view_and_page("about:blank"sv);
     }
      // Open new window if requested
     if (!urls.empty()) {
         if (urls.size() > 1) throw Error("Multiple URL arguments NYI"sv);
-        model::new_view_with_new_page(urls[0]);
+        model::create_view_and_page(urls[0]);
     }
      // Run message loop
     MSG msg;
@@ -66,9 +65,8 @@ Window* App::window_for_view (model::ViewID view) {
 }
 
 Window* App::window_for_page (model::PageID page) {
-    if (page->viewing_view) {
-         // TODO: remove cast
-        Window* window = window_for_view(model::ViewID{page->viewing_view});
+    if (auto view = load(page)->viewing_view) {
+        Window* window = window_for_view(view);
         AA(window);
         return window;
     }
@@ -90,7 +88,8 @@ Activity* App::activity_for_page (model::PageID page) {
 void App::Observer_after_commit (const model::Update& update) {
      // Create and destroy app objects
     for (model::ViewID view : update.views) {
-        if (view->exists && !view->closed_at) {
+        auto view_data = load(view);
+        if (view_data && !view_data->closed_at) {
             auto& shell = shells[view];
             if (!shell) shell = make_unique<Shell>(this, view);
             auto& window = windows[view];
@@ -102,7 +101,8 @@ void App::Observer_after_commit (const model::Update& update) {
         }
     }
     for (model::PageID page : update.pages) {
-        if (page->exists && page->loaded) {
+        auto page_data = load(page);
+        if (page_data && page_data->state != model::PageState::UNLOADED) {
             auto& activity = activities[page];
             if (!activity) activity = make_unique<Activity>(this, page);
         }

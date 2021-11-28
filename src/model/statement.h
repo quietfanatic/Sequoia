@@ -30,7 +30,7 @@ struct Statement {
     Statement () : handle(nullptr) { }
     Statement (sqlite3* db, Str sql, bool transient = false) {
         auto flags = transient ? 0 : SQLITE_PREPARE_PERSISTENT;
-        AS(sqlite3_prepare_v3(db, sql.data(), int(sql.size()), flags, &handle, nullptr));
+        AS(db, sqlite3_prepare_v3(db, sql.data(), int(sql.size()), flags, &handle, nullptr));
     }
     Statement (const Statement&) = delete;
     Statement& operator= (const Statement&) = delete;
@@ -40,7 +40,8 @@ struct Statement {
         new (this) Statement (std::move(st));
     }
     ~Statement () {
-        if (handle) AS(sqlite3_finalize(handle));
+        sqlite3* db = sqlite3_db_handle(handle);
+        if (handle) AS(db, sqlite3_finalize(handle));
     }
     operator sqlite3_stmt*& () { return handle; }
 };
@@ -52,36 +53,38 @@ struct UseStatement {
 
     UseStatement (sqlite3_stmt* h) : handle(h) { }
 
-    void param (char v) { AS(sqlite3_bind_int(handle, index++, v)); }
-    void param (signed char v) { AS(sqlite3_bind_int(handle, index++, v)); }
-    void param (unsigned char v) { AS(sqlite3_bind_int(handle, index++, v)); }
-    void param (short v) { AS(sqlite3_bind_int(handle, index++, v)); }
-    void param (unsigned short v) { AS(sqlite3_bind_int(handle, index++, v)); }
-    void param (int v) { AS(sqlite3_bind_int(handle, index++, v)); }
-    void param (unsigned int v) { AS(sqlite3_bind_int(handle, index++, v)); }
-    void param (long v) { AS(sqlite3_bind_int64(handle, index++, v)); }
-    void param (unsigned long v) { AS(sqlite3_bind_int64(handle, index++, v)); }
-    void param (long long v) { AS(sqlite3_bind_int64(handle, index++, v)); }
-    void param (unsigned long long v) { AS(sqlite3_bind_int64(handle, index++, v)); }
-    void param (float v) { AS(sqlite3_bind_double(handle, index++, v)); }
-    void param (double v) { AS(sqlite3_bind_double(handle, index++, v)); }
+    sqlite3* db () { return sqlite3_db_handle(handle); }
+
+    void param (char v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
+    void param (signed char v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
+    void param (unsigned char v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
+    void param (short v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
+    void param (unsigned short v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
+    void param (int v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
+    void param (unsigned int v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
+    void param (long v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
+    void param (unsigned long v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
+    void param (long long v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
+    void param (unsigned long long v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
+    void param (float v) { AS(db(), sqlite3_bind_double(handle, index++, v)); }
+    void param (double v) { AS(db(), sqlite3_bind_double(handle, index++, v)); }
     void param (const char* v) {
-        AS(sqlite3_bind_text(handle, index++, v, -1, SQLITE_TRANSIENT));
+        AS(db(), sqlite3_bind_text(handle, index++, v, -1, SQLITE_TRANSIENT));
     }
     void param (Str v) {
          // STATIC might be better for most use cases
-        AS(sqlite3_bind_text(handle, index++, v.data(), int(v.size()), SQLITE_TRANSIENT));
+        AS(db(), sqlite3_bind_text(handle, index++, v.data(), int(v.size()), SQLITE_TRANSIENT));
     }
     void param (const Bifractor& v) {
-        AS(sqlite3_bind_blob(handle, index++, v.bytes(), int(v.size), SQLITE_TRANSIENT));
+        AS(db(), sqlite3_bind_blob(handle, index++, v.bytes(), int(v.size), SQLITE_TRANSIENT));
     }
     template <class T>
     void param (const std::optional<T>& v) {
         if (v) param(*v);
-        else AS(sqlite3_bind_null(handle, index++));
+        else AS(db(), sqlite3_bind_null(handle, index++));
     }
     template <class T>
-    void param (IDHandle<T> v) {
+    void param (ModelID<T> v) {
         param(int64(v));
     }
     template <class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
@@ -128,8 +131,8 @@ struct UseStatement {
             }
         }
         template <class T>
-        operator IDHandle<T> () {
-            return IDHandle<T>(int64(*this));
+        operator ModelID<T> () {
+            return ModelID<T>(int64(*this));
         }
     };
     Column operator [] (int index) { return Column{this, index}; }
@@ -137,7 +140,7 @@ struct UseStatement {
     bool step () {
         AA(!done);
         auto result_code = sqlite3_step(handle);
-        if (result_code != SQLITE_ROW && result_code != SQLITE_DONE) AS(result_code);
+        if (result_code != SQLITE_ROW && result_code != SQLITE_DONE) AS(db(), result_code);
         done = result_code == SQLITE_DONE;
         return !done;
     }
@@ -170,8 +173,8 @@ struct UseStatement {
 
     ~UseStatement () {
         AA(done);
-        AS(sqlite3_reset(handle));
-        AS(sqlite3_clear_bindings(handle));
+        AS(db(), sqlite3_reset(handle));
+        AS(db(), sqlite3_clear_bindings(handle));
     }
 };
 

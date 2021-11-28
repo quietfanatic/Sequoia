@@ -2,7 +2,6 @@
 
 #include <windows.h>
 
-#include "../model/database.h"
 #include "../util/hash.h"
 #include "../util/json.h"
 #include "../util/types.h"

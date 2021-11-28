@@ -3,7 +3,4 @@ that's saved in the DB.  The only exceptions are:
  - Trivial UI stuff like scroll positions
  - Profile-related stuff, which is mostly only read at startup.
 
-Things that want to depend on application state should subscribe to the observer
-system in transaction.h.
-Things that want to change appliation state should do so with the functions in
-action.h.
+TODO: document new update system

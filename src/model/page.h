@@ -7,10 +7,16 @@
 #include "model.h"
 
 namespace model {
+inline namespace page {
+
+enum PageState {
+    UNLOADED,
+    LOADING,
+    LOADED
+};
 
 struct PageData {
      // Immutable
-    PageID id;
     String url;
      // Mutable but intrinsic
     String favicon_url;
@@ -19,19 +25,21 @@ struct PageData {
      // Extrinsic
     int64 group = 0; // NYI
      // Temporary (not stored in DB)
-    bool loaded = false;
-    bool loading = false;
+    PageState state = UNLOADED;
      // TODO: make ViewID!
-    int64 viewing_view;
-     // Bookkeeping
-    bool exists = true;
-
-    static const PageData* load (PageID);
-     // These should only be used by control
-    void save ();  // Write *this to database
-    void updated () const;  // Send to Observers without saving
+    ViewID viewing_view;
 };
+
+const PageData* load (PageID);
 
 std::vector<PageID> get_pages_with_url (Str url);
 
+void set_url (PageID, Str);
+void set_title (PageID, Str);
+void set_favicon_url (PageID, Str);
+void set_visited (PageID);
+void set_state (PageID, PageState);
+void updated (PageID);  // Send to Observers without saving
+
+} // namespace page
 } // namespace model

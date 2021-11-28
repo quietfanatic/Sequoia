@@ -28,7 +28,7 @@ struct Window {
     void view_updated ();
     void page_updated ();
 
-    Window (App*, const model::ViewID&);
+    Window (App*, model::ViewID);
     ~Window();
 };
 

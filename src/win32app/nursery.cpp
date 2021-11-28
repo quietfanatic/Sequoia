@@ -6,7 +6,6 @@
 #include <wil/com.h>
 #include <wrl.h>
 
-#include "../model/actions.h"
 #include "../model/page.h"
 #include "../model/transaction.h"
 #include "../model/view.h"
@@ -46,7 +45,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         switch (x31_hash(command)) {
         case x31_hash("new_window"): {
             ReplyMessage(0);
-            model::new_view_with_new_page(message[1]);
+            model::create_view_and_page(message[1]);
             return 0;
         }
         default: return 1;

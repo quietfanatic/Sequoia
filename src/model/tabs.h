@@ -3,9 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "link.h"
-#include "page.h"
-#include "view.h"
+#include "model.h"
 #include "transaction.h"
 
 namespace model {
@@ -36,7 +34,7 @@ struct Tab {
 
 using TabTree = std::unordered_map<LinkID, Tab>;
 
-TabTree create_tab_tree (const ViewData& view);
+TabTree create_tab_tree (ViewID view);
 
  // A removed tab is represented by a tab with 0 for its PageID.  This is kind
  //  of dumb and may change.

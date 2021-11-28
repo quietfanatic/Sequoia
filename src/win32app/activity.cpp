@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <wrl.h>
 
-#include "../model/actions.h"
+#include "../model/page.h"
 #include "../model/transaction.h"
 #include "../util/assert.h"
 #include "../util/files.h"
@@ -31,7 +31,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
-            model::start_loading_page(page);
+            set_state(page, model::PageState::LOADING);
             return S_OK;
         }).Get(), nullptr));
 
@@ -46,7 +46,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
             if (source.get() == L"about:blank"sv) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                model::change_page_title(page, from_utf16(title.get()));
+                set_title(page, from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
@@ -62,9 +62,10 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
             if (source.get() != L""sv && source.get() != L"about:blank"sv) {
+                auto page_data = load(page);
                 current_url = from_utf16(source.get());
-                if (page->url != current_url) {
-                    model::change_page_url(page, current_url);
+                if (page_data->url != current_url) {
+                    set_url(page, current_url);
                 }
             }
 
@@ -76,7 +77,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
-            model::finish_loading_page(page);
+            set_state(page, model::PageState::LOADED);
             return S_OK;
         }).Get(), nullptr));
 
@@ -89,7 +90,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            model::open_as_last_child(page, from_utf16(url.get()));
+            create_last_child(page, from_utf16(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -149,11 +150,9 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
             Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
                 [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-            if (page->viewing_view) {
-                 // TODO: remove cast
-                model::change_view_fullscreen(
-                    model::ViewID{page->viewing_view}, is_fullscreen()
-                );
+            auto page_data = load(page);
+            if (page_data->viewing_view) {
+                set_fullscreen(page_data->viewing_view, is_fullscreen());
             }
             return S_OK;
         }).Get(), nullptr));
@@ -176,7 +175,7 @@ void Activity::message_from_webview (const json::Value& message) {
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
-        model::change_page_favicon_url(page, message[1]);
+        set_favicon_url(page, message[1]);
         break;
     }
     case x31_hash("click_link"): {
@@ -202,10 +201,10 @@ void Activity::message_from_webview (const json::Value& message) {
 //                link.move_after(page);
             }
             else if (shift) {
-                model::open_as_first_child(page, url, title);
+                create_first_child(page, url, title);
             }
             else {
-                model::open_as_last_child(page, url, title);
+                create_last_child(page, url, title);
             }
         }
         break;
@@ -229,8 +228,9 @@ void Activity::message_from_webview (const json::Value& message) {
 }
 
 void Activity::page_updated () {
-    if (page->url != current_url) {
-        navigate(page->url);
+    auto page_data = load(page);
+    if (page_data->url != current_url) {
+        navigate(page_data->url);
     }
 }
 
@@ -268,7 +268,7 @@ void Activity::navigate (Str address) {
         }
     }
     else {
-        model::change_page_url(page, current_url = address);
+        set_url(page, current_url = address);
     }
 }
 

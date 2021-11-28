@@ -3,7 +3,6 @@
 #include <windows.h>
 #include <wrl.h>
 
-#include "../model/actions.h"
 #include "../model/link.h"
 #include "../model/page.h"
 #include "../util/files.h"
@@ -95,27 +94,29 @@ void Shell::select_location () {
 }
 
 static json::Array make_tab_json (
-    const model::ViewData& view, model::LinkID link, const model::Tab& tab
+    model::LinkID link, const model::Tab& tab
 ) {
      // Sending just id means tab should be removed
     if (!tab.page) {
         return json::array(link);
     }
+    auto link_data = load(link);
+    auto page_data = load(tab.page);
      // This code path will probably never be hit.
-    if (link && !link->exists) {
+    if (link && !load(link)) {
         return json::array(link);
     }
      // Choose title
-    string title = tab.page->title;
-    if (title.empty() && link) title = link->title; // TODO: don't use this if inverted link
-    if (title.empty()) title = tab.page->url;
+    string title = page_data->title;
+    if (title.empty() && link) title = link_data->title; // TODO: don't use this if inverted link
+    if (title.empty()) title = page_data->url;
 
     return json::array(
         link,
         link ? json::Value(tab.parent) : json::Value(nullptr),
-        link ? link->position.hex() : "80"sv,
-        tab.page->url,
-        tab.page->favicon_url,
+        link ? link_data->position.hex() : "80"sv,
+        page_data->url,
+        page_data->favicon_url,
         title,
         tab.flags
     );
@@ -133,11 +134,11 @@ void Shell::message_from_webview (const json::Value& message) {
                 std::pair{"theme"sv, app->settings.theme}
             )
         ));
-        tabs = create_tab_tree(*view);
+        tabs = create_tab_tree(view);
         json::Array tab_updates;
         tab_updates.reserve(tabs.size());
         for (auto& [id, tab] : tabs) {
-            tab_updates.emplace_back(make_tab_json(*view, id, tab));
+            tab_updates.emplace_back(make_tab_json(id, tab));
         }
         message_to_webview(json::array("view"sv, tab_updates));
         ready = true;
@@ -156,28 +157,28 @@ void Shell::message_from_webview (const json::Value& message) {
     }
      // Toolbar buttons
     case x31_hash("back"): {
-        Activity* activity = app->activity_for_page(view->focused_page());
+        Activity* activity = app->activity_for_page(load(view)->focused_page());
         if (activity && activity->webview) {
             activity->webview->GoBack();
         }
         break;
     }
     case x31_hash("forward"): {
-        Activity* activity = app->activity_for_page(view->focused_page());
+        Activity* activity = app->activity_for_page(load(view)->focused_page());
         if (activity && activity->webview) {
             activity->webview->GoForward();
         }
         break;
     }
     case x31_hash("reload"): {
-        Activity* activity = app->activity_for_page(view->focused_page());
+        Activity* activity = app->activity_for_page(load(view)->focused_page());
         if (activity && activity->webview) {
             activity->webview->Reload();
         }
         break;
     }
     case x31_hash("stop"): {
-        Activity* activity = app->activity_for_page(view->focused_page());
+        Activity* activity = app->activity_for_page(load(view)->focused_page());
         if (activity && activity->webview) {
             activity->webview->Stop();
         }
@@ -193,22 +194,18 @@ void Shell::message_from_webview (const json::Value& message) {
         break;
     }
     case x31_hash("new_child"): {
-        model::open_as_last_child_in_view(view, model::LinkID{message[1]}, "about:blank"sv);
+        model::create_and_focus_last_child(view, model::LinkID{message[1]}, "about:blank"sv);
         break;
     }
     case x31_hash("trash_tab"): {
         model::trash_tab(view, model::LinkID{message[1]});
         break;
     }
-    case x31_hash("delete_tab"): {
-        model::delete_tab(view, model::LinkID{message[1]});
-        break;
-    }
     case x31_hash("move_tab_before"): {
         model::LinkID link {message[1]};
         model::LinkID target {message[2]};
         if (link && target) {
-            model::move_link_before(link, target);
+            model::move_before(link, target);
         }
         break;
     }
@@ -216,7 +213,7 @@ void Shell::message_from_webview (const json::Value& message) {
         model::LinkID link {message[1]};
         model::LinkID target {message[2]};
         if (link && target) {
-            model::move_link_after(link, target);
+            model::move_after(link, target);
         }
         break;
     }
@@ -224,7 +221,7 @@ void Shell::message_from_webview (const json::Value& message) {
         model::LinkID link {message[1]};
         model::PageID parent {message[2]};
         if (link) {
-            model::move_link_first_child(link, parent);
+            model::move_first_child(link, parent);
         }
         break;
     }
@@ -232,7 +229,7 @@ void Shell::message_from_webview (const json::Value& message) {
         model::LinkID link {message[1]};
         model::PageID parent {message[2]};
         if (link) {
-            model::move_link_last_child(link, parent);
+            model::move_last_child(link, parent);
         }
         break;
     }
@@ -246,7 +243,8 @@ void Shell::message_from_webview (const json::Value& message) {
     }
      // Main menu
     case x31_hash("fullscreen"): {
-        model::change_view_fullscreen(view, !view->fullscreen);
+        auto view_data = load(view);
+        model::set_fullscreen(view, !view_data->fullscreen);
         break;
     }
     case x31_hash("register_as_browser"): {
@@ -254,7 +252,8 @@ void Shell::message_from_webview (const json::Value& message) {
         break;
     }
     case x31_hash("open_selected_links"): {
-        if (Activity* activity = app->activity_for_page(view->focused_page())) {
+        auto view_data = load(view);
+        if (Activity* activity = app->activity_for_page(view_data->focused_page())) {
             activity->message_to_webview(json::array("open_selected_links"sv));
         }
         break;
@@ -277,14 +276,14 @@ void Shell::message_from_webview (const json::Value& message) {
 void Shell::update (const model::Update& update) {
      // Generate new tab collection
     model::TabTree old_tabs = move(tabs);
-    tabs = create_tab_tree(*view);
+    tabs = create_tab_tree(view);
      // Send changed tabs to shell
     if (ready) {
         model::TabChanges changes = get_changed_tabs(old_tabs, tabs, update);
         json::Array tab_updates;
         tab_updates.reserve(changes.size());
         for (auto& [id, tab] : changes) {
-            tab_updates.emplace_back(make_tab_json(*view, id, tab));
+            tab_updates.emplace_back(make_tab_json(id, tab));
         }
         if (tab_updates.size()) {
             message_to_webview(json::array("update"sv, tab_updates));

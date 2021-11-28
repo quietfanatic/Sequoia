@@ -8,7 +8,6 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "../model/actions.h"
 #include "../model/link.h"
 #include "../model/transaction.h"
 #include "../model/view.h"
@@ -28,8 +27,8 @@ using namespace std;
 
 static LRESULT CALLBACK WndProcStatic (HWND, UINT, WPARAM, LPARAM);
 
-Window::Window (App* a, const model::ViewID& v) :
-    app(a), view(v), current_view_data(*v)
+Window::Window (App* a, model::ViewID v) :
+    app(a), view(v), current_view_data(*load(view))
 {
     static auto class_name = L"Sequoia";
     static bool init = []{
@@ -71,18 +70,18 @@ void Window::reflow () {
     if (shell && shell->controller) {
         AH(shell->controller->put_ParentWindow(hwnd));
         AH(shell->controller->put_Bounds(bounds));
-        AH(shell->controller->put_IsVisible(!view->fullscreen));
+        AH(shell->controller->put_IsVisible(!current_view_data.fullscreen));
     }
     auto dpi = GetDpiForWindow(hwnd);
     AW(dpi);
     double scale = dpi / 96.0;
-    if (!view->fullscreen) {
+    if (!current_view_data.fullscreen) {
         bounds.top += uint(toolbar_height * scale);
         double side_width = sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
     }
      // TODO: make sure this is actually our page
-    Activity* activity = app->activity_for_page(view->focused_page());
+    Activity* activity = app->activity_for_page(current_view_data.focused_page());
     if (activity && activity->controller) {
         AH(activity->controller->put_ParentWindow(hwnd));
         AH(activity->controller->put_Bounds(bounds));
@@ -99,8 +98,9 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
                      // TODO: make sure this is actually our page
+                    auto view_data = load(window->view);
                     Activity* activity = window->app->activity_for_page(
-                        window->view->focused_page()
+                        view_data->focused_page()
                     );
                     if (activity && activity->controller) {
                         activity->controller->put_IsVisible(FALSE);
@@ -136,7 +136,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         }
         case WM_CLOSE:
              // TODO: respond to session manager messages
-            model::close_view(window->view);
+            close(window->view);
             return 0;
     }
     return DefWindowProc(hwnd, message, w, l);
@@ -146,7 +146,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
-            model::change_view_fullscreen(view, !view->fullscreen);
+            model::set_fullscreen(view, !current_view_data.fullscreen);
         };
         break;
     case 'L':
@@ -199,8 +199,8 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         break;
     case VK_ESCAPE:
         if (!shift && !ctrl && !alt) {
-            if (view->fullscreen) return [this]{
-                model::change_view_fullscreen(view, false);
+            if (current_view_data.fullscreen) return [this]{
+                model::set_fullscreen(view, false);
             };
         }
         break;
@@ -223,8 +223,9 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
 }
 
 void Window::view_updated () {
-    if (view->fullscreen != current_view_data.fullscreen) {
-        if (view->fullscreen) {
+    auto view_data = load(view);
+    if (view_data->fullscreen != current_view_data.fullscreen) {
+        if (view_data->fullscreen) {
             MONITORINFO monitor = {sizeof(MONITORINFO)};
             AW(GetWindowPlacement(hwnd, &placement_before_fullscreen));
             AW(GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor));
@@ -248,18 +249,19 @@ void Window::view_updated () {
             );
             reflow();
              // TODO: make sure this is actually our activity
-            Activity* activity = app->activity_for_page(view->focused_page());
+            Activity* activity = app->activity_for_page(view_data->focused_page());
             if (activity) activity->leave_fullscreen();
         }
     }
-    if (view->focused_page() != current_view_data.focused_page()) {
+    if (view_data->focused_page() != current_view_data.focused_page()) {
         page_updated();
     }
-    current_view_data = *view;
+    current_view_data = *view_data;
 }
 
 void Window::page_updated () {
-    const string& title = view->focused_page()->title;
+    auto page_data = load(current_view_data.focused_page());
+    const string& title = page_data->title;
     String display = title.empty() ? "Sequoia"s : (title + " – Sequoia"sv);
     AW(SetWindowTextW(hwnd, to_utf16(display).c_str()));
 }
