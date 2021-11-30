@@ -100,7 +100,9 @@ Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
             return S_OK;
         }).Get(), nullptr));
 
-        static std::wstring injection = to_utf16(slurp(exe_relative("res/injection.js"sv)));
+        static std::wstring injection = to_utf16(
+            slurp(exe_relative("res/win32app/activity.js"sv))
+        );
         AH(webview->AddScriptToExecuteOnDocumentCreated(injection.c_str(), nullptr));
 
         AH(webview->add_WebMessageReceived(

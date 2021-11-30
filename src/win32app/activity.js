@@ -8,6 +8,7 @@ if (host === undefined) return;
  // TODO: Figure out how to prevent webpage from abusing chrome.webview
  //  If we delete this, host.addEventListener("message", ...) stops working.
  // TODO: File a bug report with WebView2?
+ // TODO: Stop using PostWebMessage and use ExecuteScript?
 //delete chrome.webview;
 
 let JSON_stringify = JSON.stringify;
@@ -25,6 +26,7 @@ function host_post (message) {
 
     host.postMessage(message);
 
+     // Aforementioned website breaks if it doesn't get its broken overrides.
     if (old_Array_toJSON !== undefined) {
         Array.prototype.toJSON = old_Array_toJSON;
     }
@@ -103,6 +105,7 @@ window.addEventListener("auxclick", click_link);
  // Respond to request from shell to open multiple links at once
  // TODO: this probably won't work in iframes with the current setup, so maybe
  // trigger the event from here by middle-clicking one of the selected links.
+ // (Actually, now that there are Frame APIs, we can just use those)
 host.addEventListener("message", e=>{
     console.log(e);
     if (e.data.length < 1) {
@@ -123,7 +126,7 @@ host.addEventListener("message", e=>{
             }
         }
         console.log(info);
-        host.postMessage(["new_children", info]);
+        host_post(["new_children", info]);
     }
 });
 

@@ -209,8 +209,23 @@
     <ClInclude Include="../src/win32app/window.h" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="../src/res/*">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    <CopyFileToFolders Include="../src/model/internal/schema.sql">
+      <DestinationFolders>$(OutDir)/res/model</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/activity.js">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/domifier.js">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/shell.css">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/shell.html">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/shell.js">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>

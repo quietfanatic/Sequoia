@@ -19,7 +19,7 @@ Database::Database (Str db_path) {
     if (!db_exists) {
         LOG("Creating database..."sv);
         {
-            String schema = slurp(exe_relative("res/schema.sql"sv));
+            String schema = slurp(exe_relative("res/model/schema.sql"sv));
             AS(db, sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));
         }
         LOG("Creation complete."sv);

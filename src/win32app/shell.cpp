@@ -79,7 +79,9 @@ Shell::Shell (App& a, model::ViewID v) : app(a), view(v) {
             return S_OK;
         }).Get(), nullptr));
 
-        webview->Navigate(to_utf16(exe_relative("res/shell.html"sv)).c_str());
+        webview->Navigate(to_utf16(
+            exe_relative("res/win32app/shell.html"sv)
+        ).c_str());
 
         if (Window* window = app.window_for_view(view)) {
             window->reflow();
