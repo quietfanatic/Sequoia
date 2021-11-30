@@ -92,7 +92,8 @@ Activity* App::activity_for_page (model::PageID page) {
 }
 
 void App::Observer_after_commit (const model::Update& update) {
-     // Create and destroy app objects
+     // Create and destroy app objects.  Ideally order shouldn't matter, but I
+     // suspect there may be dependencies.
     for (model::ViewID view : update.views) {
         auto view_data = model/view;
         if (view_data && !view_data->closed_at) {
@@ -114,6 +115,11 @@ void App::Observer_after_commit (const model::Update& update) {
         }
         else activities.erase(page);
     }
+     // Quit if there are no more windows.
+    if (windows.empty()) {
+        AA(shells.empty());
+        quit();
+    }
      // Update objects (order shouldn't matter here)
     for (model::ViewID view : update.views) {
         if (Window* window = window_for_view(view)) {
@@ -125,9 +131,11 @@ void App::Observer_after_commit (const model::Update& update) {
             activity->page_updated();
         }
         if (Window* window = window_for_page(page)) {
+             // TODO: avoid calling this twice?
             window->page_updated();
         }
     }
+     // Shells are responsible for figuring out when they want to update.
     for (auto& [_, shell] : shells) {
         shell->update(update);
     }
