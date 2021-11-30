@@ -14,6 +14,8 @@
 
 using namespace std;
 
+namespace win32app {
+
 Profile::Profile (Str n, Str f) : name(n), folder(f) {
     if (folder.empty()) {
         if (name.empty()) name = "default"s;
@@ -100,3 +102,5 @@ void Profile::register_as_browser () {
     set_reg_sz(class_k + L"\\shell\\open\\command"sv, nullptr, command_line + L" -- \"%1\""sv);
     set_reg_sz(L"Software\\RegisteredApplications"s, app_class.c_str(), caps_k);
 }
+
+} // namespace win32app

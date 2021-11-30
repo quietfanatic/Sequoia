@@ -8,10 +8,12 @@
 #include "../util/types.h"
 
 namespace json { struct Value; }
+
+namespace win32app {
 struct App;
 
 struct Activity {
-    App* app;
+    App& app;
     model::PageID page;
 
     wil::com_ptr<ICoreWebView2Controller> controller;
@@ -23,7 +25,7 @@ struct Activity {
      //  through navigation
     String current_url;
 
-    Activity (App*, model::PageID);
+    Activity (App&, model::PageID);
     void page_updated ();
 
     bool navigate_url (Str url);
@@ -39,4 +41,4 @@ struct Activity {
     ~Activity();
 };
 
-Activity* activity_for_page (model::PageID id);
+} // namespace win32app

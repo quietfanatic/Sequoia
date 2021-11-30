@@ -9,8 +9,9 @@
 #include <wrl.h>
 
 #include "../model/link.h"
-#include "../model/transaction.h"
+#include "../model/page.h"
 #include "../model/view.h"
+#include "../model/write.h"
 #include "../util/assert.h"
 #include "../util/files.h"
 #include "../util/hash.h"
@@ -25,17 +26,20 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-static LRESULT CALLBACK WndProcStatic (HWND, UINT, WPARAM, LPARAM);
+namespace win32app {
 
-Window::Window (App* a, model::ViewID v) :
-    app(a), view(v), current_view_data(*load(view))
+static LRESULT CALLBACK window_WndProc (HWND, UINT, WPARAM, LPARAM);
+
+Window::Window (App& a, model::ViewID v) :
+    app(a), view(v),
+    current_focused_page(focused_page(app.model, view))
 {
     static auto class_name = L"Sequoia";
     static bool init = []{
         WNDCLASSEXW c {};
         c.cbSize = sizeof(WNDCLASSEX);
         c.style = CS_HREDRAW | CS_VREDRAW;
-        c.lpfnWndProc = WndProcStatic;
+        c.lpfnWndProc = window_WndProc;
         c.hInstance = GetModuleHandle(nullptr);
         c.hCursor = LoadCursor(NULL, IDC_ARROW);
         c.lpszClassName = class_name;
@@ -66,22 +70,22 @@ Window::~Window () {
 void Window::reflow () {
     RECT bounds;
     GetClientRect(hwnd, &bounds);
-    Shell* shell = app->shell_for_view(view);
+    Shell* shell = app.shell_for_view(view);
     if (shell && shell->controller) {
         AH(shell->controller->put_ParentWindow(hwnd));
         AH(shell->controller->put_Bounds(bounds));
-        AH(shell->controller->put_IsVisible(!current_view_data.fullscreen));
+        AH(shell->controller->put_IsVisible(!fullscreen));
     }
     auto dpi = GetDpiForWindow(hwnd);
     AW(dpi);
     double scale = dpi / 96.0;
-    if (!current_view_data.fullscreen) {
+    if (!fullscreen) {
         bounds.top += uint(toolbar_height * scale);
         double side_width = sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
     }
      // TODO: make sure this is actually our page
-    Activity* activity = app->activity_for_page(current_view_data.focused_page());
+    Activity* activity = app.activity_for_page(current_focused_page);
     if (activity && activity->controller) {
         AH(activity->controller->put_ParentWindow(hwnd));
         AH(activity->controller->put_Bounds(bounds));
@@ -89,7 +93,7 @@ void Window::reflow () {
     }
 }
 
-static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
+static LRESULT CALLBACK window_WndProc (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (!window) return DefWindowProc(hwnd, message, w, l);
     switch (message) {
@@ -98,14 +102,13 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
                      // TODO: make sure this is actually our page
-                    auto view_data = load(window->view);
-                    Activity* activity = window->app->activity_for_page(
-                        view_data->focused_page()
+                    Activity* activity = window->app.activity_for_page(
+                        window->current_focused_page
                     );
                     if (activity && activity->controller) {
                         activity->controller->put_IsVisible(FALSE);
                     }
-                    Shell* shell = window->app->shell_for_view(window->view);
+                    Shell* shell = window->app.shell_for_view(window->view);
                     if (shell && shell->controller) {
                         shell->controller->put_IsVisible(FALSE);
                     }
@@ -136,7 +139,7 @@ static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM
         }
         case WM_CLOSE:
              // TODO: respond to session manager messages
-            close(window->view);
+            close(write(window->app.model), window->view);
             return 0;
     }
     return DefWindowProc(hwnd, message, w, l);
@@ -146,13 +149,13 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
-            model::set_fullscreen(view, !current_view_data.fullscreen);
+            set_fullscreen(write(app.model), view, !fullscreen);
         };
         break;
     case 'L':
         if (!shift && ctrl && !alt) return [this]{
              // Skip model for this
-            if (Shell* shell = app->shell_for_view(view)) {
+            if (Shell* shell = app.shell_for_view(view)) {
                 shell->select_location();
             }
         };
@@ -199,8 +202,8 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         break;
     case VK_ESCAPE:
         if (!shift && !ctrl && !alt) {
-            if (current_view_data.fullscreen) return [this]{
-                model::set_fullscreen(view, false);
+            if (fullscreen) return [this]{
+                set_fullscreen(write(app.model), view, false);
             };
         }
         break;
@@ -223,46 +226,47 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
 }
 
 void Window::view_updated () {
-    auto view_data = load(view);
-    if (view_data->fullscreen != current_view_data.fullscreen) {
-        if (view_data->fullscreen) {
-            MONITORINFO monitor = {sizeof(MONITORINFO)};
-            AW(GetWindowPlacement(hwnd, &placement_before_fullscreen));
-            AW(GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor));
-            DWORD style = GetWindowLong(hwnd, GWL_STYLE);
-            SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
-            SetWindowPos(hwnd, HWND_TOP,
-                monitor.rcMonitor.left, monitor.rcMonitor.top,
-                monitor.rcMonitor.right - monitor.rcMonitor.left,
-                monitor.rcMonitor.bottom - monitor.rcMonitor.top,
-                SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-            );
-            reflow();
-        }
-        else {
-            DWORD style = GetWindowLong(hwnd, GWL_STYLE);
-            SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
-            SetWindowPlacement(hwnd, &placement_before_fullscreen);
-            SetWindowPos(
-                hwnd, nullptr, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-            );
-            reflow();
-             // TODO: make sure this is actually our activity
-            Activity* activity = app->activity_for_page(view_data->focused_page());
-            if (activity) activity->leave_fullscreen();
-        }
+    auto view_data = app.model/view;
+    if (view_data->fullscreen && !fullscreen) {
+        fullscreen = Fullscreen{};
+        MONITORINFO monitor = {sizeof(MONITORINFO)};
+        AW(GetWindowPlacement(hwnd, &fullscreen->old_placement));
+        AW(GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor));
+        DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+        SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+        SetWindowPos(hwnd, HWND_TOP,
+            monitor.rcMonitor.left, monitor.rcMonitor.top,
+            monitor.rcMonitor.right - monitor.rcMonitor.left,
+            monitor.rcMonitor.bottom - monitor.rcMonitor.top,
+            SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+        );
+        reflow();
     }
-    if (view_data->focused_page() != current_view_data.focused_page()) {
+    else if (!view_data->fullscreen && fullscreen) {
+        DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+        SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(hwnd, &fullscreen->old_placement);
+        SetWindowPos(
+            hwnd, nullptr, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+        );
+        reflow();
+         // TODO: make sure this is actually our activity
+        Activity* activity = app.activity_for_page(current_focused_page);
+        if (activity) activity->leave_fullscreen();
+        fullscreen = nullopt;
+    }
+    auto new_focused_page = focused_page(app.model, view);
+    if (new_focused_page != current_focused_page) {
         page_updated();
     }
-    current_view_data = *view_data;
+    current_focused_page = new_focused_page;
 }
 
 void Window::page_updated () {
-    auto page_data = load(current_view_data.focused_page());
-    const string& title = page_data->title;
+    Str title = (app.model/focused_page(app.model, view))->title;
     String display = title.empty() ? "Sequoia"s : (title + " – Sequoia"sv);
     AW(SetWindowTextW(hwnd, to_utf16(display).c_str()));
 }
 
+} // namespace win32app

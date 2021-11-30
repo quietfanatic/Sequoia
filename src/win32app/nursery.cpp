@@ -7,13 +7,14 @@
 #include <wrl.h>
 
 #include "../model/page.h"
-#include "../model/transaction.h"
 #include "../model/view.h"
+#include "../model/write.h"
 #include "../util/assert.h"
 #include "../util/hash.h"
 #include "../util/log.h"
 #include "../util/json.h"
 #include "../util/text.h"
+#include "app.h"
 #include "activity.h"
 #include "profile.h"
 #include "window.h"
@@ -21,13 +22,7 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-String16 edge_udf;
-static wil::com_ptr<ICoreWebView2Environment> environment;
-HWND nursery_hwnd = nullptr;
-
-wil::com_ptr<ICoreWebView2Controller> next_controller = nullptr;
-wil::com_ptr<ICoreWebView2> next_webview = nullptr;
-HWND next_hwnd = nullptr;
+namespace win32app {
 
 static const wchar_t* class_name = L"Sequoia Nursery";
 
@@ -37,42 +32,45 @@ HWND existing_nursery (const Profile& profile) {
     return FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str());
 }
 
-static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
+static LRESULT CALLBACK nursery_WndProc (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     switch (message) {
-    case WM_COPYDATA: {
-        auto message = json::parse((const char*)((COPYDATASTRUCT*)l)->lpData);
-        const string& command = message[0];
-        switch (x31_hash(command)) {
-        case x31_hash("new_window"): {
-            ReplyMessage(0);
-            model::create_view_and_page(message[1]);
-            return 0;
+        case WM_COPYDATA: {
+            auto self = (Nursery*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            auto message = json::parse(
+                (const char*)((COPYDATASTRUCT*)l)->lpData
+            );
+            const string& command = message[0];
+            switch (x31_hash(command)) {
+                case x31_hash("new_window"): {
+                    ReplyMessage(0);
+                    create_view_and_page(write(self->app.model), message[1]);
+                    return 0;
+                }
+                default: return 1;
+            }
         }
-        default: return 1;
-        }
-    }
     }
     return DefWindowProc(hwnd, message, w, l);
 }
 
-void init_nursery (const Profile& profile) {
-    AA(!nursery_hwnd);
+Nursery::Nursery (App& a) : app(a) {
+    AA(!hwnd);
     AH(OleInitialize(nullptr));
 
-    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(profile.name);
+    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(app.profile.name);
 
-    edge_udf = to_utf16(profile.folder + "/edge-user-data"sv);
+    edge_udf = to_utf16(app.profile.folder + "/edge-user-data"sv);
 
     static bool init = []{
         WNDCLASSEXW c {};
         c.cbSize = sizeof(WNDCLASSEX);
-        c.lpfnWndProc = WndProcStatic;
+        c.lpfnWndProc = nursery_WndProc;
         c.hInstance = GetModuleHandle(nullptr);
         c.lpszClassName = class_name;
         AW(RegisterClassExW(&c));
         return true;
     }();
-    nursery_hwnd = CreateWindowW(
+    hwnd = CreateWindowW(
         class_name,
         window_title.c_str(),
         0,
@@ -83,22 +81,27 @@ void init_nursery (const Profile& profile) {
         GetModuleHandle(nullptr),
         nullptr
     );
-    AW(nursery_hwnd);
-
+    AW(hwnd);
      // Check for a race condition where two app processes created a window at the same time.
      // There should only be one nursery window, and it should be the one we just made.
-    AA(FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str()) == nursery_hwnd);
-    AA(FindWindowExW(HWND_MESSAGE, nursery_hwnd, class_name, window_title.c_str()) == nullptr);
+    AA(FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str()) == hwnd);
+    AA(FindWindowExW(HWND_MESSAGE, hwnd, class_name, window_title.c_str()) == nullptr);
+
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 }
 
-static void create (const function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then) {
-    AH(environment->CreateCoreWebView2Controller(nursery_hwnd,
+static void create (
+    Nursery& nursery,
+    const function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then
+) {
+    AH(nursery.environment->CreateCoreWebView2Controller(
+        nursery.hwnd,
         Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
-            [then](HRESULT hr, ICoreWebView2Controller* controller) -> HRESULT
+            [&nursery, then](HRESULT hr, ICoreWebView2Controller* controller) -> HRESULT
    {
         LOG("Nursery: new webview created"sv);
         AH(hr);
-        HWND hwnd = GetWindow(nursery_hwnd, GW_CHILD);
+        HWND hwnd = GetWindow(nursery.hwnd, GW_CHILD);
         AW(hwnd);
         SetParent(hwnd, HWND_MESSAGE);
 
@@ -109,18 +112,23 @@ static void create (const function<void(ICoreWebView2Controller*, ICoreWebView2*
     }).Get()));
 }
 
-static void queue () {
-    create([](ICoreWebView2Controller* controller, ICoreWebView2* webview, HWND hwnd){
+static void queue (
+    Nursery& nursery
+) {
+     // TODO: use-after-free
+    create(nursery, [&nursery](ICoreWebView2Controller* controller, ICoreWebView2* webview, HWND hwnd){
         LOG("Nursery: new webview queued"sv);
-        next_controller = controller;
-        next_webview = webview;
-        next_hwnd = hwnd;
+        nursery.next_controller = controller;
+        nursery.next_webview = webview;
+        nursery.next_hwnd = hwnd;
     });
 }
 
-void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then) {
+void Nursery::new_webview (
+    const function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then
+) {
     LOG("Nursery: new webview requested"sv);
-    AA(nursery_hwnd);
+    AA(hwnd);
     if (!environment) {
         LOG("Nursery: creating environment"sv);
         auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
@@ -128,13 +136,13 @@ void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, 
         AH(CreateCoreWebView2EnvironmentWithOptions(
             nullptr, edge_udf.c_str(), nullptr,
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
-                [then](HRESULT hr, ICoreWebView2Environment* env) -> HRESULT
+                [this, then](HRESULT hr, ICoreWebView2Environment* env) -> HRESULT
         {
             AH(hr);
             LOG("Nursery: environment created"sv);
             environment = env;
-            create(then);
-            queue();
+            create(*this, then);
+            queue(*this);
             return S_OK;
         }).Get()));
     }
@@ -143,15 +151,15 @@ void new_webview (const function<void(ICoreWebView2Controller*, ICoreWebView2*, 
         auto controller = std::move(next_controller);
         auto webview = std::move(next_webview);
         then(controller.get(), webview.get(), next_hwnd);
-        queue();
+        queue(*this);
     }
     else {
         LOG("Nursery: skipping queue"sv);
          // next_webview isn't ready yet.
          // Instead of trying to queue up an arbitrary number of callbacks, just make a
          // new webview ignoring the queue.
-        create(then);
+        create(*this, then);
     }
 }
 
-
+} // namespace win32app

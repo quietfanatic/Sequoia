@@ -1,3 +1,6 @@
+BEGIN;
+
+PRAGMA application_id = 0x53657175; -- "Sequ"
 PRAGMA user_version = 6;
 
 ----- URLS (NYI)
@@ -172,3 +175,4 @@ CREATE INDEX _closed_views_by_closed_at ON _views (
     _closed_at
 ) WHERE _closed_at > 0;
 
+COMMIT;

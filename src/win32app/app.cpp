@@ -3,46 +3,52 @@
 #include <exception>
 #include <windows.h>
 
-#include "../model/database.h"
-#include "../model/transaction.h"
+#include "../model/page.h"
+#include "../model/view.h"
+#include "../model/write.h"
 #include "activity.h"
 #include "shell.h"
 #include "window.h"
 
 using namespace std;
 
+namespace win32app {
+
 App::App (Profile&& p) :
     profile(std::move(p)),
-    settings(profile.load_settings())
+    settings(profile.load_settings()),
+    nursery(*this),
+    model(model::new_model(profile.db_path()))
 {
-    model::init_db(profile.db_path());
+    observe(model, this);
 }
-App::~App () = default;
+App::~App () {
+    unobserve(model, this);
+    model::delete_model(model);
+}
 
 int App::run (const vector<String>& urls) {
      // Start browser
-    vector<model::ViewID> views = model::get_open_views();
+    auto views = get_open_views(model);
     if (!views.empty()) {
-        model::Transaction tr;
-        for (model::ViewID view : views) {
-            updated(view);
-        }
+        auto transaction = write(model);
+        for (auto view : views) touch(transaction, view);
     }
     else if (!urls.empty()) {
          // Open urls later
     }
-    else if (model::ViewID view = model::get_last_closed_view()) {
+    else if (auto view = get_last_closed_view(model)) {
          // TODO: unclose multiple views if they were closed in
          // quick succession
-        unclose(view);
+        unclose(write(model), view);
     }
     else {
-        model::create_view_and_page("about:blank"sv);
+        create_view_and_page(write(model), "about:blank"sv);
     }
      // Open new window if requested
     if (!urls.empty()) {
         if (urls.size() > 1) throw Error("Multiple URL arguments NYI"sv);
-        model::create_view_and_page(urls[0]);
+        create_view_and_page(write(model), urls[0]);
     }
      // Run message loop
     MSG msg;
@@ -65,7 +71,7 @@ Window* App::window_for_view (model::ViewID view) {
 }
 
 Window* App::window_for_page (model::PageID page) {
-    if (auto view = load(page)->viewing_view) {
+    if (auto view = (model/page)->viewing_view) {
         Window* window = window_for_view(view);
         AA(window);
         return window;
@@ -88,12 +94,12 @@ Activity* App::activity_for_page (model::PageID page) {
 void App::Observer_after_commit (const model::Update& update) {
      // Create and destroy app objects
     for (model::ViewID view : update.views) {
-        auto view_data = load(view);
+        auto view_data = model/view;
         if (view_data && !view_data->closed_at) {
             auto& shell = shells[view];
-            if (!shell) shell = make_unique<Shell>(this, view);
+            if (!shell) shell = make_unique<Shell>(*this, view);
             auto& window = windows[view];
-            if (!window) window = make_unique<Window>(this, view);
+            if (!window) window = make_unique<Window>(*this, view);
         }
         else {
             shells.erase(view);
@@ -101,10 +107,10 @@ void App::Observer_after_commit (const model::Update& update) {
         }
     }
     for (model::PageID page : update.pages) {
-        auto page_data = load(page);
+        auto page_data = model/page;
         if (page_data && page_data->state != model::PageState::UNLOADED) {
             auto& activity = activities[page];
-            if (!activity) activity = make_unique<Activity>(this, page);
+            if (!activity) activity = make_unique<Activity>(*this, page);
         }
         else activities.erase(page);
     }
@@ -126,3 +132,5 @@ void App::Observer_after_commit (const model::Update& update) {
         shell->update(update);
     }
 };
+
+} // namespace win32app

@@ -156,12 +156,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="../src/model/database.cpp" />
-    <ClCompile Include="../src/model/link.cpp" />
-    <ClCompile Include="../src/model/page.cpp" />
+    <ClCompile Include="../src/model/internal/link.cpp" />
+    <ClCompile Include="../src/model/internal/model.cpp" />
+    <ClCompile Include="../src/model/internal/observer.cpp" />
+    <ClCompile Include="../src/model/internal/page.cpp" />
+    <ClCompile Include="../src/model/internal/view.cpp" />
+    <ClCompile Include="../src/model/internal/write.cpp" />
     <ClCompile Include="../src/model/tabs.cpp" />
-    <ClCompile Include="../src/model/transaction.cpp" />
-    <ClCompile Include="../src/model/view.cpp" />
     <ClCompile Include="../src/sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="../src/util/assert.cpp" />
     <ClCompile Include="../src/util/bifractor.cpp" />
@@ -178,15 +179,19 @@
     <ClCompile Include="../src/win32app/window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../src/control/profile.h" />
-    <ClInclude Include="../src/model/database.h" />
+    <ClInclude Include="../src/model/internal/link-internal.h" />
+    <ClInclude Include="../src/model/internal/model-internal.h" />
+    <ClInclude Include="../src/model/internal/page-internal.h" />
+    <ClInclude Include="../src/model/internal/statement.h" />
+    <ClInclude Include="../src/model/internal/view-internal.h" />
+    <ClInclude Include="../src/model/internal/write-internal.h" />
     <ClInclude Include="../src/model/link.h" />
     <ClInclude Include="../src/model/model.h" />
+    <ClInclude Include="../src/model/observer.h" />
     <ClInclude Include="../src/model/page.h" />
-    <ClInclude Include="../src/model/statement.h" />
     <ClInclude Include="../src/model/tabs.h" />
-    <ClInclude Include="../src/model/transaction.h" />
     <ClInclude Include="../src/model/view.h" />
+    <ClInclude Include="../src/model/write.h" />
     <ClInclude Include="../src/sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="../src/util/assert.h" />
     <ClInclude Include="../src/util/bifractor.h" />
@@ -199,6 +204,7 @@
     <ClInclude Include="../src/win32app/activity.h" />
     <ClInclude Include="../src/win32app/app.h" />
     <ClInclude Include="../src/win32app/nursery.h" />
+    <ClInclude Include="../src/win32app/profile.h" />
     <ClInclude Include="../src/win32app/shell.h" />
     <ClInclude Include="../src/win32app/window.h" />
   </ItemGroup>

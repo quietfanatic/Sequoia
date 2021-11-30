@@ -2,6 +2,8 @@
 
 #include "../util/types.h"
 
+namespace win32app {
+
  // TODO: move to model
 struct Settings {
     String theme;
@@ -19,3 +21,4 @@ struct Profile {
     void register_as_browser ();
 };
 
+} // namespace win32app

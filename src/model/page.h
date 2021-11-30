@@ -7,7 +7,6 @@
 #include "model.h"
 
 namespace model {
-inline namespace page {
 
 enum PageState {
     UNLOADED,
@@ -26,20 +25,18 @@ struct PageData {
     int64 group = 0; // NYI
      // Temporary (not stored in DB)
     PageState state = UNLOADED;
-     // TODO: make ViewID!
     ViewID viewing_view;
 };
 
-const PageData* load (PageID);
+std::vector<PageID> get_pages_with_url (ReadRef, Str url);
 
-std::vector<PageID> get_pages_with_url (Str url);
+void set_url (WriteRef, PageID, Str);
+void set_title (WriteRef, PageID, Str);
+void set_favicon_url (WriteRef, PageID, Str);
+void set_visited (WriteRef, PageID);
+void set_state (WriteRef, PageID, PageState);
 
-void set_url (PageID, Str);
-void set_title (PageID, Str);
-void set_favicon_url (PageID, Str);
-void set_visited (PageID);
-void set_state (PageID, PageState);
-void updated (PageID);  // Send to Observers without saving
+ // Send this item to observers without actually changing it
+void touch (WriteRef, PageID);
 
-} // namespace page
 } // namespace model

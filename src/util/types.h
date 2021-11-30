@@ -47,7 +47,11 @@ static inline String16& operator += (String16& a, Str16 b) { return a.append(b);
 
 struct Error : std::exception {
     String mess;
-    Error (Str mess) : mess(mess) { }
-    Error (String&& mess) : mess(mess) { }
+    Error (String&& mess) : mess(mess) {
+#ifndef NDEBUG
+        std::abort(); // Halt for debugging
+#endif
+    }
+    Error (Str mess) : Error(String(mess)) { }
     const char* what () const noexcept override { return mess.c_str(); }
 };

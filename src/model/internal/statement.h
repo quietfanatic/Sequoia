@@ -8,7 +8,7 @@
 
 #include "../util/assert.h"
 #include "../util/bifractor.h"
-#include "model.h"
+#include "../model.h"
 
 namespace model {
 
@@ -40,10 +40,12 @@ struct Statement {
         new (this) Statement (std::move(st));
     }
     ~Statement () {
-        sqlite3* db = sqlite3_db_handle(handle);
-        if (handle) AS(db, sqlite3_finalize(handle));
+        if (handle) {
+            sqlite3* db = sqlite3_db_handle(handle);
+            AS(db, sqlite3_finalize(handle));
+        }
     }
-    operator sqlite3_stmt*& () { return handle; }
+    operator sqlite3_stmt* () const { return handle; }
 };
 
 struct UseStatement {
@@ -55,19 +57,16 @@ struct UseStatement {
 
     sqlite3* db () { return sqlite3_db_handle(handle); }
 
-    void param (char v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
-    void param (signed char v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
-    void param (unsigned char v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
-    void param (short v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
-    void param (unsigned short v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
-    void param (int v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
-    void param (unsigned int v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
-    void param (long v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
-    void param (unsigned long v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
-    void param (long long v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
-    void param (unsigned long long v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
-    void param (float v) { AS(db(), sqlite3_bind_double(handle, index++, v)); }
-    void param (double v) { AS(db(), sqlite3_bind_double(handle, index++, v)); }
+    void param (bool v) { AS(db(), sqlite3_bind_int(handle, index++, v)); }
+    template <class T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
+    void param (T v) { AS(db(), sqlite3_bind_int64(handle, index++, v)); }
+    template <class T, std::enable_if_t<std::is_floating_point_v<T>, bool> = true>
+    void param (T v) { AS(db(), sqlite3_bind_double(handle, index++, v)); }
+    template <class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
+    void param (T v) {
+        param(std::underlying_type_t<T>{v});
+    }
+
     void param (const char* v) {
         AS(db(), sqlite3_bind_text(handle, index++, v, -1, SQLITE_TRANSIENT));
     }
@@ -87,10 +86,6 @@ struct UseStatement {
     void param (ModelID<T> v) {
         param(int64(v));
     }
-    template <class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
-    void param (T v) {
-        param(std::underlying_type_t<T>{v});
-    }
 
     template <class... Ts>
     void params (Ts&&... vs) {
@@ -102,8 +97,21 @@ struct UseStatement {
         int index;
 
         operator bool () const { return sqlite3_column_int(st->handle, index); }
-        operator int64 () const { return sqlite3_column_int64(st->handle, index); }
-        operator double () const { return sqlite3_column_double(st->handle, index); }
+        template <class T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
+        operator T () const {
+            int64 val = sqlite3_column_int64(st->handle, index);
+            AA(int64(T(val)) == val);
+            return T(val);
+        }
+        template <class T, std::enable_if_t<std::is_floating_point_v<T>, bool> = true>
+        operator T () const { return sqlite3_column_double(st->handle, index); }
+        template <class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
+        operator T () {
+             // Who thought having {} warn about narrowing conversions was a
+             //  good idea
+            return T{std::underlying_type_t<T>(int64(*this))};
+        }
+
         operator Str () {
             auto p = reinterpret_cast<const char*>(
                 sqlite3_column_text(st->handle, index)
@@ -114,12 +122,6 @@ struct UseStatement {
             const void* data = sqlite3_column_blob(st->handle, index);
             int size = sqlite3_column_bytes(st->handle, index);
             return Bifractor(data, size);
-        }
-        template <class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
-        operator T () {
-             // Who thought having {} warn about narrowing conversions was a
-             //  good idea
-            return T{std::underlying_type_t<T>(int64(*this))};
         }
         template <class T>
         operator std::optional<T> () {
@@ -145,19 +147,6 @@ struct UseStatement {
         return !done;
     }
 
-    bool optional () {
-        if (step()) {
-            AA(!step());
-            return true;
-        }
-        else return false;
-    }
-
-    void single () {
-        AA(step());
-        AA(!step());
-    }
-
     void run () {
         AA(!step());
     }
@@ -172,7 +161,7 @@ struct UseStatement {
     }
 
     ~UseStatement () {
-        AA(done);
+        if (!done) AA(!step());
         AS(db(), sqlite3_reset(handle));
         AS(db(), sqlite3_clear_bindings(handle));
     }

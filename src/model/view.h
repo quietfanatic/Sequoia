@@ -11,7 +11,6 @@
 #include "model.h"
 
 namespace model {
-inline namespace view {
 
 struct ViewData {
      // Mutable
@@ -23,35 +22,36 @@ struct ViewData {
     std::unordered_set<LinkID> expanded_tabs;
      // Temporary (not stored in db)
     bool fullscreen = false;
-
-    PageID focused_page () const {
-        return focused_tab ? load(focused_tab)->to_page : root_page;
-    }
 };
 
-const ViewData* load (ViewID);
-
-std::vector<ViewID> get_open_views ();
+std::vector<ViewID> get_open_views (ReadRef);
  // Returns 0 if none
-ViewID get_last_closed_view ();
+ViewID get_last_closed_view (ReadRef);
 
-ViewID create_view_and_page (Str url);
-void close (ViewID);
-void unclose (ViewID);
-void navigate_focused_page (ViewID, Str url);
-void focus_tab (ViewID, LinkID);
+static inline PageID focused_page (ReadRef model, ViewID view) {
+    auto data = model/view;
+    return data->focused_tab
+        ? (model/data->focused_tab)->to_page
+        : data->root_page;
+}
 
-void create_and_focus_last_child (ViewID view, LinkID focused_link, Str url, Str title = ""sv);
+ViewID create_view_and_page (WriteRef, Str url);
+void close (WriteRef, ViewID);
+void unclose (WriteRef, ViewID);
+void navigate_focused_page (WriteRef, ViewID, Str url);
+void focus_tab (WriteRef, ViewID, LinkID);
 
-void trash_tab (ViewID, LinkID);
-void delete_tab (ViewID, LinkID);
+void create_and_focus_last_child (WriteRef, ViewID view, LinkID focused_link, Str url, Str title = ""sv);
 
-void expand_tab (ViewID, LinkID);
-void contract_tab (ViewID, LinkID);
+void trash_tab (WriteRef, ViewID, LinkID);
+void delete_tab (WriteRef, ViewID, LinkID);
 
-void set_fullscreen (ViewID, bool);
+void expand_tab (WriteRef, ViewID, LinkID);
+void contract_tab (WriteRef, ViewID, LinkID);
 
-void updated (ViewID);
+void set_fullscreen (WriteRef, ViewID, bool);
 
-} // namespace view
+ // Send this item to observers without actually changing it
+void touch (WriteRef, ViewID);
+
 } // namespace model

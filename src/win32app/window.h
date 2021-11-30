@@ -1,36 +1,41 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <windows.h>
 
-#include "../model/view.h"
+#include "../model/model.h"
 
+namespace win32app {
 struct App;
 
 struct Window {
-    App* app;
+    App& app;
     model::ViewID view;
+    Window (App&, model::ViewID);
+    ~Window();
 
-     // For comparison during updates
-    model::ViewData current_view_data;
+     ///// Window methods
+     // Not sure this belongs here but whatever
+    std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
 
+     ///// OS window stuff
     HWND hwnd;
-    WINDOWPLACEMENT placement_before_fullscreen;
+     // nullopt if not currently fullscreen
+    struct Fullscreen {
+        WINDOWPLACEMENT old_placement;
+    };
+    std::optional<Fullscreen> fullscreen;
      // In DIPs (scaled by dpi).  TODO: store these in model
     double sidebar_width = 240;
     double toolbar_height = 28;
     double main_menu_width = 0;
-
     void reflow ();
 
-    std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
-
+     ///// Updating
+    model::PageID current_focused_page;
     void view_updated ();
     void page_updated ();
-
-    Window (App*, model::ViewID);
-    ~Window();
 };
 
-Window* window_for_view (model::ViewID);
-Window* window_for_page (model::PageID);
+} // namespace win32app

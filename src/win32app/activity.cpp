@@ -4,7 +4,9 @@
 #include <wrl.h>
 
 #include "../model/page.h"
-#include "../model/transaction.h"
+#include "../model/link.h"
+#include "../model/view.h"
+#include "../model/write.h"
 #include "../util/assert.h"
 #include "../util/files.h"
 #include "../util/hash.h"
@@ -18,10 +20,14 @@
 using namespace Microsoft::WRL;
 using namespace std;
 
-Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
+namespace win32app {
+
+Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
     LOG("new Activity"sv, this, page);
 
-    new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
+    app.nursery.new_webview([this](
+        ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd
+    ) {
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
@@ -31,7 +37,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
-            set_state(page, model::PageState::LOADING);
+            set_state(write(app.model), page, model::PageState::LOADING);
             return S_OK;
         }).Get(), nullptr));
 
@@ -46,7 +52,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
             if (source.get() == L"about:blank"sv) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                set_title(page, from_utf16(title.get()));
+                set_title(write(app.model), page, from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
@@ -62,10 +68,9 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
             if (source.get() != L""sv && source.get() != L"about:blank"sv) {
-                auto page_data = load(page);
                 current_url = from_utf16(source.get());
-                if (page_data->url != current_url) {
-                    set_url(page, current_url);
+                if ((app.model/page)->url != current_url) {
+                    set_url(write(app.model), page, current_url);
                 }
             }
 
@@ -77,7 +82,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
-            set_state(page, model::PageState::LOADED);
+            set_state(write(app.model), page, model::PageState::LOADED);
             return S_OK;
         }).Get(), nullptr));
 
@@ -90,7 +95,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            create_last_child(page, from_utf16(url.get()));
+            create_last_child(write(app.model), page, from_utf16(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -121,7 +126,7 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            Window* window = app->window_for_page(page);
+            Window* window = app.window_for_page(page);
             if (!window) return S_OK;
             COREWEBVIEW2_KEY_EVENT_KIND kind;
             AH(args->get_KeyEventKind(&kind));
@@ -150,14 +155,13 @@ Activity::Activity (App* a, model::PageID p) : app(a), page(p) {
             Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
                 [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-            auto page_data = load(page);
-            if (page_data->viewing_view) {
-                set_fullscreen(page_data->viewing_view, is_fullscreen());
+            if (auto view = (app.model/page)->viewing_view) {
+                set_fullscreen(write(app.model), view, is_fullscreen());
             }
             return S_OK;
         }).Get(), nullptr));
 
-        if (Window* window = app->window_for_page(page)) {
+        if (Window* window = app.window_for_page(page)) {
             window->reflow();
         }
     });
@@ -175,7 +179,7 @@ void Activity::message_from_webview (const json::Value& message) {
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
-        set_favicon_url(page, message[1]);
+        set_favicon_url(write(app.model), page, message[1]);
         break;
     }
     case x31_hash("click_link"): {
@@ -201,10 +205,10 @@ void Activity::message_from_webview (const json::Value& message) {
 //                link.move_after(page);
             }
             else if (shift) {
-                create_first_child(page, url, title);
+                create_first_child(write(app.model), page, url, title);
             }
             else {
-                create_last_child(page, url, title);
+                create_last_child(write(app.model), page, url, title);
             }
         }
         break;
@@ -228,10 +232,8 @@ void Activity::message_from_webview (const json::Value& message) {
 }
 
 void Activity::page_updated () {
-    auto page_data = load(page);
-    if (page_data->url != current_url) {
-        navigate(page_data->url);
-    }
+    auto url = (app.model/page)->url;
+    if (url != current_url) navigate(url);
 }
 
 bool Activity::navigate_url (Str url) {
@@ -268,7 +270,7 @@ void Activity::navigate (Str address) {
         }
     }
     else {
-        set_url(page, current_url = address);
+        set_url(write(app.model), page, current_url = address);
     }
 }
 
@@ -287,3 +289,5 @@ Activity::~Activity () {
     LOG("delete Activity"sv, this);
     if (controller) controller->Close();
 }
+
+} // namespace win32app

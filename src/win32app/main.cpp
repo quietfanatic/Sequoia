@@ -10,6 +10,7 @@
 #include "profile.h"
 
 using namespace std;
+using namespace win32app;
 
 #pragma warning(disable:4297)  // Yeah I'm throwing from WinMain, deal with it
 
@@ -91,7 +92,6 @@ int WINAPI WinMain (
             return 0;
         }
 
-        init_nursery(profile);
         App app (std::move(profile));
         return app.run(positional_args);
     }

@@ -4,11 +4,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../model/page.h"
-#include "../model/transaction.h"
-#include "../model/view.h"
+#include "../model/model.h"
+#include "../model/observer.h"
 #include "profile.h"
+#include "nursery.h"
 
+namespace win32app {
 struct Activity;
 struct Shell;
 struct Window;
@@ -16,9 +17,11 @@ struct Window;
 struct App : model::Observer {
     Profile profile;
     Settings settings;
-    std::unordered_map<model::ViewID, std::unique_ptr<Window>> windows;
-    std::unordered_map<model::ViewID, std::unique_ptr<Shell>> shells;
+    Nursery nursery;
+    model::Model& model;
     std::unordered_map<model::PageID, std::unique_ptr<Activity>> activities;
+    std::unordered_map<model::ViewID, std::unique_ptr<Shell>> shells;
+    std::unordered_map<model::ViewID, std::unique_ptr<Window>> windows;
 
     Window* window_for_view (model::ViewID);
     Window* window_for_page (model::PageID);
@@ -33,3 +36,5 @@ struct App : model::Observer {
 
     void Observer_after_commit (const model::Update&) override;
 };
+
+} // namespace win32app

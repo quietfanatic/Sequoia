@@ -9,12 +9,13 @@ namespace model {
 using namespace std;
 
 static void gen_tabs (
+    ReadRef model,
     unordered_map<LinkID, Tab>& tabs, const ViewData& view,
     LinkID link, PageID page, LinkID parent
 ) {
-    auto children = get_links_from_page(page);
-    auto page_data = load(page);
-    auto link_data = load(link);
+    auto children = get_links_from_page(model, page);
+    auto page_data = model/page;
+    auto link_data = model/link;
 
     int flags = 0;
     if (view.focused_tab == link) flags |= Tab::FOCUSED;
@@ -29,21 +30,21 @@ static void gen_tabs (
     if (view.expanded_tabs.count(link)) {
          // TODO: include get_links_to_page
         for (LinkID child : children) {
-            auto child_data = load(child);
-            gen_tabs(tabs, view, child, child_data->to_page, link);
+            gen_tabs(model, tabs, view, child, (model/child)->to_page, link);
         }
     }
 }
 
-TabTree create_tab_tree (ViewID view) {
+TabTree create_tab_tree (ReadRef model, ViewID view) {
     TabTree r;
-    auto view_data = load(view);
-    gen_tabs(r, *view_data, LinkID{}, view_data->root_page, LinkID{});
+    auto view_data = model/view;
+    gen_tabs(model, r, *view_data, LinkID{}, view_data->root_page, LinkID{});
     return r;
 }
 
 TabChanges get_changed_tabs (
-    const TabTree& old_tabs, const TabTree& new_tabs, const Update& update
+    const Update& update,
+    const TabTree& old_tabs, const TabTree& new_tabs
 ) {
     TabChanges r;
      // Remove tabs that are no longer visible
