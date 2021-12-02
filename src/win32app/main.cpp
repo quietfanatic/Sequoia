@@ -10,30 +10,17 @@
 #include "profile.h"
 
 #ifndef TAP_DISABLE_TESTS
-#include <fstream>
 #include "../tap/tap.h"
 #endif
 
 using namespace std;
 using namespace win32app;
 
-#pragma warning(disable:4297)  // Yeah I'm throwing from WinMain, deal with it
+#pragma warning(disable:4297)  // Yeah I'm throwing from main, deal with it
 
-int WINAPI WinMain (
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nCmdShow
-) {
+int main (int argc, char** argv) {
     try {
-         // Why is Windows so nonstandard
-        int argc = __argc;
-        char** argv = __argv;
 #ifndef TAP_DISABLE_TESTS
-        tap::set_print([](const String& s){
-            static std::ofstream test_out ("test.log");
-            test_out << s;
-        });
         tap::allow_testing(argc, argv);
 #endif
          // Parse arguments
