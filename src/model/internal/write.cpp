@@ -62,4 +62,8 @@ WriteModel::WriteModel (sqlite3* db) :
     st_rollback(db, "ROLLBACK"sv)
 { }
 
+WriteModel::~WriteModel () {
+    AA(!writing);
+}
+
 } // namespace model

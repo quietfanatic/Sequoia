@@ -64,9 +64,7 @@ Model::Model (Str db_path) :
     writes(db)
 { }
 
-Model::~Model () {
-    AA(!writes.writing);
-}
+Model::~Model () { }
 
 Model& new_model (Str db_path) {
     LOG("new_model"sv, db_path);
@@ -92,3 +90,37 @@ const ViewData* operator/ (ReadRef model, ViewID id) {
 }
 
 } // namespace model
+
+#ifndef TAP_DISABLE_TESTS
+#include "../../tap/tap.h"
+
+static tap::TestSet tests ("model/model", []{
+    using namespace model;
+    using namespace tap;
+     // Prep
+    String test_folder = exe_relative("test");
+    filesystem::remove_all(test_folder);
+    filesystem::create_directories(test_folder);
+    init_log(test_folder + "/test.log");
+
+    String db_path = test_folder + "/test-db.sqlite";
+    Model* model;
+    doesnt_throw([&]{
+        model = &new_model(db_path);
+    }, "new_model can create new DB file");
+    doesnt_throw([&]{
+        delete_model(*model);
+    }, "delete_model");
+    ok(filesystem::file_size(db_path) > 0, "delete_model leaves DB file");
+    doesnt_throw([&]{
+        model = &new_model(db_path);
+    }, "new_model can use existing DB file");
+
+     // Unprep
+    delete_model(*model);
+    uninit_log();
+    filesystem::remove_all(test_folder);
+    done_testing();
+});
+
+#endif

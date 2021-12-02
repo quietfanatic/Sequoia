@@ -245,12 +245,13 @@ String stringify (const Value& v) {
     }
 }
 
-} using namespace json;
+} // namespace json;
 
 #ifndef TAP_DISABLE_TESTS
 #include "../tap/tap.h"
 
 static tap::TestSet tests ("util/json", []{
+    using namespace json;
     using namespace tap;
     auto t = [](const String& s){
         try_is(

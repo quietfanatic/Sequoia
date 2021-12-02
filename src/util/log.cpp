@@ -17,6 +17,11 @@ void init_log (Str filename) {
     logstream = new ofstream (String(filename));
 }
 
+void uninit_log () {
+    delete logstream;
+    logstream = nullptr;
+}
+
 uint64 logging_timestamp () {
     static double start = now();
     return uint64((now() - start) * 1000);

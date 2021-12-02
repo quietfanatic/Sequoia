@@ -20,6 +20,7 @@ struct WriteModel {
     std::vector<Observer*> observers;
 
     WriteModel (sqlite3* db);
+    ~WriteModel ();
 };
 
 } // namespace model

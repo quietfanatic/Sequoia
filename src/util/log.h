@@ -7,6 +7,7 @@
 extern std::ostream* logstream;
 
 void init_log (Str filename);
+void uninit_log ();
 
 uint64 logging_timestamp ();
 
