@@ -120,13 +120,45 @@ bool try_isnt_strcmp(const std::function<const char*()>& code, const char* unexp
     }, name);
 }
 
-struct plusminus {
+struct Bounds {
+    double bottom;
+    double top;
+};
+template <>
+struct Show<Bounds> {
+    std::string show (const Bounds& v) {
+        return "between " + Show<double>().show(v.bottom) + " and " + Show<double>().show(v.top);
+    }
+};
+
+bool between (double got, double bottom, double top, const std::string& name) {
+    if (bottom > top) {
+        double t = bottom;
+        bottom = top;
+        top = t;
+    }
+    if (got >= bottom && got <= top) {
+        return pass(name);
+    }
+    else {
+        fail(name);
+        diag_unexpected(got, Bounds{bottom, top});
+        return false;
+    }
+}
+bool try_between (const std::function<double()>& code, double bottom, double top, const std::string& name) {
+    return fail_on_throw([&]{
+        return within(code(), bottom, top, name);
+    }, name);
+}
+
+struct PlusMinus {
     double range;
     double center;
 };
 template <>
-struct Show<plusminus> {
-    std::string show (const plusminus& v) {
+struct Show<PlusMinus> {
+    std::string show (const PlusMinus& v) {
         return "within +/- " + Show<double>().show(v.range) + " of " + Show<double>().show(v.center);
     }
 };
@@ -138,8 +170,7 @@ bool within (double got, double range, double expected, const std::string& name)
     }
     else {
         fail(name);
-        plusminus pm = {range, expected};
-        diag_unexpected(got, pm);
+        diag_unexpected(got, PlusMinus{range, expected});
         return false;
     }
 }
@@ -349,6 +380,7 @@ static tap::TestSet self_tests ("tap-self-test", []{
     is(&heyguys, &heyguys, "is can compare pointers");
     is(std::string("asdf"), std::string("asdf"), "is on equal std::strings passes");
     is(std::string("asdf"), "asdf", "is on equal std::string and const char* passes");
+     // TODO: test between
     within(1.0, 0.1, 1.001, "within can pass");
     try_within([]{return 1.4;}, 0.1, 1.399, "try_within works");
     about(1.0, 1.001, "about can pass");
@@ -379,6 +411,7 @@ static tap::TestSet self_tests ("tap-self-test", []{
         int nope = -9999;
         is(&heyguys, &nope, "is fails on different pointers");
         is(std::string("sadf"), std::string("qwert"), "is fails on different std::strings");
+         // TODO: test between
         within(1.0, 0.1, 1.11, "within can fail");
         try_within([]{return 1.4;}, 0.3, 1, "try_within can fail");
         about(1.0, 1.1, "about can fail");

@@ -89,6 +89,21 @@ const ViewData* operator/ (ReadRef model, ViewID id) {
     return load_mut(model, id);
 }
 
+#ifndef TAP_DISABLE_TESTS
+ModelTestEnvironment::ModelTestEnvironment () {
+    test_folder = exe_relative("test");
+    filesystem::remove_all(test_folder);
+    filesystem::create_directories(test_folder);
+    init_log(test_folder + "/test.log");
+    db_path = test_folder + "/test-db.sqlite";
+}
+
+ModelTestEnvironment::~ModelTestEnvironment () {
+    uninit_log();
+    filesystem::remove_all(test_folder);
+}
+#endif
+
 } // namespace model
 
 #ifndef TAP_DISABLE_TESTS
@@ -98,28 +113,20 @@ static tap::TestSet tests ("model/model", []{
     using namespace model;
     using namespace tap;
      // Prep
-    String test_folder = exe_relative("test");
-    filesystem::remove_all(test_folder);
-    filesystem::create_directories(test_folder);
-    init_log(test_folder + "/test.log");
+    ModelTestEnvironment env;
 
-    String db_path = test_folder + "/test-db.sqlite";
     Model* model;
     doesnt_throw([&]{
-        model = &new_model(db_path);
+        model = &new_model(env.db_path);
     }, "new_model can create new DB file");
     doesnt_throw([&]{
         delete_model(*model);
     }, "delete_model");
-    ok(filesystem::file_size(db_path) > 0, "delete_model leaves DB file");
+    ok(filesystem::file_size(env.db_path) > 0, "delete_model leaves DB file");
     doesnt_throw([&]{
-        model = &new_model(db_path);
+        model = &new_model(env.db_path);
     }, "new_model can use existing DB file");
 
-     // Unprep
-    delete_model(*model);
-    uninit_log();
-    filesystem::remove_all(test_folder);
     done_testing();
 });
 

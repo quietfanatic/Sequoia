@@ -102,7 +102,7 @@ bool try_ok (const std::function<bool()>& code, const std::string& name = "");
  //  If the test failed, it will try to tell you what it got vs. what it expected.
  // Will fail if the == operator throws an exception.
  // You probably know that you shouldn't use == to compare floating point numbers,
- //  so for those, look at within() and about().
+ //  so for those, look at between(), within(), and about().
  // As a special case, you can use is() with const char* and it'll do a strcmp (with
  //  NULL checks).
 template <class A, class B>
@@ -125,6 +125,9 @@ bool try_isnt_strcmp(const std::function<const char*()>& code, const char* unexp
  // is(), printing out got and expected isn't particularly useful.
  // Just use ok(a != b, "a isn't b");
 
+ // Tests that got is >= bottom and <= top
+bool between (double got, double bottom, double top, const std::string& name = "");
+bool try_between (const std::function<double()>& code, double bottom, double top, const std::string& name = "");
  // Tests that got is within +/- range of expected.
 bool within (double got, double range, double expected, const std::string& name = "");
 bool try_within (const std::function<double()>& code, double range, double expected, const std::string& name = "");
@@ -374,32 +377,33 @@ bool throws_check (const std::function<void()>& code, const std::function<bool(c
 
 template <class T>
 std::string Show<T>::show (const T& v) {
-    if constexpr (std::is_same_v<T, bool>) {
+    using namespace std;
+    if constexpr (is_same_v<T, bool>) {
         return v ? "true" : "false";
     }
-    else if constexpr (std::is_same_v<T, char>) {
-        return std::string("'") + v + "'";
+    else if constexpr (is_same_v<T, char>) {
+        return string("'") + v + "'";
     }
-    else if constexpr (std::is_same_v<T, const char*>) {
-        return v ? "\"" + std::string(v) + "\"" : "nullptr";
+    else if constexpr (is_convertible_v<T, const char*>) {
+        return v ? "\"" + string(v) + "\"" : "nullptr";
     }
-    else if constexpr (std::is_same_v<T, std::string>) {
+    else if constexpr (is_convertible_v<T, string>) {
         return "\"" + v + "\"";
     }
-    else if constexpr (std::is_same_v<T, std::nullptr_t>) {
+    else if constexpr (is_same_v<T, nullptr_t>) {
         return "nullptr";
     }
-    else if constexpr (std::is_same_v<T, std::exception>) {
+    else if constexpr (is_convertible_v<T, exception>) {
         return "exception of type " + internal::type_name(typeid(v)) + ": " + v.what();
     }
-    else if constexpr (std::is_arithmetic_v<T>) {
-        return std::to_string(v);
+    else if constexpr (is_arithmetic_v<T>) {
+        return to_string(v);
     }
-    else if constexpr (std::is_pointer_v<T>) {
+    else if constexpr (is_pointer_v<T>) {
         return internal::show_ptr((void*)v);
     }
-    else if constexpr (std::is_enum_v<T>) {
-        return "(enum value) " + std::to_string(std::underlying_type_t<T>(v));
+    else if constexpr (is_enum_v<T>) {
+        return "(enum value) " + to_string(underlying_type_t<T>(v));
     }
     else {
         return "(unprintable object of type " + internal::type_name(typeid(T)) + ")";

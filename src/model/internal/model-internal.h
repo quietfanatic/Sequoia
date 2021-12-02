@@ -30,4 +30,13 @@ struct Model {
     ~Model ();
 };
 
+#ifndef TAP_DISABLE_TESTS
+struct ModelTestEnvironment {
+    String test_folder;
+    String db_path;
+    ModelTestEnvironment ();
+    ~ModelTestEnvironment ();
+};
+#endif
+
 } // namespace model
