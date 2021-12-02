@@ -127,7 +127,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>../src/sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;TAP_DISABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -146,7 +146,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>../src/sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;TAP_DISABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -164,6 +164,7 @@
     <ClCompile Include="../src/model/internal/write.cpp" />
     <ClCompile Include="../src/model/tabs.cpp" />
     <ClCompile Include="../src/sqlite-amalgamation-3300100/sqlite3.c" />
+    <ClCompile Include="../src/tap/tap.cpp" />
     <ClCompile Include="../src/util/assert.cpp" />
     <ClCompile Include="../src/util/bifractor.cpp" />
     <ClCompile Include="../src/util/files.cpp" />
@@ -193,6 +194,7 @@
     <ClInclude Include="../src/model/view.h" />
     <ClInclude Include="../src/model/write.h" />
     <ClInclude Include="../src/sqlite-amalgamation-3300100/sqlite3.h" />
+    <ClInclude Include="../src/tap/tap.h" />
     <ClInclude Include="../src/util/assert.h" />
     <ClInclude Include="../src/util/bifractor.h" />
     <ClInclude Include="../src/util/db_support.h" />

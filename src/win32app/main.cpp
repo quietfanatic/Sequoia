@@ -9,6 +9,11 @@
 #include "nursery.h"
 #include "profile.h"
 
+#ifndef TAP_DISABLE_TESTS
+#include <fstream>
+#include "../tap/tap.h"
+#endif
+
 using namespace std;
 using namespace win32app;
 
@@ -21,12 +26,16 @@ int WINAPI WinMain (
     int nCmdShow
 ) {
     try {
-        SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-
          // Why is Windows so nonstandard
-        char** argv = __argv;
         int argc = __argc;
-
+        char** argv = __argv;
+#ifndef TAP_DISABLE_TESTS
+        tap::set_print([](const String& s){
+            static std::ofstream test_out ("test.log");
+            test_out << s;
+        });
+        tap::allow_testing(argc, argv);
+#endif
          // Parse arguments
         vector<String> positional_args;
         String arg_profile;
@@ -74,6 +83,8 @@ int WINAPI WinMain (
                 positional_args.emplace_back(arg);
             }
         }
+
+        SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
         Profile profile = Profile(arg_profile, arg_profile_folder);
 

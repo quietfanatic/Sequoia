@@ -245,5 +245,35 @@ String stringify (const Value& v) {
     }
 }
 
-} // namespace json
+} using namespace json;
 
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+
+static tap::TestSet tests ("util/json", []{
+    using namespace tap;
+    auto t = [](const String& s){
+        try_is(
+            [&]{ return stringify(parse(s)); },
+            s, s
+        );
+    };
+    plan(15);
+    t("null");
+    t("true");
+    t("false");
+    t("0");
+    t("12343");
+    t("35.324");
+    t("-45.5");
+    t("1.3241e-54");
+    t("\"foo\"");
+    t("\"a \\n b \\r c \\t c \\\\ \\\" \"");
+    t("[]");
+    t("[2,4,6,null,true,\"asdf\"]");
+    t("{}");
+    t("{\"asdf\":\"ghjk\"}");
+    t("{\"foo\":[4,5,6],\"agfd\":[[[[4]]],{},{\"gtre\":null}],\"goo\":{}}");
+});
+
+#endif
