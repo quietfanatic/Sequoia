@@ -21,8 +21,8 @@ struct Activity {
     HWND webview_hwnd = nullptr;
 
      // Store this so that we don't navigate from our own SourceChanged handler,
-     //  and also to work around special URLs not surviving a round-trip
-     //  through navigation
+     // and also to work around special URLs not surviving a round-trip through
+     // navigation.
     String current_url;
 
     Activity (App&, model::PageID);

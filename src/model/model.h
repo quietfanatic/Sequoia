@@ -10,7 +10,7 @@ Model& new_model (Str db_path);
 void delete_model (Model&);
 
  // A readable view of the model.  Doesn't currently do anything real.
- //  Eventually this might support thread-safe read transactions.
+ // Eventually this might support thread-safe read transactions.
 struct Read {
     const Model& model;
     Read (const Model& m) : model(m) { }
@@ -20,7 +20,7 @@ struct ReadRef {
     const Model& model;
     ReadRef (const Read& r) : model(r.model) { }
      // For some reason the compiler is unable to stack the Read and ReadRef
-     //  implicit coercions together.  TODO: investigate why
+     // implicit coercions together.  TODO: investigate why
     ReadRef (const Model& m) : model(m) { }
     const Model& operator* () const { return model; }
     const Model* operator-> () const { return &model; }

@@ -34,7 +34,7 @@ Write::~Write () {
     else {
          // Commit.  If this fails...I dunno, hope it doesn't.
         UseStatement(model.writes.st_commit).run();
-         // Notify observers
+         // Notify observers.
          // All this flag fiddling is to make sure updates are sequenced,
          // so Observer_after_commit doesn't have to be reentrant.
         if (model.writes.notifying) {

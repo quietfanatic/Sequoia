@@ -117,7 +117,9 @@ static json::Array make_tab_json (
     }
      // Choose title
     string title = page_data->title;
-    if (title.empty() && link) title = link_data->title; // TODO: don't use this if inverted link
+     // TODO: don't use this if inverted link
+     // (TODO: support inverted links at all)
+    if (title.empty() && link) title = link_data->title;
     if (title.empty()) title = page_data->url;
 
     return json::array(
@@ -166,28 +168,36 @@ void Shell::message_from_webview (const json::Value& message) {
     }
      // Toolbar buttons
     case x31_hash("back"): {
-        Activity* activity = app.activity_for_page(focused_page(app.model, view));
+        Activity* activity = app.activity_for_page(
+            focused_page(app.model, view)
+        );
         if (activity && activity->webview) {
             activity->webview->GoBack();
         }
         break;
     }
     case x31_hash("forward"): {
-        Activity* activity = app.activity_for_page(focused_page(app.model, view));
+        Activity* activity = app.activity_for_page(
+            focused_page(app.model, view)
+        );
         if (activity && activity->webview) {
             activity->webview->GoForward();
         }
         break;
     }
     case x31_hash("reload"): {
-        Activity* activity = app.activity_for_page(focused_page(app.model, view));
+        Activity* activity = app.activity_for_page(
+            focused_page(app.model, view)
+        );
         if (activity && activity->webview) {
             activity->webview->Reload();
         }
         break;
     }
     case x31_hash("stop"): {
-        Activity* activity = app.activity_for_page(focused_page(app.model, view));
+        Activity* activity = app.activity_for_page(
+            focused_page(app.model, view)
+        );
         if (activity && activity->webview) {
             activity->webview->Stop();
         }
@@ -263,7 +273,9 @@ void Shell::message_from_webview (const json::Value& message) {
         break;
     }
     case x31_hash("open_selected_links"): {
-        if (Activity* activity = app.activity_for_page(focused_page(app.model, view))) {
+        if (Activity* activity = app.activity_for_page(
+            focused_page(app.model, view)
+        )) {
             activity->message_to_webview(json::array("open_selected_links"sv));
         }
         break;
@@ -278,7 +290,9 @@ void Shell::message_from_webview (const json::Value& message) {
     }
 
     } catch (exception& e) {
-        show_string_error(__FILE__, __LINE__, "Uncaught exception: "sv + e.what());
+        show_string_error(__FILE__, __LINE__,
+            "Uncaught exception: "sv + e.what()
+        );
         throw;
     }
 }

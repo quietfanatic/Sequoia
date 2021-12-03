@@ -32,7 +32,9 @@ HWND existing_nursery (const Profile& profile) {
     return FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str());
 }
 
-static LRESULT CALLBACK nursery_WndProc (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
+static LRESULT CALLBACK nursery_WndProc (
+    HWND hwnd, UINT message, WPARAM w, LPARAM l
+) {
     switch (message) {
         case WM_COPYDATA: {
             auto self = (Nursery*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -57,7 +59,8 @@ Nursery::Nursery (App& a) : app(a) {
     AA(!hwnd);
     AH(OleInitialize(nullptr));
 
-    String16 window_title = L"Sequoia Nursery for "sv + to_utf16(app.profile.name);
+    String16 window_title = L"Sequoia Nursery for "sv
+        + to_utf16(app.profile.name);
 
     edge_udf = to_utf16(app.profile.folder + "/edge-user-data"sv);
 
@@ -82,10 +85,15 @@ Nursery::Nursery (App& a) : app(a) {
         nullptr
     );
     AW(hwnd);
-     // Check for a race condition where two app processes created a window at the same time.
-     // There should only be one nursery window, and it should be the one we just made.
-    AA(FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str()) == hwnd);
-    AA(FindWindowExW(HWND_MESSAGE, hwnd, class_name, window_title.c_str()) == nullptr);
+     // Check for a race condition where two app processes created a window at
+     // the same time.  There should only be one nursery window, and it should
+     // be the one we just made.
+    AA(FindWindowExW(
+        HWND_MESSAGE, NULL, class_name, window_title.c_str()
+    ) == hwnd);
+    AA(FindWindowExW(
+        HWND_MESSAGE, hwnd, class_name, window_title.c_str()
+    ) == nullptr);
 
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 }
@@ -96,27 +104,34 @@ static void create (
 ) {
     AH(nursery.environment->CreateCoreWebView2Controller(
         nursery.hwnd,
-        Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
-            [&nursery, then](HRESULT hr, ICoreWebView2Controller* controller) -> HRESULT
-   {
-        LOG("Nursery: new webview created"sv);
-        AH(hr);
-        HWND hwnd = GetWindow(nursery.hwnd, GW_CHILD);
-        AW(hwnd);
-        SetParent(hwnd, HWND_MESSAGE);
+        Callback<
+            ICoreWebView2CreateCoreWebView2ControllerCompletedHandler
+        >([&nursery, then](
+            HRESULT hr, ICoreWebView2Controller* controller
+        ) -> HRESULT {
+            LOG("Nursery: new webview created"sv);
+            AH(hr);
+            HWND hwnd = GetWindow(nursery.hwnd, GW_CHILD);
+            AW(hwnd);
+            SetParent(hwnd, HWND_MESSAGE);
 
-        ICoreWebView2* webview;
-        controller->get_CoreWebView2(&webview);
-        then(controller, webview, hwnd);
-        return S_OK;
-    }).Get()));
+            ICoreWebView2* webview;
+            controller->get_CoreWebView2(&webview);
+            then(controller, webview, hwnd);
+            return S_OK;
+        }).Get()
+    ));
 }
 
 static void queue (
     Nursery& nursery
 ) {
      // TODO: use-after-free
-    create(nursery, [&nursery](ICoreWebView2Controller* controller, ICoreWebView2* webview, HWND hwnd){
+    create(nursery, [&nursery](
+        ICoreWebView2Controller* controller,
+        ICoreWebView2* webview,
+        HWND hwnd
+    ){
         LOG("Nursery: new webview queued"sv);
         nursery.next_controller = controller;
         nursery.next_webview = webview;
@@ -135,16 +150,19 @@ void Nursery::new_webview (
         AH(options->put_AllowSingleSignOnUsingOSPrimaryAccount(TRUE));
         AH(CreateCoreWebView2EnvironmentWithOptions(
             nullptr, edge_udf.c_str(), nullptr,
-            Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
-                [this, then](HRESULT hr, ICoreWebView2Environment* env) -> HRESULT
-        {
-            AH(hr);
-            LOG("Nursery: environment created"sv);
-            environment = env;
-            create(*this, then);
-            queue(*this);
-            return S_OK;
-        }).Get()));
+            Callback<
+                ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler
+            >([this, then](
+                HRESULT hr, ICoreWebView2Environment* env
+            ) -> HRESULT {
+                AH(hr);
+                LOG("Nursery: environment created"sv);
+                environment = env;
+                create(*this, then);
+                queue(*this);
+                return S_OK;
+            }).Get()
+        ));
     }
     else if (next_controller) {
         LOG("Nursery: using queued webview"sv);
@@ -155,9 +173,9 @@ void Nursery::new_webview (
     }
     else {
         LOG("Nursery: skipping queue"sv);
-         // next_webview isn't ready yet.
-         // Instead of trying to queue up an arbitrary number of callbacks, just make a
-         // new webview ignoring the queue.
+         // next_webview isn't ready yet.  Instead of trying to queue up an
+         // arbitrary number of callbacks, just make a new webview ignoring the
+         // queue.
         create(*this, then);
     }
 }

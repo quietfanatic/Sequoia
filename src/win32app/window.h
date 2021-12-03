@@ -17,7 +17,9 @@ struct Window {
 
      ///// Window methods
      // Not sure this belongs here but whatever
-    std::function<void()> get_key_handler (uint key, bool shift, bool ctrl, bool alt);
+    std::function<void()> get_key_handler (
+        uint key, bool shift, bool ctrl, bool alt
+    );
 
      ///// OS window stuff
     HWND hwnd;

@@ -3,7 +3,8 @@
 #include <unordered_set>
 #include <stdexcept>
 
-#include <combaseapi.h>  // Must include combaseapi.h (or wil/com.h) before WebView2.h
+ // Must include combaseapi.h (or wil/com.h) before WebView2.h
+#include <combaseapi.h>
 #include <windows.h>
 #include <WebView2.h>
 #include <wrl.h>
@@ -81,7 +82,8 @@ void Window::reflow () {
     double scale = dpi / 96.0;
     if (!fullscreen) {
         bounds.top += uint(toolbar_height * scale);
-        double side_width = sidebar_width > main_menu_width ? sidebar_width : main_menu_width;
+        double side_width = sidebar_width > main_menu_width
+            ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
     }
      // TODO: make sure this is actually our page
@@ -93,7 +95,9 @@ void Window::reflow () {
     }
 }
 
-static LRESULT CALLBACK window_WndProc (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
+static LRESULT CALLBACK window_WndProc (
+    HWND hwnd, UINT message, WPARAM w, LPARAM l
+) {
     auto window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (!window) return DefWindowProc(hwnd, message, w, l);
     switch (message) {
@@ -123,7 +127,8 @@ static LRESULT CALLBACK window_WndProc (HWND hwnd, UINT message, WPARAM w, LPARA
             return 0;
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN: {
-             // Since our application is only webviews, I'm not sure we ever get here
+             // Since our application is only webviews, I'm not sure we ever
+             // get here
             auto handler = window->get_key_handler(
                 uint(w),
                 GetKeyState(VK_SHIFT) < 0,
@@ -145,7 +150,9 @@ static LRESULT CALLBACK window_WndProc (HWND hwnd, UINT message, WPARAM w, LPARA
     return DefWindowProc(hwnd, message, w, l);
 }
 
-std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, bool alt) {
+std::function<void()> Window::get_key_handler (
+    uint key, bool shift, bool ctrl, bool alt
+) {
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
@@ -231,7 +238,9 @@ void Window::view_updated () {
         fullscreen = Fullscreen{};
         MONITORINFO monitor = {sizeof(MONITORINFO)};
         AW(GetWindowPlacement(hwnd, &fullscreen->old_placement));
-        AW(GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor));
+        AW(GetMonitorInfo(
+            MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor
+        ));
         DWORD style = GetWindowLong(hwnd, GWL_STYLE);
         SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
         SetWindowPos(hwnd, HWND_TOP,
@@ -248,7 +257,8 @@ void Window::view_updated () {
         SetWindowPlacement(hwnd, &fullscreen->old_placement);
         SetWindowPos(
             hwnd, nullptr, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER
+                | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
         );
         reflow();
          // TODO: make sure this is actually our activity

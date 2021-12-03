@@ -15,7 +15,7 @@ const EXPANDED = 64;
 ///// View model (model of view, not viewmodel)
 
  // Although the data model at the bottom is a graph of pages and links, it's
- //  presented to the user as a tree of tabs, which looks in the DOM like
+ // presented to the user as a tree of tabs, which looks in the DOM like
  //     [Item [Tab] [List
  //         [Item [Tab]]
  //         [Item [Tab] [List
@@ -23,9 +23,9 @@ const EXPANDED = 64;
  //         ]
  //     ]
  // The conversion is done on the app side, and communicated to this shell as
- //  changes to this tree of tabs.  Most of the data is just stuffed directly
- //  into the DOM without being stored in JS.  The only JS data stored per item
- //  is for positioning.
+ // changes to this tree of tabs.  Most of the data is just stuffed directly
+ // into the DOM without being stored in JS.  The only JS data stored per item
+ // is for positioning.
 
 ///// Toolbar DOM
 
@@ -132,7 +132,8 @@ let $toggle_main_menu = $("div", {
 
  // Put it all together
 let $toolbar = $("div", {id:"toolbar"},
-    $back, $forward, $reload, $stop, $address, $error_indicator, $toggle_sidebar, $toggle_main_menu
+    $back, $forward, $reload, $stop, $address,
+    $error_indicator, $toggle_sidebar, $toggle_main_menu
 );
 
 function update_toolbar (url, loading) {
@@ -180,7 +181,9 @@ function on_resize_mousedown (event) {
     handled(event);
 }
 function on_resize_drag (event) {
-    let new_width = sidebar_original_width - (event.clientX - sidebar_resize_origin);
+    let new_width = sidebar_original_width - (
+        event.clientX - sidebar_resize_origin
+    );
     $html.style.setProperty('--sidebar-width', new_width + "px");
     send_resize();
     handled(event);
@@ -473,7 +476,9 @@ function on_tab_release (event) {
         if ($move_destination) {
             let $item = $move_destination.closest('.item');
             if (+$item.id != moving_tab_id) {
-                host.postMessage(["move_tab", moving_tab_id, +$item.id, move_destination_rel]);
+                host.postMessage([
+                    "move_tab", moving_tab_id, +$item.id, move_destination_rel
+                ]);
             }
         }
     }

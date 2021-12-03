@@ -6,12 +6,15 @@ PRAGMA user_version = 6;
 ----- URLS (NYI)
 
  -- URLs in this database should be canonicalized to UTF-8 unicode form
- --  (so-called IRIs).
+ -- (so-called IRIs).
+ --
  -- I considered storing titles in this table as well, but there aren't enough
- --  duplicated titles to be worth deduplicating.  (Even URLs are only really
- --  worth deduplicating for favicons.)
+ -- duplicated titles to be worth deduplicating.  (Even URLs are only really
+ -- worth deduplicating for favicons.)
+ --
  -- There's no garbage collection for this table.  Based on my usage, I don't
- --  generate enough URLs over time to be worth bothering.
+ -- generate enough URLs over time to be worth bothering.
+ --
  -- _hash is an x31 hash of the URL's UTF-8 bytes converted to int64.
 --CREATE TABLE _urls (
 --    _id INTEGER PRIMARY KEY,
@@ -19,7 +22,7 @@ PRAGMA user_version = 6;
 --    _content TEXT NOT NULL
 --);
  -- URLs are looked up by hash because most URLs begin with http[s]://, so
- --  doing string comparisons to look them up would waste a lot of cycles.
+ -- doing string comparisons to look them up would waste a lot of cycles.
 --CREATE INDEX _urls_by_hash ON _urls (
 --    _hash
 --);
@@ -27,13 +30,17 @@ PRAGMA user_version = 6;
 ----- PAGES
 
  -- Generally there will be one page per URL, but the user can make multiple
- --  pages for the same URL.  TODO: Do we want to allow multiple URLs for one
- --  page if they only differ by fragment?
- -- _url: Currently TEXT but will be deduplicated in a separate table eventually
+ -- pages for the same URL.  TODO: Do we want to allow multiple URLs for one
+ -- page if they only differ by fragment?
+ --
+ -- _url: Currently TEXT but will be deduplicated in a separate table
+ -- eventually
+ --
  -- _title is the actual title from the HTML page.  It will be "" if this
- --  page has not been loaded yet.
+ -- page has not been loaded yet.
+ --
  -- _group doesn't semantically belong in this table, but since it's a
- --  one-to-many relationship, this is where it's easiest to put it.
+ -- one-to-many relationship, this is where it's easiest to put it.
 CREATE TABLE _pages (
     _id INTEGER PRIMARY KEY,
     _url_hash INTEGER NOT NULL,
@@ -50,7 +57,7 @@ CREATE INDEX _pages_by_url_hash ON _pages (
     _url_hash
 );
  -- The representative page of a group is the one last visited, or if none are
- --  visited, the one with the largest id (last created).
+ -- visited, the one with the largest id (last created).
 CREATE INDEX _pages_by_group ON _pages (
     _group, _visited_at, _id
 ) WHERE _group <> 0;
@@ -62,17 +69,20 @@ CREATE INDEX _pages_by_visited_at ON _pages (
 ----- LINKS
 
  -- Links are between pages, and usually indicate that the to_page was accessed
- --  via a link in the from_page.
+ -- via a link in the from_page.
+ --
  -- _opener_page is the page that the link was opened from, or NULL if
- --  manually created.  For normal parent/child links, this will be the same as
- --  _from_page, but for links opened as siblings or moved, it may differ.
+ -- manually created.  For normal parent/child links, this will be the same as
+ -- _from_page, but for links opened as siblings or moved, it may differ.
+ --
  -- _position is a sortable blob, see util/bifractor.h.  Every link with a given
- --  _from_page must have a unique position, and although the database can't
- --  regulate this, every link whose from_page is in the same group should also
- --  have a unique position.  Therefore links must have their positions updated
- --  when pages are merged into the same group.
+ -- _from_page must have a unique position, and although the database can't
+ -- regulate this, every link whose from_page is in the same group should also
+ -- have a unique position.  Therefore links must have their positions updated
+ -- when pages are merged into the same group.
+ --
  -- _title is heuristically generated from the link on the _from_page, and is
- --  used as the user-visible title of the _to_page before it's loaded.
+ -- used as the user-visible title of the _to_page before it's loaded.
 CREATE TABLE _links (
     _id INTEGER PRIMARY KEY,
     _opener_page INTEGER NOT NULL,
@@ -119,8 +129,8 @@ CREATE TABLE _page_tags (
 ) WITHOUT ROWID;
 
  -- SQLite properly deduplicates columns in the table's primary key that are
- --  also in the index's key, so this index should be exactly the same size as
- --  its table.
+ -- also in the index's key, so this index should be exactly the same size as
+ -- its table.
 CREATE INDEX _page_tags_by_tag ON _page_tags (
     _tag, _page
 );
@@ -128,9 +138,9 @@ CREATE INDEX _page_tags_by_tag ON _page_tags (
 ----- GROUPS
 
  -- Putting pages in a group means the user wants the pages to be considered
- --  semantically the same page.  The database attaches links and tags to
- --  individual pages instead of groups, so if pages are merged into a group and
- --  then split up, each page remembers its own stuff.
+ -- semantically the same page.  The database attaches links and tags to
+ -- individual pages instead of groups, so if pages are merged into a group and
+ -- then split up, each page remembers its own stuff.
 CREATE TABLE _groups (
     _id INTEGER PRIMARY KEY,
     _current_page INTEGER NOT NULL
@@ -142,12 +152,15 @@ CREATE TABLE _groups (
 
  -- A view represents a tree-like view of the graph.
  -- To preserver the path to the focused tab, views do two things:
- --  - They focus on links, not pages or groups, because links know their parent
- --  - They require that a tab is expanded in only one place it occurs.
+ --   - They focus on links, not pages or groups, because links know their parent
+ --   - They require that a tab is expanded in only one place it occurs.
+ --
  -- If _focused_tab is 0, that means the root page is focused.  This is a
- --  little weird, and frankly I'm not quite satisfied, but the root page might
- --  not have any links associated with it.
+ -- little weird, and frankly I'm not quite satisfied, but the root page might
+ -- not have any links associated with it.
+ --
  -- If _closed_at is NULL, there is an open desktop window viewing this view.
+ --
  -- _expanded_tabs is a JSON array of link IDs (0 = root page)
 CREATE TABLE _views (
     _id INTEGER PRIMARY KEY,

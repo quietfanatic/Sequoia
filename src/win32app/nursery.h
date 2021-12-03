@@ -1,8 +1,8 @@
 #pragma once
 
  // This class has two purposes:
- //  Holds a global message window for IPC
- //  Makes webviews
+ //   - Holds a global message window for IPC
+ //   - Makes webviews
  // Eventually these should be split.
 
 #include <windows.h>

@@ -108,7 +108,7 @@ struct UseStatement {
         template <class T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
         operator T () {
              // Who thought having {} warn about narrowing conversions was a
-             //  good idea
+             // good idea
             return T{std::underlying_type_t<T>(int64(*this))};
         }
 

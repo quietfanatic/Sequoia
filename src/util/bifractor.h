@@ -1,14 +1,13 @@
+#pragma once
+
  // This implements a class of infinite-precision fractions that can be compared with
- //   memcmp, so that they can serve as an ordered SQLite BLOB.
+ // memcmp, so that they can serve as an ordered SQLite BLOB.
  //
  // A Bifractor can constructed as 0, 1, or the bisection of two other Bifractors.
- //   The bisecting constructor can take a bias within 0x01..0xff, with 0x80 being the
- //   halfway point. Lower biases will make the result closer to the left side, so that
- //   if you expect to bisect in one direction contiually, the byte string doesn't get
- //   quite as long.
- // It is an error to try to bisect equal Bifractors.
-
-#pragma once
+ // The bisecting constructor can take a bias within 0x01..0xff, with 0x80 being the
+ // halfway point. Lower biases will make the result closer to the left side, so that
+ // if you expect to bisect in one direction contiually, the byte string doesn't get
+ // quite as long.  It is an error to try to bisect equal Bifractors.
 
 #include <new>
 #include <ostream>

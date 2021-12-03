@@ -7,6 +7,7 @@
 extern std::ostream* logstream;
 
 void init_log (Str filename);
+ // Release the filehandle so you can delete it on Windows
 void uninit_log ();
 
 uint64 logging_timestamp ();
@@ -34,6 +35,7 @@ std::ostream& log_args (std::ostream& log, Arg1&& arg1, Arg2&& arg2, Args&&... a
     return log;
 }
 
+ // init_log must be called before using this.
 template <class... Args>
 void LOG (Args&&... args) {
     log_args(*logstream, logging_timestamp(), std::forward<Args>(args)...) << std::endl << std::flush;

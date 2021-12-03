@@ -50,17 +50,17 @@ TabChanges get_changed_tabs (
      // Remove tabs that are no longer visible
     for (auto& [id, tab] : old_tabs) {
         // Using Tab{} causes MSVC to say things like "no appropriate default
-        //  constructor available" and "Invalid aggregate intitialization".
-        //  Compiler bug?
+        // constructor available" and "Invalid aggregate intitialization".
+        // Compiler bug?
         Tab empty;
         if (!new_tabs.count(id)) {
             r.emplace_back(id, empty);
         }
     }
      // Add tabs that:
-     //  - Are newly visible
-     //  - Are visible and are in the Update
-     //  - Have had their flags changed, most of which won't be reflected in the Update.
+     //   - Are newly visible
+     //   - Are visible and are in the Update
+     //   - Have had their flags changed, most of which won't be reflected in the Update.
     for (auto& [id, tab] : new_tabs) {
         auto old = old_tabs.find(id);
         if (old == old_tabs.end()

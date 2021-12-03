@@ -6,7 +6,7 @@ let host = chrome.webview;
  // I don't know what could cause it now, but we'll keep the check just in case.
 if (host === undefined) return;
  // TODO: Figure out how to prevent webpage from abusing chrome.webview
- //  If we delete this, host.addEventListener("message", ...) stops working.
+ // If we delete this, host.addEventListener("message", ...) stops working.
  // TODO: File a bug report with WebView2?
  // TODO: Stop using PostWebMessage and use ExecuteScript?
 //delete chrome.webview;
@@ -16,7 +16,7 @@ let JSON_stringify = JSON.stringify;
 function host_post (message) {
      // Go to extra lengths to prevent websites from busting JSON with monkey-typing.
      // Yes, I have in fact encountered a website that replaces builtin JSON functions
-     //  with incorrect versions.
+     // with incorrect versions.
     let old_Array_toJSON = Array.prototype.toJSON;
     delete Array.prototype.toJSON;
     let old_String_toJSON = String.prototype.toJSON;

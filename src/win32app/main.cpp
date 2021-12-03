@@ -76,7 +76,7 @@ int main (int argc, char** argv) {
         Profile profile = Profile(arg_profile, arg_profile_folder);
 
          // If a process is already running in this profile, send it a message
-         //  instead of starting a new instance.
+         // instead of starting a new instance.
          // TODO: Is there a race condition here?
         if (HWND nursery = existing_nursery(profile)) {
             Str url = positional_args.size() >= 1 ? positional_args[0] : "about:blank"sv;

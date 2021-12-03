@@ -22,7 +22,10 @@ Profile::Profile (Str n, Str f) : name(n), folder(f) {
         folder = exe_relative("profiles/"sv + name);
     }
     else if (name.empty()) {
-        show_string_error(__FILE__, __LINE__, "Cannot provide profile-folder argument without also providing profile argument."sv);
+        show_string_error(__FILE__, __LINE__,
+            "Cannot provide profile-folder argument without also providing "
+            "profile argument."sv
+        );
     }
     else {
         folder_specified = true;
@@ -48,7 +51,9 @@ Settings Profile::load_settings () {
             break;
         }
         default:
-            show_string_error(__FILE__, __LINE__, "Unrecognized setting name: "sv + pair.first);
+            show_string_error(__FILE__, __LINE__,
+                "Unrecognized setting name: "sv + pair.first
+            );
         }
     }
     return r;
@@ -70,7 +75,9 @@ void Profile::register_as_browser () {
     String16 caps_k = smi_k + L"\\Capabilities"sv;
     String16 class_k = L"Software\\Classes\\"sv + app_class;
 
-    auto set_reg_sz = [](const wstring& subkey, const wchar_t* name, const wstring& value) {
+    auto set_reg_sz = [](
+        const wstring& subkey, const wchar_t* name, const wstring& value
+    ) {
         AWE(RegSetKeyValueW(
             HKEY_CURRENT_USER, subkey.c_str(), name,
             REG_SZ, value.c_str(), DWORD((value.size()+1)*sizeof(value[0]))
@@ -82,12 +89,17 @@ void Profile::register_as_browser () {
         caps_k, L"ApplicationDescription",
         L"A browser-like application for tab hoarders."
     );
-    for (auto& ext : {L".htm", L".html", L".shtml", L".svg", L".xht", L".xhtml"}) {
+    for (auto& ext : {
+        L".htm", L".html", L".shtml", L".svg", L".xht", L".xhtml"
+    }) {
         set_reg_sz(caps_k + L"\\FileAssociations"sv, ext, app_name + L"-App"sv);
     }
     set_reg_sz(caps_k + L"\\StartMenu"sv, L"StartMenuInternet", app_name);
     for (auto& scheme : {L"ftp", L"http", L"https"}) {
-        set_reg_sz(caps_k + L"\\URLAssociations"sv, scheme, app_name + L"-App"sv);
+        set_reg_sz(
+            caps_k + L"\\URLAssociations"sv, scheme,
+            app_name + L"-App"sv
+        );
     }
 
     wstring command_line = L'"' + exe_path16 + L'"';
@@ -99,7 +111,10 @@ void Profile::register_as_browser () {
     }
 
     set_reg_sz(smi_k + L"\\shell\\open\\command"sv, nullptr, command_line);
-    set_reg_sz(class_k + L"\\shell\\open\\command"sv, nullptr, command_line + L" -- \"%1\""sv);
+    set_reg_sz(
+        class_k + L"\\shell\\open\\command"sv, nullptr,
+        command_line + L" -- \"%1\""sv
+    );
     set_reg_sz(L"Software\\RegisteredApplications"s, app_class.c_str(), caps_k);
 }
 
