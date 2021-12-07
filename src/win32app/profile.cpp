@@ -5,7 +5,7 @@
 
 #include <windows.h>
 
-#include "../util/assert.h"
+#include "../util/error.h"
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"
@@ -22,8 +22,7 @@ Profile::Profile (Str n, Str f) : name(n), folder(f) {
         folder = exe_relative("profiles/"sv + name);
     }
     else if (name.empty()) {
-        show_string_error(__FILE__, __LINE__,
-            "Cannot provide profile-folder argument without also providing "
+        ERR("Cannot provide profile-folder argument without also providing "
             "profile argument."sv
         );
     }
@@ -51,9 +50,7 @@ Settings Profile::load_settings () {
             break;
         }
         default:
-            show_string_error(__FILE__, __LINE__,
-                "Unrecognized setting name: "sv + pair.first
-            );
+            ERR("Unrecognized setting name: "sv + pair.first);
         }
     }
     return r;

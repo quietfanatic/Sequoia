@@ -49,6 +49,7 @@ static std::string todo_excuse;
 static void(* print )(const std::string&) = [](const std::string& s){
     fputs(s.c_str(), stdout);
 };
+static bool currently_testing = false;
 
  ///// API
 
@@ -224,7 +225,7 @@ void diag (const std::string& message) {
 }
 
 void BAIL_OUT (const std::string& reason) {
-    printf("Bail out!  %s", reason.c_str());
+    print("Bail out!  " + reason + "\n");
     exit(1);
 }
 
@@ -259,14 +260,16 @@ void run_test (const std::string& name) {
     for (auto& t : testers()) {
         if (t->name == name) {
             try {
+                currently_testing = true;
                 t->code();
+                currently_testing = false;
             }
             catch (std::exception& e) {
-                printf("Uncaught exception: %s\n", e.what());
+                print("Uncaught exception: " + std::string(e.what()) + "\n");
                 throw;
             }
             catch (...) {
-                printf("Uncaught non-standard exception.");
+                print("Uncaught non-standard exception.\n");
                 throw;
             }
             return;
@@ -289,6 +292,8 @@ void list_tests () {
     print("(testing disabled)");
 #endif
 }
+
+bool testing () { return currently_testing; }
 
 int argc = 0;
 char** argv = nullptr;

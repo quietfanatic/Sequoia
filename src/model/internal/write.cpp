@@ -1,5 +1,6 @@
 #include "write-internal.h"
 
+#include "../../util/error.h"
 #include "model-internal.h"
 
 using namespace std;

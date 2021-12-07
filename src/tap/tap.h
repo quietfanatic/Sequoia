@@ -272,6 +272,10 @@ void run_test (const std::string& name);
  // stdout (or whatever your print handler is).
 void list_tests ();
 
+ // Returns true if a test is currently being run.  Only use this to disable
+ // test-unfriendly error handling.
+bool testing ();
+
  // Copies of the parameters passed to allow_testing that you can access from
  // your tests.  These are not available if you directly call run_test.
 extern int argc;

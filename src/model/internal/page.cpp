@@ -1,7 +1,7 @@
 #include "page-internal.h"
 
 #include <sqlite3.h>
-#include "../../util/assert.h"
+#include "../../util/error.h"
 #include "../../util/hash.h"
 #include "../../util/log.h"
 #include "../../util/time.h"

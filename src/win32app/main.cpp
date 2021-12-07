@@ -2,6 +2,7 @@
 
 #include <windows.h>
 
+#include "../util/error.h"
 #include "../util/hash.h"
 #include "../util/json.h"
 #include "../util/types.h"
@@ -49,7 +50,7 @@ int main (int argc, char** argv) {
                 if (sep == arg.size()) {
                     i += 1;
                     if (i == argc) {
-                        throw Error("Missing value for named parameter "sv + name);
+                        ERR("Missing value for named parameter "sv + name);
                     }
                     value = argv[i];
                 }
@@ -63,7 +64,7 @@ int main (int argc, char** argv) {
                     case x31_hash("profile-folder"):
                         arg_profile_folder = value;
                         break;
-                    default: throw Error("Unrecognized named parameter " + name);
+                    default: ERR("Unrecognized named parameter " + name);
                 }
             }
             else {
@@ -94,7 +95,6 @@ int main (int argc, char** argv) {
         return app.run(positional_args);
     }
     catch (exception& e) {
-        show_string_error(__FILE__, __LINE__, "Uncaught exception: "sv + e.what());
-        throw;
+        ERR("Uncaught exception: "sv + e.what());
     }
 }

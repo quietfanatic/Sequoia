@@ -4,8 +4,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "../util/assert.h"
 #include "../util/bifractor.h"
+#include "../util/error.h"
 #include "../util/types.h"
 #include "link.h"
 #include "model.h"

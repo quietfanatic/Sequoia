@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <exception>
 #include <string>
 #include <string_view>
 
@@ -44,14 +43,3 @@ static inline String16 operator + (Str16 a, Str16 b) {
 }
 static inline String& operator += (String& a, Str b) { return a.append(b); }
 static inline String16& operator += (String16& a, Str16 b) { return a.append(b); }
-
-struct Error : std::exception {
-    String mess;
-    Error (String&& mess) : mess(mess) {
-#ifndef NDEBUG
-        std::abort(); // Halt for debugging
-#endif
-    }
-    Error (Str mess) : Error(String(mess)) { }
-    const char* what () const noexcept override { return mess.c_str(); }
-};

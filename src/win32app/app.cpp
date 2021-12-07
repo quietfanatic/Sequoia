@@ -6,6 +6,7 @@
 #include "../model/page.h"
 #include "../model/view.h"
 #include "../model/write.h"
+#include "../util/error.h"
 #include "activity.h"
 #include "shell.h"
 #include "window.h"
@@ -47,7 +48,7 @@ int App::run (const vector<String>& urls) {
     }
      // Open new window if requested
     if (!urls.empty()) {
-        if (urls.size() > 1) throw Error("Multiple URL arguments NYI"sv);
+        if (urls.size() > 1) ERR("Multiple URL arguments NYI"sv);
         create_view_and_page(write(model), urls[0]);
     }
      // Run message loop

@@ -3,7 +3,7 @@
 #include <chrono>
 #include <fstream>
 
-#include "assert.h"
+#include "error.h"
 #include "time.h"
 
 using namespace std;

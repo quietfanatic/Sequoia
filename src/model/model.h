@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../util/assert.h"
+#include "../util/error.h"
 #include "../util/types.h"
 
 namespace model {

@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include <sqlite3.h>
-#include "../../util/assert.h"
+#include "../../util/error.h"
 #include "../../util/log.h"
 #include "../../util/time.h"
 #include "model-internal.h"

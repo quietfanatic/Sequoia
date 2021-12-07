@@ -6,8 +6,8 @@
 
 #include <sqlite3.h>
 
-#include "../util/assert.h"
 #include "../util/bifractor.h"
+#include "../util/error.h"
 #include "../model.h"
 
 namespace model {

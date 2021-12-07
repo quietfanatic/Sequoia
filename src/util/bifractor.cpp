@@ -3,7 +3,7 @@
 #include <memory>
 #include <stdexcept>
 
-#include "assert.h"
+#include "error.h"
 #include "text.h"
 
 std::string Bifractor::hex () const {
@@ -51,7 +51,7 @@ Bifractor::Bifractor (const Bifractor& a, const Bifractor& b, uint bias) {
         }
         }
     }
-    throw Error("Tried to bisect two Bifractors that were equal."sv);
+    ERR("Tried to bisect two Bifractors that were equal."sv);
 }
 
 Bifractor::Bifractor (const void* bytes_ptr, size_t bytes_size) : size(bytes_size) {

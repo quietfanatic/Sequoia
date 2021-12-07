@@ -13,7 +13,7 @@
 #include "../model/page.h"
 #include "../model/view.h"
 #include "../model/write.h"
-#include "../util/assert.h"
+#include "../util/error.h"
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"

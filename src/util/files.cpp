@@ -3,6 +3,7 @@
 #include <fstream>
 #include <windows.h>
 
+#include "error.h"
 #include "text.h"
 
 using namespace std;
@@ -28,7 +29,7 @@ String slurp (Str filename) {
      // TODO: replace with C IO
     ifstream file (String(filename), ios::ate | ios::binary);
     if (!file.is_open()) {
-        throw Error("Failure opening a file, but I don't know why because C++ IO is terrible."sv);
+        ERR("Failure opening a file, but I don't know why because C++ IO is terrible."sv);
     }
     size_t len = file.tellg();
     file.seekg(0, ios::beg);

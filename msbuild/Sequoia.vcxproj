@@ -165,8 +165,8 @@
     <ClCompile Include="../src/model/tabs.cpp" />
     <ClCompile Include="../src/sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="../src/tap/tap.cpp" />
-    <ClCompile Include="../src/util/assert.cpp" />
     <ClCompile Include="../src/util/bifractor.cpp" />
+    <ClCompile Include="../src/util/error.cpp" />
     <ClCompile Include="../src/util/files.cpp" />
     <ClCompile Include="../src/util/json.cpp" />
     <ClCompile Include="../src/util/log.cpp" />
@@ -195,9 +195,9 @@
     <ClInclude Include="../src/model/write.h" />
     <ClInclude Include="../src/sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="../src/tap/tap.h" />
-    <ClInclude Include="../src/util/assert.h" />
     <ClInclude Include="../src/util/bifractor.h" />
     <ClInclude Include="../src/util/db_support.h" />
+    <ClInclude Include="../src/util/error.h" />
     <ClInclude Include="../src/util/files.h" />
     <ClInclude Include="../src/util/json.h" />
     <ClInclude Include="../src/util/log.h" />

@@ -7,6 +7,7 @@
 #include "../model/page.h"
 #include "../model/view.h"
 #include "../model/write.h"
+#include "../util/error.h"
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"
@@ -138,162 +139,162 @@ void Shell::message_from_webview (const json::Value& message) {
 
     const string& command = message[0];
     switch (x31_hash(command.c_str())) {
-    case x31_hash("ready"): {
-        message_to_webview(json::array(
-            "settings"sv,
-            json::object(
-                std::pair{"theme"sv, app.settings.theme}
-            )
-        ));
-        tabs = create_tab_tree(app.model, view);
-        json::Array tab_updates;
-        tab_updates.reserve(tabs.size());
-        for (auto& [id, tab] : tabs) {
-            tab_updates.emplace_back(make_tab_json(app.model, id, tab));
+        case x31_hash("ready"): {
+            message_to_webview(json::array(
+                "settings"sv,
+                json::object(
+                    std::pair{"theme"sv, app.settings.theme}
+                )
+            ));
+            tabs = create_tab_tree(app.model, view);
+            json::Array tab_updates;
+            tab_updates.reserve(tabs.size());
+            for (auto& [id, tab] : tabs) {
+                tab_updates.emplace_back(make_tab_json(app.model, id, tab));
+            }
+            message_to_webview(json::array("view"sv, tab_updates));
+            ready = true;
+            break;
         }
-        message_to_webview(json::array("view"sv, tab_updates));
-        ready = true;
-        break;
-    }
-    case x31_hash("resize"): {
-         // TODO: set sidebar width or something
-        if (Window* window = app.window_for_view(view)) {
-            window->reflow();
+        case x31_hash("resize"): {
+             // TODO: set sidebar width or something
+            if (Window* window = app.window_for_view(view)) {
+                window->reflow();
+            }
+            break;
         }
-        break;
-    }
-    case x31_hash("navigate"): {
-        navigate_focused_page(write(app.model), view, message[1]);
-        break;
-    }
-     // Toolbar buttons
-    case x31_hash("back"): {
-        Activity* activity = app.activity_for_page(
-            focused_page(app.model, view)
-        );
-        if (activity && activity->webview) {
-            activity->webview->GoBack();
+        case x31_hash("navigate"): {
+            navigate_focused_page(write(app.model), view, message[1]);
+            break;
         }
-        break;
-    }
-    case x31_hash("forward"): {
-        Activity* activity = app.activity_for_page(
-            focused_page(app.model, view)
-        );
-        if (activity && activity->webview) {
-            activity->webview->GoForward();
+         // Toolbar buttons
+        case x31_hash("back"): {
+            Activity* activity = app.activity_for_page(
+                focused_page(app.model, view)
+            );
+            if (activity && activity->webview) {
+                activity->webview->GoBack();
+            }
+            break;
         }
-        break;
-    }
-    case x31_hash("reload"): {
-        Activity* activity = app.activity_for_page(
-            focused_page(app.model, view)
-        );
-        if (activity && activity->webview) {
-            activity->webview->Reload();
+        case x31_hash("forward"): {
+            Activity* activity = app.activity_for_page(
+                focused_page(app.model, view)
+            );
+            if (activity && activity->webview) {
+                activity->webview->GoForward();
+            }
+            break;
         }
-        break;
-    }
-    case x31_hash("stop"): {
-        Activity* activity = app.activity_for_page(
-            focused_page(app.model, view)
-        );
-        if (activity && activity->webview) {
-            activity->webview->Stop();
+        case x31_hash("reload"): {
+            Activity* activity = app.activity_for_page(
+                focused_page(app.model, view)
+            );
+            if (activity && activity->webview) {
+                activity->webview->Reload();
+            }
+            break;
         }
-        break;
-    }
-    case x31_hash("investigate_error"): {
-        webview->OpenDevToolsWindow();
-        break;
-    }
-     // Tab actions
-    case x31_hash("focus_tab"): {
-        focus_tab(write(app.model), view, model::LinkID{message[1]});
-        break;
-    }
-    case x31_hash("new_child"): {
-        create_and_focus_last_child(
-            write(app.model), view,
-            model::LinkID{message[1]}, "about:blank"sv
-        );
-        break;
-    }
-    case x31_hash("trash_tab"): {
-        trash_tab(write(app.model), view, model::LinkID{message[1]});
-        break;
-    }
-    case x31_hash("move_tab_before"): {
-        model::LinkID link {message[1]};
-        model::LinkID target {message[2]};
-        if (link && target) {
-            move_before(write(app.model), link, target);
+        case x31_hash("stop"): {
+            Activity* activity = app.activity_for_page(
+                focused_page(app.model, view)
+            );
+            if (activity && activity->webview) {
+                activity->webview->Stop();
+            }
+            break;
         }
-        break;
-    }
-    case x31_hash("move_tab_after"): {
-        model::LinkID link {message[1]};
-        model::LinkID target {message[2]};
-        if (link && target) {
-            move_after(write(app.model), link, target);
+        case x31_hash("investigate_error"): {
+            webview->OpenDevToolsWindow();
+            break;
         }
-        break;
-    }
-    case x31_hash("move_tab_first_child"): {
-        model::LinkID link {message[1]};
-        model::PageID parent {message[2]};
-        if (link) {
-            move_first_child(write(app.model), link, parent);
+         // Tab actions
+        case x31_hash("focus_tab"): {
+            focus_tab(write(app.model), view, model::LinkID{message[1]});
+            break;
         }
-        break;
-    }
-    case x31_hash("move_tab_last_child"): {
-        model::LinkID link {message[1]};
-        model::PageID parent {message[2]};
-        if (link) {
-            move_last_child(write(app.model), link, parent);
+        case x31_hash("new_child"): {
+            create_and_focus_last_child(
+                write(app.model), view,
+                model::LinkID{message[1]}, "about:blank"sv
+            );
+            break;
         }
-        break;
-    }
-    case x31_hash("expand_tab"): {
-        expand_tab(write(app.model), view, model::LinkID{message[1]});
-        break;
-    }
-    case x31_hash("contract_tab"): {
-        contract_tab(write(app.model), view, model::LinkID{message[1]});
-        break;
-    }
-     // Main menu
-    case x31_hash("fullscreen"): {
-        set_fullscreen(write(app.model), view, !(app.model/view)->fullscreen);
-        break;
-    }
-    case x31_hash("register_as_browser"): {
-        app.profile.register_as_browser();
-        break;
-    }
-    case x31_hash("open_selected_links"): {
-        if (Activity* activity = app.activity_for_page(
-            focused_page(app.model, view)
-        )) {
-            activity->message_to_webview(json::array("open_selected_links"sv));
+        case x31_hash("trash_tab"): {
+            trash_tab(write(app.model), view, model::LinkID{message[1]});
+            break;
         }
-        break;
-    }
-    case x31_hash("quit"): {
-        app.quit();
-        break;
-    }
-    default: {
-        throw Error("Unknown message from shell: "sv + command);
-    }
+        case x31_hash("move_tab_before"): {
+            model::LinkID link {message[1]};
+            model::LinkID target {message[2]};
+            if (link && target) {
+                move_before(write(app.model), link, target);
+            }
+            break;
+        }
+        case x31_hash("move_tab_after"): {
+            model::LinkID link {message[1]};
+            model::LinkID target {message[2]};
+            if (link && target) {
+                move_after(write(app.model), link, target);
+            }
+            break;
+        }
+        case x31_hash("move_tab_first_child"): {
+            model::LinkID link {message[1]};
+            model::PageID parent {message[2]};
+            if (link) {
+                move_first_child(write(app.model), link, parent);
+            }
+            break;
+        }
+        case x31_hash("move_tab_last_child"): {
+            model::LinkID link {message[1]};
+            model::PageID parent {message[2]};
+            if (link) {
+                move_last_child(write(app.model), link, parent);
+            }
+            break;
+        }
+        case x31_hash("expand_tab"): {
+            expand_tab(write(app.model), view, model::LinkID{message[1]});
+            break;
+        }
+        case x31_hash("contract_tab"): {
+            contract_tab(write(app.model), view, model::LinkID{message[1]});
+            break;
+        }
+         // Main menu
+        case x31_hash("fullscreen"): {
+            bool currently_fullscreen = (app.model/view)->fullscreen;
+            set_fullscreen(write(app.model), view, !currently_fullscreen);
+            break;
+        }
+        case x31_hash("register_as_browser"): {
+            app.profile.register_as_browser();
+            break;
+        }
+        case x31_hash("open_selected_links"): {
+            if (Activity* activity = app.activity_for_page(
+                focused_page(app.model, view)
+            )) {
+                activity->message_to_webview(
+                    json::array("open_selected_links"sv)
+                );
+            }
+            break;
+        }
+        case x31_hash("quit"): {
+            app.quit();
+            break;
+        }
+        default: {
+            ERR("Unknown message from shell: "sv + command);
+        }
     }
 
     } catch (exception& e) {
-        show_string_error(__FILE__, __LINE__,
-            "Uncaught exception: "sv + e.what()
-        );
-        throw;
+        ERR("Uncaught exception: "sv + e.what());
     }
 }
 

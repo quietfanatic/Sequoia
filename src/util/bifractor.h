@@ -12,7 +12,7 @@
 #include <new>
 #include <ostream>
 
-#include "assert.h"
+#include "error.h"
 #include "types.h"
 
 struct Bifractor {

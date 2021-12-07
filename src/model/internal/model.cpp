@@ -3,9 +3,14 @@
 #include <filesystem>
 
 #include <sqlite3.h>
+#include "../../util/error.h"
 #include "../../util/files.h"
 #include "../../util/log.h"
 #include "statement.h"
+
+#ifndef TAP_DISABLE_TESTS
+#include "../../tap/tap.h"
+#endif
 
 using namespace std;
 
@@ -31,7 +36,7 @@ Database::Database (Str db_path) {
             st.step();
             int application_id = st[0];
             if (application_id != 0x53657175) { // "Sequ"
-                throw Error("Database file is for a different application!?"sv);
+                ERR("Database file is for a different application!?"sv);
             }
         }
         Statement st_user_version (db, "PRAGMA user_version", true);
@@ -45,9 +50,9 @@ Database::Database (Str db_path) {
             case 3:
             case 4:
             case 5:
-                throw Error("Migrating from old database versions is not supported in this build, sorry."sv);
+                ERR("Migrating from old database versions is not supported in this build, sorry."sv);
             case 6: break;
-            default: throw Error("Unknown database version.  Was this database created in a newer version of Sequoia?"sv);
+            default: ERR("Unknown database version.  Was this database created in a newer version of Sequoia?"sv);
         }
     }
 }
@@ -99,8 +104,14 @@ ModelTestEnvironment::ModelTestEnvironment () {
 }
 
 ModelTestEnvironment::~ModelTestEnvironment () {
-    uninit_log();
-    filesystem::remove_all(test_folder);
+    try {
+        uninit_log();
+        filesystem::remove_all(test_folder);
+    }
+    catch (std::exception& e) {
+        tap::diag(e.what());
+        tap::BAIL_OUT();
+    }
 }
 #endif
 
@@ -125,6 +136,7 @@ static tap::TestSet tests ("model/model", []{
     ok(filesystem::file_size(env.db_path) > 0, "delete_model leaves DB file");
     doesnt_throw([&]{
         model = &new_model(env.db_path);
+        delete_model(*model);
     }, "new_model can use existing DB file");
 
     done_testing();

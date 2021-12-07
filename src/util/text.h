@@ -9,6 +9,8 @@ String16 to_utf16 (Str);
  // Must be 0..15
 char to_hex_digit (uint8 nyb);
 
+String to_hex (uint32);
+
  // Returns -1 if not a hex digit
 int8 from_hex_digit (char c);
 
