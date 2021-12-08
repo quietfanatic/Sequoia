@@ -33,9 +33,11 @@ struct WriteRef {
     Model& model;
     WriteRef (Write& w) : model(w.model) { }
     WriteRef (Write&& w) : model(w.model) { }
-    operator ReadRef () { return Read(model); }
     Model& operator* () { return model; }
     Model* operator-> () { return &model; }
 };
+
+inline ReadRef::ReadRef(WriteRef w) : model(w.model) { }
+inline ReadRef::ReadRef(const Write& w) : model(w.model) { }
 
 } // namespace model

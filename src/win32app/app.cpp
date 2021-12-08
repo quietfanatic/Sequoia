@@ -19,13 +19,13 @@ App::App (Profile&& p) :
     profile(std::move(p)),
     settings(profile.load_settings()),
     nursery(*this),
-    model(model::new_model(profile.db_path()))
+    model(*model::new_model(profile.db_path()))
 {
     observe(model, this);
 }
 App::~App () {
     unobserve(model, this);
-    model::delete_model(model);
+    model::delete_model(&model);
 }
 
 int App::run (const vector<String>& urls) {

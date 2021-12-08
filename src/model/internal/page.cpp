@@ -129,7 +129,7 @@ static tap::TestSet tests ("model/page", []{
     using namespace model;
     using namespace tap;
     ModelTestEnvironment env;
-    Model& model = new_model(env.db_path);
+    Model& model = *new_model(env.db_path);
 
     PageID page;
     Write* tr = nullptr;
@@ -219,7 +219,7 @@ static tap::TestSet tests ("model/page", []{
     delete tr;
     ok(to2.called, "Observer called for set_favicon_url and touch");
 
-    delete_model(model);
+    delete_model(&model);
     done_testing();
 });
 

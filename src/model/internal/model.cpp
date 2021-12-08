@@ -71,14 +71,14 @@ Model::Model (Str db_path) :
 
 Model::~Model () { }
 
-Model& new_model (Str db_path) {
+Model* new_model (Str db_path) {
     LOG("new_model"sv, db_path);
-    return *new Model (db_path);
+    return new Model (db_path);
 }
 
-void delete_model (Model& model) {
+void delete_model (Model* model) {
     LOG("delete_model"sv);
-    delete &model;
+    delete model;
 }
 
 const PageData* operator/ (ReadRef model, PageID id) {
@@ -104,6 +104,8 @@ ModelTestEnvironment::ModelTestEnvironment () {
 }
 
 ModelTestEnvironment::~ModelTestEnvironment () {
+     // The runtime on Windows is not very helpful when an exception is thrown
+     //  in a destructor.
     try {
         uninit_log();
         filesystem::remove_all(test_folder);
@@ -123,20 +125,19 @@ ModelTestEnvironment::~ModelTestEnvironment () {
 static tap::TestSet tests ("model/model", []{
     using namespace model;
     using namespace tap;
-     // Prep
     ModelTestEnvironment env;
 
     Model* model;
     doesnt_throw([&]{
-        model = &new_model(env.db_path);
+        model = new_model(env.db_path);
     }, "new_model can create new DB file");
     doesnt_throw([&]{
-        delete_model(*model);
+        delete_model(model);
     }, "delete_model");
     ok(filesystem::file_size(env.db_path) > 0, "delete_model leaves DB file");
     doesnt_throw([&]{
-        model = &new_model(env.db_path);
-        delete_model(*model);
+        model = new_model(env.db_path);
+        delete_model(model);
     }, "new_model can use existing DB file");
 
     done_testing();

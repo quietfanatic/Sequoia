@@ -1,13 +1,22 @@
 #pragma once
 
+#include <functional>
+#include <memory>
+
 #include "../util/error.h"
 #include "../util/types.h"
 
 namespace model {
 
 struct Model;
-Model& new_model (Str db_path);
-void delete_model (Model&);
+Model* new_model (Str db_path);
+void delete_model (Model*);
+
+ // A writable view of the model, defined in write.h
+ // Unlike Read, this does not implicitly cast from Model&.
+struct Write;
+ // Write& or Write&&, but collapses one pointer indirection.
+struct WriteRef;
 
  // A readable view of the model.  Doesn't currently do anything real.
  // Eventually this might support thread-safe read transactions.
@@ -22,14 +31,11 @@ struct ReadRef {
      // For some reason the compiler is unable to stack the Read and ReadRef
      // implicit coercions together.  TODO: investigate why
     ReadRef (const Model& m) : model(m) { }
+    ReadRef (WriteRef);
+    ReadRef (const Write&);
     const Model& operator* () const { return model; }
     const Model* operator-> () const { return &model; }
 };
-
- // A writable view of the model, defined in write.h
- // Unlike Read, this does not implicitly cast from Model&.
-struct Write;
-struct WriteRef;
 
 template <class T>
 struct ModelID {
@@ -63,12 +69,23 @@ const ViewData* operator / (ReadRef, ViewID);
 
 } // namespace model
 
- // Allow ModelID in unordered_map and unordered_set
 namespace std {
-    template <class T>
-    struct hash<model::ModelID<T>> {
-        std::size_t operator () (model::ModelID<T> v) const {
-            return std::hash<int64>{}(v.id);
-        }
-    };
-}
+
+ // Allow std::unique_ptr<Model>
+template <>
+struct default_delete<::model::Model> {
+    void operator () (::model::Model* m) const {
+        ::model::delete_model(m);
+    }
+};
+
+ // Allow ModelID in unordered_map and unordered_set
+template <class T>
+struct hash<::model::ModelID<T>> {
+    size_t operator () (::model::ModelID<T> v) const {
+        return hash<int64>{}(v.id);
+    }
+};
+
+} // namespace std
+
