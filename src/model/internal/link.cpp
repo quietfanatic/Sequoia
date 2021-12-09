@@ -75,6 +75,7 @@ ORDER BY _trashed_at DESC LIMIT 1
 LinkID get_last_trashed_link (ReadRef model) {
     LOG("get_last_trashed_link"sv);
     UseStatement st (model->links.st_last_trashed);
+    st.params();
     return st.step() ? LinkID(st[0]) : LinkID{};
 }
 
@@ -100,6 +101,7 @@ ORDER BY _position DESC LIMIT 1
 static Bifractor last_position (ReadRef model, PageID parent) {
     AA(parent);
     UseStatement st (model->links.st_last_position);
+    st.params(parent);
     return st.step()
         ? Bifractor(st[0], Bifractor(1), 1/32.0)
         : Bifractor(1/16.0);
@@ -353,7 +355,7 @@ static tap::TestSet tests ("model/link", []{
     ok(next_sibling_data->position < last_child_data->position);
     ok(next_sibling_data->created_at);
     ok(!next_sibling_data->trashed_at);
-    PageID old_next_to_page = prev_sibling_data->to_page;
+    PageID old_next_to_page = next_sibling_data->to_page;
 
     vector<LinkID> links_from_first;
     doesnt_throw([&]{
@@ -378,13 +380,13 @@ static tap::TestSet tests ("model/link", []{
         move_first_child(write(model), next_sibling, firster_child_data->to_page);
     }, "move_first_child");
      // Existing data in cache should be overwritten
-    is(next_sibling_data->opener_page, first_child_data->from_page);
+    is(next_sibling_data->opener_page, first_child_data->to_page);
     is(next_sibling_data->from_page, firster_child_data->to_page);
     is(next_sibling_data->to_page, old_next_to_page);
     doesnt_throw([&]{
         move_last_child(write(model), prev_sibling, firster_child_data->to_page);
     }, "move_last_child");
-    is(prev_sibling_data->opener_page, first_child_data->from_page);
+    is(prev_sibling_data->opener_page, first_child_data->to_page);
     is(prev_sibling_data->from_page, firster_child_data->to_page);
     is(prev_sibling_data->to_page, old_prev_to_page);
     ok(prev_sibling_data->position > next_sibling_data->position);
@@ -409,7 +411,7 @@ static tap::TestSet tests ("model/link", []{
     is(links_from_first[0], firster_child);
 
     doesnt_throw([&]{
-        ok(!get_last_trashed_link(model));
+        is(get_last_trashed_link(model), LinkID{});
     }, "get_last_trashed_link (before trashing)");
     doesnt_throw([&]{
         trash(write(model), last_child);
@@ -427,10 +429,10 @@ static tap::TestSet tests ("model/link", []{
         is(get_last_trashed_link(model), last_child);
     }, "get_last_trashed_link (after untrashing 1)");
     doesnt_throw([&]{
-        untrash(write(model), first_child);
+        untrash(write(model), last_child);
     }, "untrash 2");
     doesnt_throw([&]{
-        ok(!get_last_trashed_link(model));
+        is(get_last_trashed_link(model), LinkID{});
     }, "get_last_trashed_link (after untrashing all)");
 
     delete_model(&model);
