@@ -6,6 +6,17 @@
 #include "error.h"
 #include "text.h"
 
+static void validate (const Bifractor& b) {
+    if (b.size >= 2) {
+        if (b.bytes()[0] == 0xff) {
+            ERR("First byte in Bifractor bytestring cannot be 0xFF (unless it's the only byte)"sv);
+        }
+        if (b.bytes()[b.size-1] == 0x00) {
+            ERR("Last byte in Bifractor bytestring cannot be 0x00 (unless it's the only byte)"sv);
+        }
+    }
+}
+
 std::string Bifractor::hex () const {
     AA(size);
     std::string r (size*2, 0);
@@ -16,60 +27,73 @@ std::string Bifractor::hex () const {
     return r;
 }
 
-Bifractor::Bifractor (const Bifractor& a, const Bifractor& b, uint bias) {
+Bifractor::Bifractor (const Bifractor& a, const Bifractor& b, float bias) :
+    Bifractor()
+{
     AA(a.size);
     AA(b.size);
-    AA(a != b);
+    AA(bias >= 0 && bias <= 1);
     size_t max_size = (a.size > b.size ? a.size : b.size) + 1;
 
-    std::unique_ptr<uint8[]> buf {new uint8 [max_size]};
+    uint8 stack_buf [128];
+    std::unique_ptr<uint8[]> heap_buf (
+        max_size <= 128 ? nullptr : new uint8[max_size]
+    );
+    uint8* buf = max_size <= 128 ? stack_buf : heap_buf.get();
 
-    uint carry_a = 0;
     uint carry_b = 0;
     for (size_t i = 0; i < max_size; i++) {
-        uint av = (i < a.size ? a.bytes()[i] : 0) + carry_a;
+         // Extend a and b infinitely to the right with 0x00
+        uint av = (i < a.size ? a.bytes()[i] : 0);
         uint bv = (i < b.size ? b.bytes()[i] : 0) + carry_b;
-        switch (av - bv) {
-        case 0:
+        if (av > bv) {
+            ERR("Tried to bisect two Bifractors that were in the wrong order."sv);
+        }
+        else if (av == bv) {
             buf[i] = av;
-            break;
-        case 1:
-            buf[i] = bv;
-            carry_a = 0x100;
-            break;
-        case -1:
+        }
+        else if (av + 1 == bv) {
             buf[i] = av;
             carry_b = 0x100;
-            break;
-        default: {
-            uint middle = (av * (0x100 - bias) + bv * bias) >> 8;
-             // Since this rounds down, whichever it's equal to is the smaller one.
-            if (middle == av || middle == bv) middle += 1;
-            buf[i] = middle;
-            new (this) Bifractor(buf.get(), i+1);
-            return;
         }
+        else {
+             // Lerp between the lower and upper bound (then round)
+            uint middle = uint(av * (1 - bias) + bv * bias + 0.5);
+             // Make sure we don't accidentally equal either side.  Lerping
+             // between av+1 and bv-1 instead would save us from having to do
+             // this adjustment, but it would make the bias less effective.
+            if (middle == av) middle += 1;
+            if (middle == bv) middle -= 1;
+            buf[i] = middle;
+
+            const_cast<size_t&>(size) = i+1;
+            if (size > sizeof(ptr)) {
+                const_cast<const uint8*&>(ptr) = new uint8 [size];
+            }
+            for (size_t i = 0; i < size; i++) {
+                const_cast<uint8*>(bytes())[i] = buf[i];
+            }
+#ifndef NDEBUG
+            try { validate(*this); }
+            catch (...) { this->~Bifractor(); throw; }
+#endif
+            return;
         }
     }
     ERR("Tried to bisect two Bifractors that were equal."sv);
 }
 
-Bifractor::Bifractor (const void* bytes_ptr, size_t bytes_size) : size(bytes_size) {
+Bifractor::Bifractor (const uint8* bytes_ptr, size_t bytes_size) :
+    size(bytes_size)
+{
     if (size > sizeof(ptr)) {
-        ptr = new uint8 [size];
+        const_cast<const uint8*&>(ptr) = new uint8 [size];
     }
     for (size_t i = 0; i < size; i++) {
-        bytes()[i] = reinterpret_cast<const uint8*>(bytes_ptr)[i];
+        const_cast<uint8*>(bytes())[i] = bytes_ptr[i];
     }
-}
-
-Bifractor::Bifractor (const Bifractor& b) : size(b.size) {
-    if (size > sizeof(ptr)) {
-        ptr = new uint8[size];
-    }
-    for (size_t i = 0; i < size; i++) {
-        bytes()[i] = b.bytes()[i];
-    }
+    try { validate(*this); }
+    catch (...) { this->~Bifractor(); throw; }
 }
 
 /*static*/ int Bifractor::compare (const Bifractor& a, const Bifractor& b) {
@@ -98,43 +122,45 @@ static tap::TestSet tests ("util/bifractor", []{
     ok(zero < half, "0 < 1/2");
     ok(half < one, "1/2 < 1");
     {
-        Bifractor b = 1;
+        Bifractor b {1};
         bool okay = true;
         for (size_t i = 0; i < 1111; i++) {
-            Bifractor new_b {0, b};
-            if (new_b <= 0 || new_b >= 1 || new_b >= b) {
+            Bifractor new_b {zero, b};
+            if (new_b <= zero || new_b >= one || new_b >= b) {
                 okay = false;
                 break;
             }
             b = new_b;
         }
         ok(okay, "Continually bifracting downwards");
-        is(b.size, 1111 / 8 + 1, "Unbiased bifracting results in iterations*8 length string");
+        is(b.size, 1111 / 8 + 1, "Unbiased bifracting results in iterations/8 length string");
     }
     {
-        Bifractor b = 1;
+        Bifractor b {1};
         bool okay = true;
         for (size_t i = 0; i < 1111; i++) {
-            Bifractor new_b {0, b, 0xf8};
-            if (new_b <= 0 || new_b >= 1 || new_b >= b) {
+            Bifractor new_b {zero, b, 31/32.0};
+            if (new_b <= zero || new_b >= one || new_b >= b) {
                 okay = false;
                 break;
             }
             b = new_b;
         }
         ok(okay, "Continually bifracting downwards, biased");
-         // Why is this +6 and not +1?  Probably due to excessive integer rounding down,
-         //   making the bias effectively lower.  I'm not too concerned though, since I
-         //   expect bifracting up with low bias will be more common than bifracting down
-         //   with high bias.
-        is(b.size, 1111 / 128 + 6, "Biased bifracting results in smaller string");
+         // Why is this +4 and not +1?  Because only the last byte in the
+         // bytestring is lerped, rather than the entire remaining interval,
+         // making biases less effective when the last bytes are close together.
+         // In the extreme case where the last bytes are 2 apart, the bias is
+         // completely meaningless, and the last byte is set to the only value
+         // left between them.
+        is(b.size, 1111 / 128 + 4, "Biased bifracting results in smaller string");
     }
     {
-        Bifractor b = 1;
+        Bifractor b {1};
         bool okay = true;
         for (size_t i = 0; i < 1111; i++) {
-            Bifractor new_b {0, b, 0x08};
-            if (new_b <= 0 || new_b >= 1 || new_b >= b) {
+            Bifractor new_b {zero, b, 1/32.0};
+            if (new_b <= zero || new_b >= one || new_b >= b) {
                 okay = false;
                 break;
             }
@@ -144,39 +170,40 @@ static tap::TestSet tests ("util/bifractor", []{
         is(b.size, 1111 / 2 + 1, "Wrongly biased bifracting results in larger string");
     }
     {
-        Bifractor b = 0;
+        Bifractor b {0};
         bool okay = true;
         for (size_t i = 0; i < 1111; i++) {
-            Bifractor new_b {b, 1};
-            if (new_b <= 0 || new_b >= 1 || new_b <= b) {
+            Bifractor new_b {b, one};
+            if (new_b <= zero || new_b >= one || new_b <= b) {
                 okay = false;
                 break;
             }
             b = new_b;
         }
         ok(okay, "Continually bifracting upwards");
-        is(b.size, 1111 / 8 + 1, "Unbiased bifracting results in iterations*8 length string");
+        is(b.size, 1111 / 8 + 1, "Unbiased bifracting results in iterations/8 length string");
     }
     {
-        Bifractor b = 0;
+        Bifractor b {0};
         bool okay = true;
         for (size_t i = 0; i < 1111; i++) {
-            Bifractor new_b {b, 1, 0x08};
-            if (new_b <= 0 || new_b >= 1 || new_b <= b) {
+            Bifractor new_b {b, one, 1/32.0};
+            if (new_b <= zero || new_b >= one || new_b <= b) {
                 okay = false;
                 break;
             }
             b = new_b;
         }
         ok(okay, "Continually bifracting upwards, biased");
-        is(b.size, 1111 / 128 + 2, "Biased bifracting results in smaller string");
+         // Why +4 and not +1?  See the explanation above.
+        is(b.size, 1111 / 128 + 4, "Biased bifracting results in smaller string");
     }
     {
-        Bifractor b = 0;
+        Bifractor b {0};
         bool okay = true;
         for (size_t i = 0; i < 1111; i++) {
-            Bifractor new_b {b, 1, 0xf8};
-            if (new_b <= 0 || new_b >= 1 || new_b <= b) {
+            Bifractor new_b {b, one, 31/32.0};
+            if (new_b <= zero || new_b >= one || new_b <= b) {
                 okay = false;
                 break;
             }
@@ -190,16 +217,16 @@ static tap::TestSet tests ("util/bifractor", []{
         bool okay = true;
         for (size_t i = 0; i < 1111; i++) {
             if (rand() & 1) {
-                Bifractor new_b {0, b};
-                if (new_b <= 0 || new_b >= 1 || new_b >= b) {
+                Bifractor new_b {zero, b};
+                if (new_b <= zero || new_b >= one || new_b >= b) {
                     okay = false;
                     break;
                 }
                 b = new_b;
             }
             else {
-                Bifractor new_b {b, 1};
-                if (new_b <= 0 || new_b >= 1 || new_b <= b) {
+                Bifractor new_b {b, one};
+                if (new_b <= zero || new_b >= one || new_b <= b) {
                     okay = false;
                     break;
                 }
@@ -207,14 +234,18 @@ static tap::TestSet tests ("util/bifractor", []{
             }
         }
         ok(okay, "Continually bifracting randomly between 0 and 1");
+         // Technically this could randomly fail, but it is extremely unlikely.
+         // (something like 1/2^(6*8), or less than one in several pentillion)
+        ok(b.size < 6, "Bifracting randomly between 0 and 1 doesn't make a very large string");
     }
     {
         Bifractor low_b {0};
         Bifractor high_b {1};
         bool okay = true;
+        Bifractor b;
         for (size_t i = 0; i < 1111; i++) {
-            Bifractor b {low_b, high_b};
-            if (b <= 0 || b >= 1 || b <= low_b || b >= high_b) {
+            b = Bifractor{low_b, high_b};
+            if (b <= zero || b >= one || b <= low_b || b >= high_b) {
                 okay = false;
                 break;
             }
@@ -225,11 +256,12 @@ static tap::TestSet tests ("util/bifractor", []{
                 high_b = b;
             }
         }
-        ok(okay, "Continually bifracting randomly increasingly smaller");
+        ok(okay, "Continually bifracting randomly narrowing");
+        is(b.size, 1111 / 8 + 1, "Randomly narrowing bifracting makes a longish string");
     }
     is(
-        Bifractor{Bifractor{0}, Bifractor{Bifractor{0}, Bifractor{1}}}.hex(),
-        "3F",
+        Bifractor{Bifractor{Bifractor{0}, Bifractor{1}}, Bifractor{1}}.hex(),
+        "C0",
         "Brief test of hex()"
     );
 });

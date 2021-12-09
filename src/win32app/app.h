@@ -19,6 +19,7 @@ struct App : model::Observer {
     Settings settings;
     Nursery nursery;
     model::Model& model;
+    std::unique_ptr<model::Model> model2;
     std::unordered_map<model::PageID, std::unique_ptr<Activity>> activities;
     std::unordered_map<model::ViewID, std::unique_ptr<Shell>> shells;
     std::unordered_map<model::ViewID, std::unique_ptr<Window>> windows;

@@ -15,6 +15,7 @@ struct LinkModel {
     Statement st_load;
     Statement st_from_page;
     Statement st_to_page;
+    Statement st_last_trashed;
     Statement st_first_position;
     Statement st_last_position;
     Statement st_position_after;

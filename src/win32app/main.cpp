@@ -20,10 +20,10 @@ using namespace win32app;
 #pragma warning(disable:4297)  // Yeah I'm throwing from main, deal with it
 
 int main (int argc, char** argv) {
-    try {
 #ifndef TAP_DISABLE_TESTS
-        tap::allow_testing(argc, argv);
+    tap::allow_testing(argc, argv);
 #endif
+    try {
          // Parse arguments
         vector<String> positional_args;
         String arg_profile;

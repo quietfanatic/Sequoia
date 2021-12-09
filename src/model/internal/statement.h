@@ -121,7 +121,7 @@ struct UseStatement {
         operator Bifractor () {
             const void* data = sqlite3_column_blob(st->handle, index);
             int size = sqlite3_column_bytes(st->handle, index);
-            return Bifractor(data, size);
+            return Bifractor(reinterpret_cast<const uint8*>(data), size);
         }
         template <class T>
         operator std::optional<T> () {
