@@ -16,10 +16,8 @@ struct LinkModel {
     Statement st_from_page;
     Statement st_to_page;
     Statement st_last_trashed;
-    Statement st_first_position;
-    Statement st_last_position;
-    Statement st_position_after;
-    Statement st_position_before;
+    Statement st_first_position_after;
+    Statement st_last_position_before;
     Statement st_save;
     LinkModel (sqlite3*);
 };

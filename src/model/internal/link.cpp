@@ -79,60 +79,50 @@ LinkID get_last_trashed_link (ReadRef model) {
     return st.step() ? LinkID(st[0]) : LinkID{};
 }
 
-static constexpr Str sql_first_position = R"(
-SELECT _position FROM _links WHERE _from_page = ?
-ORDER BY _position ASC LIMIT 1
-)"sv;
-
-static Bifractor first_position (ReadRef model, PageID parent) {
-    AA(parent);
-    UseStatement st (model->links.st_first_position);
-    st.params(parent);
-    return st.step()
-        ? Bifractor(Bifractor(0), st[0], 31/32.0)
-        : Bifractor(15/16.0);
-}
-
-static constexpr Str sql_last_position = R"(
-SELECT _position FROM _links WHERE _from_page = ?
-ORDER BY _position DESC LIMIT 1
-)"sv;
-
-static Bifractor last_position (ReadRef model, PageID parent) {
-    AA(parent);
-    UseStatement st (model->links.st_last_position);
-    st.params(parent);
-    return st.step()
-        ? Bifractor(st[0], Bifractor(1), 1/32.0)
-        : Bifractor(1/16.0);
-}
-
-static constexpr Str sql_position_after = R"(
+static constexpr Str sql_first_position_after = R"(
 SELECT _position FROM _links WHERE _from_page = ? AND _position > ?
 ORDER BY _position ASC LIMIT 1
 )"sv;
 
 static Bifractor position_after (ReadRef model, const LinkData* data) {
     AA(data);
-    UseStatement st (model->links.st_position_after);
+    UseStatement st (model->links.st_first_position_after);
     st.params(data->from_page, data->position);
     return st.step()
-        ? Bifractor(data->position, st[0], 1/4.0)
-        : Bifractor(data->position, Bifractor(1), 1/4.0);
+        ? Bifractor(data->position, st[0], 8/32.0)
+        : Bifractor(data->position, Bifractor(1), 8/32.0);
 }
 
-static constexpr Str sql_position_before = R"(
+static Bifractor first_position (ReadRef model, PageID parent) {
+    AA(parent);
+    UseStatement st (model->links.st_first_position_after);
+    st.params(parent, Bifractor(0));
+    return st.step()
+        ? Bifractor(Bifractor(0), st[0], 31/32.0)
+        : Bifractor(30/32.0);
+}
+
+static constexpr Str sql_last_position_before = R"(
 SELECT _position FROM _links WHERE _from_page = ? AND _position < ?
 ORDER BY _position DESC LIMIT 1
 )"sv;
 
 static Bifractor position_before (ReadRef model, const LinkData* data) {
     AA(data);
-    UseStatement st (model->links.st_position_before);
+    UseStatement st (model->links.st_last_position_before);
     st.params(data->from_page, data->position);
     return st.step()
-        ? Bifractor(st[0], data->position, 3/4.0)
-        : Bifractor(Bifractor(0), data->position, 3/4.0);
+        ? Bifractor(st[0], data->position, 24/32.0)
+        : Bifractor(Bifractor(0), data->position, 24/32.0);
+}
+
+static Bifractor last_position (ReadRef model, PageID parent) {
+    AA(parent);
+    UseStatement st (model->links.st_last_position_before);
+    st.params(parent, Bifractor(1));
+    return st.step()
+        ? Bifractor(st[0], Bifractor(1), 1/32.0)
+        : Bifractor(2/32.0);
 }
 
 static constexpr Str sql_save = R"(
@@ -273,10 +263,8 @@ LinkModel::LinkModel (sqlite3* db) :
     st_from_page(db, sql_from_page),
     st_to_page(db, sql_to_page),
     st_last_trashed(db, sql_last_trashed),
-    st_last_position(db, sql_last_position),
-    st_first_position(db, sql_first_position),
-    st_position_after(db, sql_position_after),
-    st_position_before(db, sql_position_before),
+    st_first_position_after(db, sql_first_position_after),
+    st_last_position_before(db, sql_last_position_before),
     st_save(db, sql_save)
 { }
 
