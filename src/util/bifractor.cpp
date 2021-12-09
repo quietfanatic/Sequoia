@@ -96,7 +96,7 @@ Bifractor::Bifractor (const uint8* bytes_ptr, size_t bytes_size) :
     catch (...) { this->~Bifractor(); throw; }
 }
 
-/*static*/ int Bifractor::compare (const Bifractor& a, const Bifractor& b) {
+int operator <=> (const Bifractor& a, const Bifractor& b) {
     int r = memcmp(a.bytes(), b.bytes(), a.size < b.size ? a.size : b.size);
     if (r) return r;
     return int(a.size - b.size);

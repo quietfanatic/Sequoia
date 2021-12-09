@@ -45,6 +45,7 @@ struct ModelID {
     ModelID (const ModelID& o) : id(o.id) { }
     explicit constexpr operator bool () const { return id; }
     constexpr operator int64 () const { return id; }
+    friend auto operator<=> (const ModelID&, const ModelID&) = default;
 };
 
 struct PageData;
@@ -58,11 +59,12 @@ using ViewID = ModelID<ViewData>;
  // better error messages if you forget to include page.h or similar.
  //
  // Probably ->* would make more sense, but it's annoying to type and unclear
- //  whether its an overload when you're reading it.  We'd totally use ->* if
- //  it had the same precedence as ->, so you could say
- //  model->*page->title...but it doesn't, so (model/page)->title it is.
- //  operator[] would also be great, but it can't be a non-member function,
- //  for no particularly good reason I can see.
+ // whether its an overload when you're reading it.  We'd totally use ->* if
+ // it had the same precedence as ->, so you could say
+ // model->*page->title...but it doesn't, so (model/page)->title it is.
+ //
+ // operator[] would be best, but it can't be a non-member function, for no
+ // particularly good reason I can see.
 const PageData* operator / (ReadRef, PageID);
 const LinkData* operator / (ReadRef, LinkID);
 const ViewData* operator / (ReadRef, ViewID);

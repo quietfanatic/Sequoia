@@ -183,6 +183,8 @@ Object object (std::pair<Str, Args>&&... args) {
 
 bool operator== (const Value& a, const Value& b);
 inline bool operator!= (const Value& a, const Value& b) { return !(a == b); }
+ // Theoretically we could implement operator<=>, but I'm not bothering until
+ // there's a reason to.
 
 String stringify (const Value& v);
 

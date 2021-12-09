@@ -75,7 +75,7 @@ ORDER BY _trashed_at DESC LIMIT 1
 LinkID get_last_trashed_link (ReadRef model) {
     LOG("get_last_trashed_link"sv);
     UseStatement st (model->links.st_last_trashed);
-    return st.step() ? LinkID{st[0]} : LinkID{};
+    return st.step() ? LinkID(st[0]) : LinkID{};
 }
 
 static constexpr Str sql_first_position = R"(

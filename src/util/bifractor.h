@@ -73,28 +73,13 @@ struct Bifractor {
         new ((void*)this) Bifractor(b);
         return *this;
     }
-
-    static int compare (const Bifractor& a, const Bifractor& b);
 };
 
-static inline bool operator < (const Bifractor& a, const Bifractor& b) {
-    return Bifractor::compare(a, b) < 0;
-}
-static inline bool operator <= (const Bifractor& a, const Bifractor& b) {
-    return Bifractor::compare(a, b) <= 0;
-}
+int operator <=> (const Bifractor& a, const Bifractor& b);
+
 static inline bool operator == (const Bifractor& a, const Bifractor& b) {
     if (a.size != b.size) return false;
-    return Bifractor::compare(a, b) == 0;
-}
-static inline bool operator != (const Bifractor& a, const Bifractor& b) {
-    return !(a == b);
-}
-static inline bool operator >= (const Bifractor& a, const Bifractor& b) {
-    return Bifractor::compare(a, b) >= 0;
-}
-static inline bool operator > (const Bifractor& a, const Bifractor& b) {
-    return Bifractor::compare(a, b) > 0;
+    return (a <=> b) == 0;
 }
 
 static inline std::ostream& operator << (std::ostream& o, const Bifractor& b) {
