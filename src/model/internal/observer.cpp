@@ -10,13 +10,7 @@ void observe (Model& model, Observer* observer) {
     model.writes.observers.emplace_back(observer);
 }
 void unobserve (Model& model, Observer* observer) {
-    auto& observers = model.writes.observers;
-    for (auto iter = observers.begin(); iter != observers.end(); iter++) {
-        if (*iter == observer) {
-            observers.erase(iter);
-            break;
-        }
-    }
+    erase(model.writes.observers, observer);
 }
 
 } // namespace model

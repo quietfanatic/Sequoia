@@ -107,7 +107,7 @@ int operator <=> (const Bifractor& a, const Bifractor& b) {
 
 static tap::TestSet tests ("util/bifractor", []{
     using namespace tap;
-    plan(22);
+    plan(24);
     srand(uint(time(0)));
 
     Bifractor zero {0};
