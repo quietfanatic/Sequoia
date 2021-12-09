@@ -91,3 +91,16 @@ struct hash<::model::ModelID<T>> {
 
 } // namespace std
 
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+namespace tap {
+
+template <class T>
+struct Show<::model::ModelID<T>> {
+    std::string show (::model::ModelID<T> id) {
+        return "{" + Show<int64>{}.show(int64(id)) + "}";
+    }
+};
+
+} // namespace tap
+#endif
