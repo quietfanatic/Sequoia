@@ -223,8 +223,7 @@ void Activity::message_from_webview(json::Value&& message) {
         if (button == 1) {
             if (double_click) {
                 if (last_created_new_child && window) {
-                     // TODO: figure out why the new tab doesn't get loaded
-                    set_window_focused_tab(window->id, last_created_new_child);
+                    window->focus_tab(last_created_new_child);
                 }
             }
             else if (alt && shift) {
