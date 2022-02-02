@@ -1,4 +1,4 @@
-#include "page-internal.h"
+#include "node-internal.h"
 
 #include <sqlite3.h>
 #include "../../util/error.h"
@@ -12,19 +12,19 @@ using namespace std;
 namespace model {
 
 static constexpr Str sql_load = R"(
-SELECT _url, _favicon_url, _title, _visited_at, _group FROM _pages WHERE _id = ?
+SELECT _url, _favicon_url, _title, _visited_at, _group FROM _nodes WHERE _id = ?
 )"sv;
 
-PageData* load_mut (ReadRef model, PageID id) {
+NodeData* load_mut (ReadRef model, NodeID id) {
     if (!id) return nullptr;
 
-    auto [iter, emplaced] = model->pages.cache.try_emplace(id, nullptr);
+    auto [iter, emplaced] = model->nodes.cache.try_emplace(id, nullptr);
     auto& data = iter->second;
     if (!emplaced) return &*data;
-    UseStatement st (model->pages.st_load);
+    UseStatement st (model->nodes.st_load);
     st.params(id);
     if (st.step()) {
-        data = make_unique<PageData>();
+        data = make_unique<NodeData>();
         data->url = Str(st[0]);
         data->favicon_url = Str(st[1]);
         data->title = Str(st[2]);
@@ -35,86 +35,86 @@ PageData* load_mut (ReadRef model, PageID id) {
 }
 
 static constexpr Str sql_with_url = R"(
-SELECT _id FROM _pages WHERE _url_hash = ? AND _url = ?
+SELECT _id FROM _nodes WHERE _url_hash = ? AND _url = ?
 ORDER BY _id
 )"sv;
 
-vector<PageID> get_pages_with_url (ReadRef model, Str url) {
-    LOG("get_pages_with_url", url);
-    UseStatement st (model->pages.st_with_url);
+vector<NodeID> get_nodes_with_url (ReadRef model, Str url) {
+    LOG("get_nodes_with_url", url);
+    UseStatement st (model->nodes.st_with_url);
     st.params(x31_hash(url), url);
-    return st.collect<PageID>();
+    return st.collect<NodeID>();
 }
 
 static constexpr Str sql_save = R"(
-INSERT OR REPLACE INTO _pages
+INSERT OR REPLACE INTO _nodes
 (_id, _url_hash, _url, _favicon_url, _title, _visited_at, _group)
 VALUES (?, ?, ?, ?, ?, ?, ?)
 )"sv;
 
-static PageID save (WriteRef model, PageID id, const PageData* data) {
+static NodeID save (WriteRef model, NodeID id, const NodeData* data) {
     AA(data);
-    UseStatement st (model->pages.st_save);
+    UseStatement st (model->nodes.st_save);
     st.params(
         null_default(id), x31_hash(data->url), data->url, data->favicon_url,
         data->title, data->visited_at, data->group
     );
     st.run();
     AA(sqlite3_changes(model->db) == 1);
-    if (!id) id = PageID(sqlite3_last_insert_rowid(model->db));
+    if (!id) id = NodeID(sqlite3_last_insert_rowid(model->db));
     touch(model, id);
     return id;
 }
 
-PageID create_page (WriteRef model, Str url, Str title) {
-    LOG("create_page"sv, url, title);
+NodeID create_node (WriteRef model, Str url, Str title) {
+    LOG("create_node"sv, url, title);
     AA(url != ""sv);
-    auto data = make_unique<PageData>();
+    auto data = make_unique<NodeData>();
     data->url = url;
     data->title = title;
-    PageID id = save(model, PageID{}, &*data);
-    auto [iter, emplaced] = model->pages.cache.try_emplace(id, move(data));
+    NodeID id = save(model, NodeID{}, &*data);
+    auto [iter, emplaced] = model->nodes.cache.try_emplace(id, move(data));
     AA(emplaced);
     return id;
 }
 
-void set_url (WriteRef model, PageID id, Str url) {
-    LOG("set_url Page"sv, id, url);
+void set_url (WriteRef model, NodeID id, Str url) {
+    LOG("set_url Node"sv, id, url);
     auto data = load_mut(model, id);
     data->url = url;
     save(model, id, data);
 }
-void set_title (WriteRef model, PageID id, Str title) {
-    LOG("set_title Page"sv, id, title);
+void set_title (WriteRef model, NodeID id, Str title) {
+    LOG("set_title Node"sv, id, title);
     auto data = load_mut(model, id);
     data->title = title;
     save(model, id, data);
 }
-void set_favicon_url (WriteRef model, PageID id, Str url) {
-    LOG("set_favicon_url Page"sv, id, url);
+void set_favicon_url (WriteRef model, NodeID id, Str url) {
+    LOG("set_favicon_url Node"sv, id, url);
     auto data = load_mut(model, id);
     data->favicon_url = url;
     save(model, id, data);
 }
-void set_visited (WriteRef model, PageID id) {
-    LOG("set_visited Page"sv, id);
+void set_visited (WriteRef model, NodeID id) {
+    LOG("set_visited Node"sv, id);
     auto data = load_mut(model, id);
     data->visited_at = now();
     save(model, id, data);
 }
-void set_state (WriteRef model, PageID id, PageState state) {
-    LOG("set_state Page"sv, id, state);
+void set_state (WriteRef model, NodeID id, NodeState state) {
+    LOG("set_state Node"sv, id, state);
     auto data = load_mut(model, id);
     data->state = state;
      // No need to save, since state isn't written to DB
     touch(model, id);
 }
 
-void touch (WriteRef model, PageID id) {
-    model->writes.current_update.pages.insert(id);
+void touch (WriteRef model, NodeID id) {
+    model->writes.current_update.nodes.insert(id);
 }
 
-PageModel::PageModel (sqlite3* db) :
+NodeModel::NodeModel (sqlite3* db) :
     st_load(db, sql_load),
     st_with_url(db, sql_with_url),
     st_save(db, sql_save)
@@ -125,60 +125,60 @@ PageModel::PageModel (sqlite3* db) :
 #ifndef TAP_DISABLE_TESTS
 #include "../../tap/tap.h"
 
-static tap::TestSet tests ("model/page", []{
+static tap::TestSet tests ("model/node", []{
     using namespace model;
     using namespace tap;
     ModelTestEnvironment env;
     Model& model = *new_model(env.db_path);
 
-    PageID page;
+    NodeID node;
     Write* tr = nullptr;
     doesnt_throw([&]{ tr = new Write (model); }, "Start write transaction");
     doesnt_throw([&]{
-        page = create_page(*tr, "test url", "test title");
-    }, "create_page");
-    doesnt_throw([&]{ set_url(*tr, page, "url 2"); }, "set_url");
-    doesnt_throw([&]{ set_title(*tr, page, "title 2"); }, "set_title");
-    doesnt_throw([&]{ set_favicon_url(*tr, page, "con"); }, "set_favicon_url");
+        node = create_node(*tr, "test url", "test title");
+    }, "create_node");
+    doesnt_throw([&]{ set_url(*tr, node, "url 2"); }, "set_url");
+    doesnt_throw([&]{ set_title(*tr, node, "title 2"); }, "set_title");
+    doesnt_throw([&]{ set_favicon_url(*tr, node, "con"); }, "set_favicon_url");
     double before = now();
-    doesnt_throw([&]{ set_visited(*tr, page); }, "set_visited");
+    doesnt_throw([&]{ set_visited(*tr, node); }, "set_visited");
     double after = now();
-    doesnt_throw([&]{ set_state(*tr, page, PageState::LOADING); }, "set_state");
+    doesnt_throw([&]{ set_state(*tr, node, NodeState::LOADING); }, "set_state");
 
-    const PageData* data;
-    doesnt_throw([&]{ data = model/page; }, "load Page from cache");
+    const NodeData* data;
+    doesnt_throw([&]{ data = model/node; }, "load Node from cache");
     is(data->url, "url 2", "url from cache");
     is(data->title, "title 2", "title from cache");
     is(data->favicon_url, "con", "favicon_url from cache");
     between(data->visited_at, before, after, "visited_at from cache");
-    is(data->state, PageState::LOADING, "state from cache");
+    is(data->state, NodeState::LOADING, "state from cache");
 
-    model.pages.cache.clear();
-    doesnt_throw([&]{ data = model/page; }, "load page from db");
+    model.nodes.cache.clear();
+    doesnt_throw([&]{ data = model/node; }, "load node from db");
     is(data->url, "url 2", "url from db");
     is(data->title, "title 2", "title from db");
     is(data->favicon_url, "con", "favicon_url from db");
     between(data->visited_at, before, after, "visited_at from db");
-    is(data->state, PageState::UNLOADED, "state resets when reading from db");
+    is(data->state, NodeState::UNLOADED, "state resets when reading from db");
 
-    PageID page2 = create_page(*tr, "url 2");
-    const PageData* data2 = model/page2;
+    NodeID node2 = create_node(*tr, "url 2");
+    const NodeData* data2 = model/node2;
     is(data2->title, "", "default title from cache");
     is(data2->favicon_url, "", "default favicon_url from cache");
     is(data2->visited_at, 0, "default visited_at from cache");
-    is(data2->state, PageState::UNLOADED, "default state from cache");
-    model.pages.cache.clear();
-    data2 = model/page2;
+    is(data2->state, NodeState::UNLOADED, "default state from cache");
+    model.nodes.cache.clear();
+    data2 = model/node2;
     is(data2->title, "", "default title from db");
     is(data2->favicon_url, "", "default favicon_url from db");
     is(data2->visited_at, 0, "default visited_at from cache");
 
-    PageID page3 = create_page(*tr, "url 3", "title 4");
-    auto pages = get_pages_with_url(model, "url 2");
-    is(pages.size(), 2, "get_pages_with_url");
+    NodeID node3 = create_node(*tr, "url 3", "title 4");
+    auto nodes = get_nodes_with_url(model, "url 2");
+    is(nodes.size(), 2, "get_nodes_with_url");
      // Results should be sorted by id
-    is(pages[0], page, "get_pages_with_url[0]");
-    is(pages[1], page2, "get_pages_with_url[1]");
+    is(nodes[0], node, "get_nodes_with_url[0]");
+    is(nodes[1], node2, "get_nodes_with_url[1]");
 
     struct TestObserver : Observer {
         std::function<void(const Update&)> f;
@@ -192,26 +192,26 @@ static tap::TestSet tests ("model/page", []{
     };
 
     TestObserver to1 {[&](const Update& update){
-        is(update.pages.size(), 3, "Observer got an update with 3 pages");
-        ok(update.pages.count(page), "Update has page 1");
-        ok(update.pages.count(page2), "Update has page 2");
-        ok(update.pages.count(page3), "Update has page 3");
+        is(update.nodes.size(), 3, "Observer got an update with 3 nodes");
+        ok(update.nodes.count(node), "Update has node 1");
+        ok(update.nodes.count(node2), "Update has node 2");
+        ok(update.nodes.count(node3), "Update has node 3");
         is(update.links.size(), 0, "Update has 0 links");
         is(update.views.size(), 0, "Update had 0 views");
     }};
     doesnt_throw([&]{ observe(model, &to1); }, "observe");
     doesnt_throw([&]{ delete tr; }, "Commit transaction");
     doesnt_throw([&]{ unobserve(model, &to1); }, "unobserve");
-    ok(to1.called, "Observer was called for create_page");
+    ok(to1.called, "Observer was called for create_node");
 
     tr = new Write (model);
-    set_favicon_url(*tr, page2, "asdf");
-    touch(*tr, page3);
+    set_favicon_url(*tr, node2, "asdf");
+    touch(*tr, node3);
     TestObserver to2 {[&](const Update& update){
-        is(update.pages.size(), 2, "Observer got an update with 2 pages");
-        ok(!update.pages.count(page), "Update doesn't have page 1");
-        ok(update.pages.count(page2), "Update has page 2");
-        ok(update.pages.count(page3), "Update has page 3");
+        is(update.nodes.size(), 2, "Observer got an update with 2 nodes");
+        ok(!update.nodes.count(node), "Update doesn't have node 1");
+        ok(update.nodes.count(node2), "Update has node 2");
+        ok(update.nodes.count(node3), "Update has node 3");
         is(update.links.size(), 0, "Update has 0 links");
         is(update.views.size(), 0, "Update had 0 views");
     }};

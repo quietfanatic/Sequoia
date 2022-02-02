@@ -6,7 +6,7 @@
 #include <wil/com.h>
 #include <wrl.h>
 
-#include "../model/page.h"
+#include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"
 #include "../util/error.h"
@@ -45,7 +45,7 @@ static LRESULT CALLBACK nursery_WndProc (
             switch (x31_hash(command)) {
                 case x31_hash("new_window"): {
                     ReplyMessage(0);
-                    create_view_and_page(write(self->app.model), message[1]);
+                    create_view_and_node(write(self->app.model), message[1]);
                     return 0;
                 }
                 default: return 1;

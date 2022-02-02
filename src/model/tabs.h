@@ -21,7 +21,7 @@ namespace model {
  // to change eventually.  A LinkID of 0 represents the root tab of a view.
 struct Tab {
      // Must match constants in shell.js
-     // TODO: loaded and loading don't match bools in PageData
+     // TODO: loaded and loading don't match bools in NodeData
     enum Flags {
         FOCUSED = 1,
         VISITED = 2,
@@ -31,7 +31,7 @@ struct Tab {
         EXPANDABLE = 32,
         EXPANDED = 64,
     };
-    PageID page;
+    NodeID node;
     LinkID parent;
     Flags flags;
 };
@@ -40,7 +40,7 @@ using TabTree = std::unordered_map<LinkID, Tab>;
 
 TabTree create_tab_tree (ReadRef model, ViewID view);
 
- // A removed tab is represented by a tab with 0 for its PageID.  This is kind
+ // A removed tab is represented by a tab with 0 for its NodeID.  This is kind
  // of dumb and may change.
 using TabChanges = std::vector<std::pair<LinkID, Tab>>;
 

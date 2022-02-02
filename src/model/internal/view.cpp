@@ -10,14 +10,14 @@
 #include "../../util/time.h"
 #include "link-internal.h"
 #include "model-internal.h"
-#include "page-internal.h"
+#include "node-internal.h"
 
 using namespace std;
 
 namespace model {
 
 static constexpr Str sql_load = R"(
-SELECT _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs
+SELECT _root_node, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs
 FROM _views WHERE _id = ?
 )"sv;
 
@@ -32,7 +32,7 @@ ViewData* load_mut (ReadRef model, ViewID id) {
     st.params(id);
     if (st.step()) {
         data = make_unique<ViewData>();
-        data->root_page = st[0];
+        data->root_node = st[0];
         data->focused_tab = st[1];
         data->created_at = st[2];
         data->closed_at = st[3];
@@ -67,7 +67,7 @@ ViewID get_last_closed_view (ReadRef model) {
 }
 
 static constexpr Str sql_save = R"(
-INSERT OR REPLACE INTO _views (_id, _root_page, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs)
+INSERT OR REPLACE INTO _views (_id, _root_node, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs)
 VALUES (?, ?, ?, ?, ?, ?, ?)
 )"sv;
 
@@ -83,7 +83,7 @@ static ViewID save (WriteRef model, ViewID id, const ViewData* data) {
 
     UseStatement st (model->views.st_save);
     st.params(
-        null_default(id), data->root_page, data->focused_tab,
+        null_default(id), data->root_node, data->focused_tab,
         data->created_at, data->closed_at, data->trashed_at,
         json::stringify(expanded_tabs_json)
     );
@@ -94,10 +94,10 @@ static ViewID save (WriteRef model, ViewID id, const ViewData* data) {
     return id;
 }
 
-ViewID create_view_and_page (WriteRef model, Str url) {
-    LOG("create_view_and_page"sv, url);
+ViewID create_view_and_node (WriteRef model, Str url) {
+    LOG("create_view_and_node"sv, url);
     auto data = make_unique<ViewData>();
-    data->root_page = create_page(model, url);
+    data->root_node = create_node(model, url);
     data->focused_tab = LinkID{};
     data->created_at = now();
     auto id = save(model, ViewID{}, &*data);
@@ -120,10 +120,10 @@ void unclose (WriteRef model, ViewID id) {
     save(model, id, data);
 }
 
-void navigate_focused_page (WriteRef model, ViewID id, Str url) {
-    LOG("navigate_focused_page"sv, id, url);
-    if (PageID page = focused_page(model, id)) {
-        set_url(model, page, url);
+void navigate_focused_node (WriteRef model, ViewID id, Str url) {
+    LOG("navigate_focused_node"sv, id, url);
+    if (NodeID node = focused_node(model, id)) {
+        set_url(model, node, url);
     }
 }
 
@@ -137,10 +137,10 @@ void focus_tab (WriteRef model, ViewID id, LinkID tab) {
 void create_and_focus_last_child (WriteRef model, ViewID id, LinkID parent_tab, Str url, Str title) {
     LOG("create_and_focus_last_child"sv, id, parent_tab, url);
     auto data = load_mut(model, id);
-    PageID parent_page = parent_tab
-        ? parent_page = load_mut(model, parent_tab)->from_page
-        : data->root_page;
-    LinkID link = create_last_child(model, parent_page, url, title);
+    NodeID parent_node = parent_tab
+        ? parent_node = load_mut(model, parent_tab)->from_node
+        : data->root_node;
+    LinkID link = create_last_child(model, parent_node, url, title);
     data->focused_tab = link;
     data->expanded_tabs.insert(parent_tab);
     save(model, id, data);

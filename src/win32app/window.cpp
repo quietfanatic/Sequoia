@@ -10,7 +10,7 @@
 #include <wrl.h>
 
 #include "../model/link.h"
-#include "../model/page.h"
+#include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"
 #include "../util/error.h"
@@ -33,7 +33,7 @@ static LRESULT CALLBACK window_WndProc (HWND, UINT, WPARAM, LPARAM);
 
 Window::Window (App& a, model::ViewID v) :
     app(a), view(v),
-    current_focused_page(focused_page(app.model, view))
+    current_focused_node(focused_node(app.model, view))
 {
     static auto class_name = L"Sequoia";
     static bool init = []{
@@ -86,8 +86,8 @@ void Window::reflow () {
             ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
     }
-     // TODO: make sure this is actually our page
-    Activity* activity = app.activity_for_page(current_focused_page);
+     // TODO: make sure this is actually our node
+    Activity* activity = app.activity_for_node(current_focused_node);
     if (activity && activity->controller) {
         AH(activity->controller->put_ParentWindow(hwnd));
         AH(activity->controller->put_Bounds(bounds));
@@ -105,9 +105,9 @@ static LRESULT CALLBACK window_WndProc (
             switch (w) {
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
-                     // TODO: make sure this is actually our page
-                    Activity* activity = window->app.activity_for_page(
-                        window->current_focused_page
+                     // TODO: make sure this is actually our node
+                    Activity* activity = window->app.activity_for_node(
+                        window->current_focused_node
                     );
                     if (activity && activity->controller) {
                         activity->controller->put_IsVisible(FALSE);
@@ -262,19 +262,19 @@ void Window::view_updated () {
         );
         reflow();
          // TODO: make sure this is actually our activity
-        Activity* activity = app.activity_for_page(current_focused_page);
+        Activity* activity = app.activity_for_node(current_focused_node);
         if (activity) activity->leave_fullscreen();
         fullscreen = nullopt;
     }
-    auto new_focused_page = focused_page(app.model, view);
-    if (new_focused_page != current_focused_page) {
-        page_updated();
+    auto new_focused_node = focused_node(app.model, view);
+    if (new_focused_node != current_focused_node) {
+        node_updated();
     }
-    current_focused_page = new_focused_page;
+    current_focused_node = new_focused_node;
 }
 
-void Window::page_updated () {
-    Str title = (app.model/focused_page(app.model, view))->title;
+void Window::node_updated () {
+    Str title = (app.model/focused_node(app.model, view))->title;
     String display = title.empty() ? "Sequoia"s : (title + " – Sequoia"sv);
     AW(SetWindowTextW(hwnd, to_utf16(display).c_str()));
 }

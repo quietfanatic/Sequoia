@@ -14,7 +14,7 @@ namespace model {
 
 struct ViewData {
      // Mutable
-    PageID root_page;
+    NodeID root_node;
     LinkID focused_tab;
     double closed_at = 0;
     double created_at = 0;
@@ -28,17 +28,17 @@ std::vector<ViewID> get_open_views (ReadRef);
  // Returns 0 if none
 ViewID get_last_closed_view (ReadRef);
 
-static inline PageID focused_page (ReadRef model, ViewID view) {
+static inline NodeID focused_node (ReadRef model, ViewID view) {
     auto data = model/view;
     return data->focused_tab
-        ? (model/data->focused_tab)->to_page
-        : data->root_page;
+        ? (model/data->focused_tab)->to_node
+        : data->root_node;
 }
 
-ViewID create_view_and_page (WriteRef, Str url);
+ViewID create_view_and_node (WriteRef, Str url);
 void close (WriteRef, ViewID);
 void unclose (WriteRef, ViewID);
-void navigate_focused_page (WriteRef, ViewID, Str url);
+void navigate_focused_node (WriteRef, ViewID, Str url);
 void focus_tab (WriteRef, ViewID, LinkID);
 
 void create_and_focus_last_child (WriteRef, ViewID view, LinkID focused_link, Str url, Str title = ""sv);

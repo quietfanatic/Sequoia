@@ -4,7 +4,7 @@
 #include <wrl.h>
 
 #include "../model/link.h"
-#include "../model/page.h"
+#include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"
 #include "../util/error.h"
@@ -107,28 +107,28 @@ static json::Array make_tab_json (
     model::LinkID link, const model::Tab& tab
 ) {
      // Sending just id means tab should be removed
-    if (!tab.page) {
+    if (!tab.node) {
         return json::array(link);
     }
     auto link_data = model/link;
-    auto page_data = model/tab.page;
+    auto node_data = model/tab.node;
      // This code path will probably never be hit.
     if (link && !link_data) {
         return json::array(link);
     }
      // Choose title
-    string title = page_data->title;
+    string title = node_data->title;
      // TODO: don't use this if inverted link
      // (TODO: support inverted links at all)
     if (title.empty() && link) title = link_data->title;
-    if (title.empty()) title = page_data->url;
+    if (title.empty()) title = node_data->url;
 
     return json::array(
         link,
         link ? json::Value(tab.parent) : json::Value(nullptr),
         link ? link_data->position.hex() : "80"sv,
-        page_data->url,
-        page_data->favicon_url,
+        node_data->url,
+        node_data->favicon_url,
         title,
         tab.flags
     );
@@ -164,13 +164,13 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("navigate"): {
-            navigate_focused_page(write(app.model), view, message[1]);
+            navigate_focused_node(write(app.model), view, message[1]);
             break;
         }
          // Toolbar buttons
         case x31_hash("back"): {
-            Activity* activity = app.activity_for_page(
-                focused_page(app.model, view)
+            Activity* activity = app.activity_for_node(
+                focused_node(app.model, view)
             );
             if (activity && activity->webview) {
                 activity->webview->GoBack();
@@ -178,8 +178,8 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("forward"): {
-            Activity* activity = app.activity_for_page(
-                focused_page(app.model, view)
+            Activity* activity = app.activity_for_node(
+                focused_node(app.model, view)
             );
             if (activity && activity->webview) {
                 activity->webview->GoForward();
@@ -187,8 +187,8 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("reload"): {
-            Activity* activity = app.activity_for_page(
-                focused_page(app.model, view)
+            Activity* activity = app.activity_for_node(
+                focused_node(app.model, view)
             );
             if (activity && activity->webview) {
                 activity->webview->Reload();
@@ -196,8 +196,8 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("stop"): {
-            Activity* activity = app.activity_for_page(
-                focused_page(app.model, view)
+            Activity* activity = app.activity_for_node(
+                focused_node(app.model, view)
             );
             if (activity && activity->webview) {
                 activity->webview->Stop();
@@ -242,7 +242,7 @@ void Shell::message_from_webview (const json::Value& message) {
         }
         case x31_hash("move_tab_first_child"): {
             model::LinkID link {message[1]};
-            model::PageID parent {message[2]};
+            model::NodeID parent {message[2]};
             if (link) {
                 move_first_child(write(app.model), link, parent);
             }
@@ -250,7 +250,7 @@ void Shell::message_from_webview (const json::Value& message) {
         }
         case x31_hash("move_tab_last_child"): {
             model::LinkID link {message[1]};
-            model::PageID parent {message[2]};
+            model::NodeID parent {message[2]};
             if (link) {
                 move_last_child(write(app.model), link, parent);
             }
@@ -275,8 +275,8 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("open_selected_links"): {
-            if (Activity* activity = app.activity_for_page(
-                focused_page(app.model, view)
+            if (Activity* activity = app.activity_for_node(
+                focused_node(app.model, view)
             )) {
                 activity->message_to_webview(
                     json::array("open_selected_links"sv)

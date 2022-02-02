@@ -3,7 +3,7 @@
 #include <exception>
 #include <windows.h>
 
-#include "../model/page.h"
+#include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"
 #include "../util/error.h"
@@ -44,12 +44,12 @@ int App::run (const vector<String>& urls) {
         unclose(write(model), view);
     }
     else {
-        create_view_and_page(write(model), "about:blank"sv);
+        create_view_and_node(write(model), "about:blank"sv);
     }
      // Open new window if requested
     if (!urls.empty()) {
         if (urls.size() > 1) ERR("Multiple URL arguments NYI"sv);
-        create_view_and_page(write(model), urls[0]);
+        create_view_and_node(write(model), urls[0]);
     }
      // Run message loop
     MSG msg;
@@ -71,8 +71,8 @@ Window* App::window_for_view (model::ViewID view) {
     else return nullptr;
 }
 
-Window* App::window_for_page (model::PageID page) {
-    if (auto view = (model/page)->viewing_view) {
+Window* App::window_for_node (model::NodeID node) {
+    if (auto view = (model/node)->viewing_view) {
         Window* window = window_for_view(view);
         AA(window);
         return window;
@@ -86,8 +86,8 @@ Shell* App::shell_for_view (model::ViewID view) {
     else return nullptr;
 }
 
-Activity* App::activity_for_page (model::PageID page) {
-    auto iter = activities.find(page);
+Activity* App::activity_for_node (model::NodeID node) {
+    auto iter = activities.find(node);
     if (iter != activities.end()) return iter->second.get();
     else return nullptr;
 }
@@ -108,13 +108,13 @@ void App::Observer_after_commit (const model::Update& update) {
             windows.erase(view);
         }
     }
-    for (model::PageID page : update.pages) {
-        auto page_data = model/page;
-        if (page_data && page_data->state != model::PageState::UNLOADED) {
-            auto& activity = activities[page];
-            if (!activity) activity = make_unique<Activity>(*this, page);
+    for (model::NodeID node : update.nodes) {
+        auto node_data = model/node;
+        if (node_data && node_data->state != model::NodeState::UNLOADED) {
+            auto& activity = activities[node];
+            if (!activity) activity = make_unique<Activity>(*this, node);
         }
-        else activities.erase(page);
+        else activities.erase(node);
     }
      // Quit if there are no more windows.
     if (windows.empty()) {
@@ -127,13 +127,13 @@ void App::Observer_after_commit (const model::Update& update) {
             window->view_updated();
         }
     }
-    for (model::PageID page : update.pages) {
-        if (Activity* activity = activity_for_page(page)) {
-            activity->page_updated();
+    for (model::NodeID node : update.nodes) {
+        if (Activity* activity = activity_for_node(node)) {
+            activity->node_updated();
         }
-        if (Window* window = window_for_page(page)) {
+        if (Window* window = window_for_node(node)) {
              // TODO: avoid calling this twice?
-            window->page_updated();
+            window->node_updated();
         }
     }
      // Shells are responsible for figuring out when they want to update.

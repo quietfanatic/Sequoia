@@ -11,10 +11,10 @@ namespace model {
 
 struct LinkData {
      // Immutable
-    PageID opener_page;
+    NodeID opener_node;
      // Mutable
-    PageID from_page;
-    PageID to_page;
+    NodeID from_node;
+    NodeID to_node;
     Bifractor position;
     String title;
     double created_at = 0;
@@ -22,24 +22,24 @@ struct LinkData {
 };
 
  // Ordered by position
-std::vector<LinkID> get_links_from_page (ReadRef, PageID page);
+std::vector<LinkID> get_links_from_node (ReadRef, NodeID node);
  // Ordered by id
-std::vector<LinkID> get_links_to_page (ReadRef, PageID page);
+std::vector<LinkID> get_links_to_node (ReadRef, NodeID node);
  // returns LinkID{} if there are no non-deleted trashed links
 LinkID get_last_trashed_link (ReadRef);
 
- // TODO: don't create page by default
-LinkID create_first_child (WriteRef, PageID parent, Str url, Str title = ""sv);
-LinkID create_last_child (WriteRef, PageID parent, Str url, Str title = ""sv);
+ // TODO: don't create node by default
+LinkID create_first_child (WriteRef, NodeID parent, Str url, Str title = ""sv);
+LinkID create_last_child (WriteRef, NodeID parent, Str url, Str title = ""sv);
 LinkID create_next_sibling (WriteRef,
-    PageID opener, LinkID target, Str url, Str title = ""sv
+    NodeID opener, LinkID target, Str url, Str title = ""sv
 );
 LinkID create_prev_sibling (WriteRef,
-    PageID opener, LinkID target, Str url, Str title = ""sv
+    NodeID opener, LinkID target, Str url, Str title = ""sv
 );
 
-void move_first_child (WriteRef, LinkID, PageID parent);
-void move_last_child (WriteRef, LinkID, PageID parent);
+void move_first_child (WriteRef, LinkID, NodeID parent);
+void move_last_child (WriteRef, LinkID, NodeID parent);
 void move_after (WriteRef, LinkID, LinkID prev);
 void move_before (WriteRef, LinkID, LinkID next);
 

@@ -14,7 +14,7 @@ struct App;
 
 struct Activity {
     App& app;
-    model::PageID page;
+    model::NodeID node;
 
     wil::com_ptr<ICoreWebView2Controller> controller;
     wil::com_ptr<ICoreWebView2> webview;
@@ -25,8 +25,8 @@ struct Activity {
      // navigation.
     String current_url;
 
-    Activity (App&, model::PageID);
-    void page_updated ();
+    Activity (App&, model::NodeID);
+    void node_updated ();
 
     bool navigate_url (Str url);
     void navigate_search (Str search);

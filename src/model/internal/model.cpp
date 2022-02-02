@@ -63,7 +63,7 @@ Database::~Database () {
 
 Model::Model (Str db_path) :
     db(db_path),
-    pages(db),
+    nodes(db),
     links(db),
     views(db),
     writes(db)
@@ -81,8 +81,8 @@ void delete_model (Model* model) {
     delete model;
 }
 
-const PageData* operator/ (ReadRef model, PageID id) {
-    LOG("load Page"sv, id);
+const NodeData* operator/ (ReadRef model, NodeID id) {
+    LOG("load Node"sv, id);
     return load_mut(model, id);
 }
 const LinkData* operator/ (ReadRef model, LinkID id) {

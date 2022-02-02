@@ -22,8 +22,8 @@ Write::~Write () {
          // Clear current update
         Update update = move(model.writes.current_update);
          // Delete dirty cached items
-        for (PageID page : update.pages) {
-            model.pages.cache.erase(page);
+        for (NodeID node : update.nodes) {
+            model.nodes.cache.erase(node);
         }
         for (LinkID link : update.links) {
             model.links.cache.erase(link);

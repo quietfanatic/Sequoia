@@ -35,9 +35,9 @@ struct Window {
     void reflow ();
 
      ///// Updating
-    model::PageID current_focused_page;
+    model::NodeID current_focused_node;
     void view_updated ();
-    void page_updated ();
+    void node_updated ();
 };
 
 } // namespace win32app

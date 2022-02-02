@@ -48,24 +48,24 @@ struct ModelID {
     friend auto operator<=> (const ModelID&, const ModelID&) = default;
 };
 
-struct PageData;
-using PageID = ModelID<PageData>;
+struct NodeData;
+using NodeID = ModelID<NodeData>;
 struct LinkData;
 using LinkID = ModelID<LinkData>;
 struct ViewData;
 using ViewID = ModelID<ViewData>;
 
  // Loading operators.  I'll go ahead and declare them here so that you ge
- // better error messages if you forget to include page.h or similar.
+ // better error messages if you forget to include node.h or similar.
  //
  // Probably ->* would make more sense, but it's annoying to type and unclear
  // whether its an overload when you're reading it.  We'd totally use ->* if
  // it had the same precedence as ->, so you could say
- // model->*page->title...but it doesn't, so (model/page)->title it is.
+ // model->*node->title...but it doesn't, so (model/node)->title it is.
  //
  // operator[] would be best, but it can't be a non-member function, for no
  // particularly good reason I can see.
-const PageData* operator / (ReadRef, PageID);
+const NodeData* operator / (ReadRef, NodeID);
 const LinkData* operator / (ReadRef, LinkID);
 const ViewData* operator / (ReadRef, ViewID);
 

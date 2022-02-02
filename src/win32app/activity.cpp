@@ -3,8 +3,8 @@
 #include <stdexcept>
 #include <wrl.h>
 
-#include "../model/page.h"
 #include "../model/link.h"
+#include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"
 #include "../util/error.h"
@@ -22,8 +22,8 @@ using namespace std;
 
 namespace win32app {
 
-Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
-    LOG("new Activity"sv, this, page);
+Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
+    LOG("new Activity"sv, this, node);
 
     app.nursery.new_webview([this](
         ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd
@@ -37,7 +37,7 @@ Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
         {
-            set_state(write(app.model), page, model::PageState::LOADING);
+            set_state(write(app.model), node, model::NodeState::LOADING);
             return S_OK;
         }).Get(), nullptr));
 
@@ -52,7 +52,7 @@ Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
             if (source.get() == L"about:blank"sv) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
-                set_title(write(app.model), page, from_utf16(title.get()));
+                set_title(write(app.model), node, from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
@@ -62,15 +62,15 @@ Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2SourceChangedEventArgs* args) -> HRESULT
         {
-             // TODO: Make new page instead of changing this one!
+             // TODO: Make new node instead of changing this one!
              // WebView2 tends to have spurious navigations to about:blank, so don't
              // save the url in that case.
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
             if (source.get() != L""sv && source.get() != L"about:blank"sv) {
                 current_url = from_utf16(source.get());
-                if ((app.model/page)->url != current_url) {
-                    set_url(write(app.model), page, current_url);
+                if ((app.model/node)->url != current_url) {
+                    set_url(write(app.model), node, current_url);
                 }
             }
 
@@ -82,7 +82,7 @@ Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
-            set_state(write(app.model), page, model::PageState::LOADED);
+            set_state(write(app.model), node, model::NodeState::LOADED);
             return S_OK;
         }).Get(), nullptr));
 
@@ -95,7 +95,7 @@ Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            create_last_child(write(app.model), page, from_utf16(url.get()));
+            create_last_child(write(app.model), node, from_utf16(url.get()));
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -128,7 +128,7 @@ Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            Window* window = app.window_for_page(page);
+            Window* window = app.window_for_node(node);
             if (!window) return S_OK;
             COREWEBVIEW2_KEY_EVENT_KIND kind;
             AH(args->get_KeyEventKind(&kind));
@@ -157,13 +157,13 @@ Activity::Activity (App& a, model::PageID p) : app(a), page(p) {
             Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
                 [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-            if (auto view = (app.model/page)->viewing_view) {
+            if (auto view = (app.model/node)->viewing_view) {
                 set_fullscreen(write(app.model), view, is_fullscreen());
             }
             return S_OK;
         }).Get(), nullptr));
 
-        if (Window* window = app.window_for_page(page)) {
+        if (Window* window = app.window_for_node(node)) {
             window->reflow();
         }
     });
@@ -181,7 +181,7 @@ void Activity::message_from_webview (const json::Value& message) {
 
     switch (x31_hash(command)) {
         case x31_hash("favicon"): {
-            set_favicon_url(write(app.model), page, message[1]);
+            set_favicon_url(write(app.model), node, message[1]);
             break;
         }
         case x31_hash("click_link"): {
@@ -201,16 +201,16 @@ void Activity::message_from_webview (const json::Value& message) {
     //            }
                 if (alt && shift) {
                     // TODO: get this activity's link id from view
-    //                link.move_before(page);
+    //                link.move_before(node);
                 }
                 else if (alt) {
-    //                link.move_after(page);
+    //                link.move_after(node);
                 }
                 else if (shift) {
-                    create_first_child(write(app.model), page, url, title);
+                    create_first_child(write(app.model), node, url, title);
                 }
                 else {
-                    create_last_child(write(app.model), page, url, title);
+                    create_last_child(write(app.model), node, url, title);
                 }
             }
             break;
@@ -233,13 +233,13 @@ void Activity::message_from_webview (const json::Value& message) {
     }
 }
 
-void Activity::page_updated () {
-    auto url = (app.model/page)->url;
+void Activity::node_updated () {
+    auto url = (app.model/node)->url;
     if (url != current_url) navigate(url);
 }
 
 bool Activity::navigate_url (Str url) {
-    LOG("navigate_url"sv, page, url);
+    LOG("navigate_url"sv, node, url);
     auto hr = webview->Navigate(to_utf16(url).c_str());
     if (SUCCEEDED(hr)) {
         current_url = url;
@@ -250,7 +250,7 @@ bool Activity::navigate_url (Str url) {
 }
 
 void Activity::navigate_search (Str search) {
-    LOG("navigate_search"sv, page, search);
+    LOG("navigate_search"sv, node, search);
      // Escape URL characters
     String url = "https://duckduckgo.com/?q="sv + escape_url(search);
      // If the search URL is invalid, treat it as a bug
@@ -272,7 +272,7 @@ void Activity::navigate (Str address) {
         }
     }
     else {
-        set_url(write(app.model), page, current_url = address);
+        set_url(write(app.model), node, current_url = address);
     }
 }
 

@@ -1,6 +1,6 @@
 #include "tabs.h"
 
-#include "page.h"
+#include "node.h"
 #include "link.h"
 #include "view.h"
 
@@ -11,26 +11,26 @@ using namespace std;
 static void gen_tabs (
     ReadRef model,
     unordered_map<LinkID, Tab>& tabs, const ViewData& view,
-    LinkID link, PageID page, LinkID parent
+    LinkID link, NodeID node, LinkID parent
 ) {
-    auto children = get_links_from_page(model, page);
-    auto page_data = model/page;
+    auto children = get_links_from_node(model, node);
+    auto node_data = model/node;
     auto link_data = model/link;
 
     int flags = 0;
     if (view.focused_tab == link) flags |= Tab::FOCUSED;
-    if (page_data->visited_at) flags |= Tab::VISITED;
-    if (page_data->state == PageState::LOADING) flags |= Tab::LOADING;
-    if (page_data->state == PageState::LOADED) flags |= Tab::LOADED;
+    if (node_data->visited_at) flags |= Tab::VISITED;
+    if (node_data->state == NodeState::LOADING) flags |= Tab::LOADING;
+    if (node_data->state == NodeState::LOADED) flags |= Tab::LOADED;
     if (link && link_data->trashed_at) flags |= Tab::TRASHED;
     if (children.size()) flags |= Tab::EXPANDABLE; // TODO: don't use if inverted
     if (view.expanded_tabs.count(link)) flags |= Tab::EXPANDED;
 
-    tabs.emplace(link, Tab{page, parent, Tab::Flags(flags)});
+    tabs.emplace(link, Tab{node, parent, Tab::Flags(flags)});
     if (view.expanded_tabs.count(link)) {
-         // TODO: include get_links_to_page
+         // TODO: include get_links_to_node
         for (LinkID child : children) {
-            gen_tabs(model, tabs, view, child, (model/child)->to_page, link);
+            gen_tabs(model, tabs, view, child, (model/child)->to_node, link);
         }
     }
 }
@@ -38,7 +38,7 @@ static void gen_tabs (
 TabTree create_tab_tree (ReadRef model, ViewID view) {
     TabTree r;
     auto view_data = model/view;
-    gen_tabs(model, r, *view_data, LinkID{}, view_data->root_page, LinkID{});
+    gen_tabs(model, r, *view_data, LinkID{}, view_data->root_node, LinkID{});
     return r;
 }
 
@@ -66,7 +66,7 @@ TabChanges get_changed_tabs (
         if (old == old_tabs.end()
             || tab.flags != old->second.flags
             || update.links.count(id)
-            || update.pages.count(tab.page)
+            || update.nodes.count(tab.node)
         ) {
             r.emplace_back(id, tab);
         }

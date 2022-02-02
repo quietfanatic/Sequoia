@@ -7,7 +7,7 @@ namespace model {
 
  // Collection of item IDs passed to Observers
 struct Update {
-    std::unordered_set<PageID> pages;
+    std::unordered_set<NodeID> nodes;
     std::unordered_set<LinkID> links;
     std::unordered_set<ViewID> views;
 };

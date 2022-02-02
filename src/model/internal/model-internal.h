@@ -4,7 +4,7 @@
 #include <sqlite3.h>
 
 #include "link-internal.h"
-#include "page-internal.h"
+#include "node-internal.h"
 #include "view-internal.h"
 #include "write-internal.h"
 
@@ -21,7 +21,7 @@ struct Database {
 struct Model {
     Database db;
 
-    PageModel pages;
+    NodeModel nodes;
     LinkModel links;
     ViewModel views;
     WriteModel writes;

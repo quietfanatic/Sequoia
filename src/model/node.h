@@ -8,13 +8,13 @@
 
 namespace model {
 
-enum PageState {
+enum NodeState {
     UNLOADED,
     LOADING,
     LOADED
 };
 
-struct PageData {
+struct NodeData {
      // Immutable
     String url;
      // Mutable but intrinsic
@@ -24,19 +24,19 @@ struct PageData {
      // Extrinsic
     int64 group = 0; // NYI
      // Temporary (not stored in DB)
-    PageState state = UNLOADED;
+    NodeState state = UNLOADED;
     ViewID viewing_view;
 };
 
-std::vector<PageID> get_pages_with_url (ReadRef, Str url);
+std::vector<NodeID> get_nodes_with_url (ReadRef, Str url);
 
-void set_url (WriteRef, PageID, Str);
-void set_title (WriteRef, PageID, Str);
-void set_favicon_url (WriteRef, PageID, Str);
-void set_visited (WriteRef, PageID);
-void set_state (WriteRef, PageID, PageState);
+void set_url (WriteRef, NodeID, Str);
+void set_title (WriteRef, NodeID, Str);
+void set_favicon_url (WriteRef, NodeID, Str);
+void set_visited (WriteRef, NodeID);
+void set_state (WriteRef, NodeID, NodeState);
 
  // Send this item to observers without actually changing it
-void touch (WriteRef, PageID);
+void touch (WriteRef, NodeID);
 
 } // namespace model
