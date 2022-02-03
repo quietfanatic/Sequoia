@@ -8,7 +8,7 @@ This is very much a work in progress, and there is no documentation.
 
 To build Sequoia, you need Visual Studio 2019.  2017 will probably work if you reconfigure the project.
 
-To run Sequoia, you must have Microsoft Edge (Chromium-based) installed.
+To run Sequoia, you must have the WebView2 runtime installed.  This should already be the case if you're on a recent Windows version.
 
 ### Usage
 
