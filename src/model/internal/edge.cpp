@@ -156,58 +156,72 @@ static EdgeID create_edge (WriteRef model, unique_ptr<EdgeData>&& data) {
     return id;
 }
 
-EdgeID create_first_child (WriteRef model, NodeID parent, Str url, Str title) {
-    LOG("create_first_child"sv, parent, url, title);
+EdgeID make_first_child (WriteRef model, NodeID parent, NodeID to, Str title) {
+    LOG("make_first_child"sv, parent, to, title);
     AA(parent);
     auto data = make_unique<EdgeData>();
     data->opener_node = parent;
     data->from_node = parent;
-    data->to_node = create_node(model, url);
+    data->to_node = to;
     data->position = first_position(model, parent);
     data->title = title;
     return create_edge(model, move(data));
 }
 
-EdgeID create_last_child (WriteRef model, NodeID parent, Str url, Str title) {
-    LOG("create_last_child"sv, parent, url, title);
+EdgeID make_last_child (WriteRef model, NodeID parent, NodeID to, Str title) {
+    LOG("make_last_child"sv, parent, to, title);
     AA(parent);
     auto data = make_unique<EdgeData>();
     data->opener_node = parent;
     data->from_node = parent;
-    data->to_node = create_node(model, url);
+    data->to_node = to;
     data->position = last_position(model, parent);
     data->title = title;
     return create_edge(model, move(data));
 }
 
-EdgeID create_next_sibling (WriteRef model, NodeID opener, EdgeID target, Str url, Str title) {
-    LOG("create_next_sibling"sv, opener, target, url, title);
-    AA(opener);
-    auto target_data = load_mut(model, target);
+EdgeID make_next_sibling (WriteRef model, EdgeID prev, NodeID to, Str title) {
+    LOG("make_next_sibling"sv, prev, to, title);
+    AA(prev);
+    auto prev_data = load_mut(model, prev);
     auto data = make_unique<EdgeData>();
-    data->opener_node = opener;
-    data->from_node = target_data->from_node;
-    data->to_node = create_node(model, url);
-    data->position = position_after(model, target_data);
+    data->opener_node = prev_data->to_node;
+    data->from_node = prev_data->from_node;
+    data->to_node = to;
+    data->position = position_after(model, prev_data);
     data->title = title;
     return create_edge(model, move(data));
 }
 
-EdgeID create_prev_sibling (WriteRef model, NodeID opener, EdgeID target, Str url, Str title) {
-    LOG("create_prev_sibling"sv, opener, target, url, title);
-    AA(opener);
-    auto target_data = load_mut(model, target);
+EdgeID make_prev_sibling (WriteRef model, EdgeID next, NodeID to, Str title) {
+    LOG("make_prev_sibling"sv, next, to, title);
+    AA(next);
+    auto next_data = load_mut(model, next);
     auto data = make_unique<EdgeData>();
-    data->opener_node = opener;
-    data->from_node = target_data->from_node;
-    data->to_node = create_node(model, url);
-    data->position = position_before(model, target_data);
+    data->opener_node = next_data->to_node;
+    data->from_node = next_data->from_node;
+    data->to_node = to;
+    data->position = position_before(model, next_data);
     data->title = title;
     return create_edge(model, move(data));
+}
+
+EdgeID create_first_child (WriteRef model, NodeID parent, Str url, Str title) {
+    return make_first_child(model, parent, create_node(model, url, title));
+}
+EdgeID create_last_child (WriteRef model, NodeID parent, Str url, Str title) {
+    return make_last_child(model, parent, create_node(model, url, title));
+}
+EdgeID create_next_sibling (WriteRef model, EdgeID prev, Str url, Str title) {
+    return make_next_sibling(model, prev, create_node(model, url, title));
+}
+EdgeID create_prev_sibling (WriteRef model, EdgeID next, Str url, Str title) {
+    return make_prev_sibling(model, next, create_node(model, url, title));
 }
 
 void move_first_child (WriteRef model, EdgeID id, NodeID parent) {
     LOG("move_first_child"sv, id, parent);
+    AA(parent);
     auto data = load_mut(model, id);
     data->from_node = parent;
     data->position = first_position(model, parent);
@@ -216,27 +230,30 @@ void move_first_child (WriteRef model, EdgeID id, NodeID parent) {
 
 void move_last_child (WriteRef model, EdgeID id, NodeID parent) {
     LOG("move_last_child"sv, id, parent);
+    AA(parent);
     auto data = load_mut(model, id);
     data->from_node = parent;
     data->position = last_position(model, parent);
     save(model, id, data);
 }
 
-void move_after (WriteRef model, EdgeID id, EdgeID target) {
-    LOG("move_after"sv, id, target);
+void move_after (WriteRef model, EdgeID id, EdgeID prev) {
+    LOG("move_after"sv, id, prev);
+    AA(prev);
     auto data = load_mut(model, id);
-    auto target_data = load_mut(model, target);
-    data->from_node = target_data->from_node;
-    data->position = position_after(model, target_data);
+    auto prev_data = load_mut(model, prev);
+    data->from_node = prev_data->from_node;
+    data->position = position_after(model, prev_data);
     save(model, id, data);
 }
 
-void move_before (WriteRef model, EdgeID id, EdgeID target) {
-    LOG("move_before"sv, id, target);
+void move_before (WriteRef model, EdgeID id, EdgeID next) {
+    LOG("move_before"sv, id, next);
+    AA(next);
     auto data = load_mut(model, id);
-    auto target_data = load_mut(model, target);
-    data->from_node = target_data->from_node;
-    data->position = position_before(model, target_data);
+    auto next_data = load_mut(model, next);
+    data->from_node = next_data->from_node;
+    data->position = position_before(model, next_data);
     save(model, id, data);
 }
 
@@ -279,16 +296,21 @@ static tap::TestSet tests ("model/edge", []{
     ModelTestEnvironment env;
     Model& model = *new_model(env.db_path);
 
-    NodeID first_node = create_node(write(model), "about:blank");
+    std::vector<NodeID> nodes;
+    for (size_t i = 0; i < 30; i++) {
+        auto title = "node "s + std::to_string(i);
+        nodes.push_back(create_node(write(model), "about:blank", title));
+    }
+
     EdgeID first_child;
     doesnt_throw([&]{
-        first_child = create_first_child(write(model), first_node, "about:blank", "foo");
-    }, "create_first_child");
+        first_child = make_first_child(write(model), nodes[0], nodes[1], "foo");
+    }, "make_first_child");
     ok(first_child);
     auto first_child_data = model/first_child;
-    is(first_child_data->opener_node, first_node);
-    is(first_child_data->from_node, first_node);
-    ok(first_child_data->to_node);
+    is(first_child_data->opener_node, nodes[0]);
+    is(first_child_data->from_node, nodes[0]);
+    is(first_child_data->to_node, nodes[1]);
     ok(first_child_data->position > Bifractor(0));
     ok(first_child_data->position < Bifractor(1));
     is(first_child_data->title, "foo");
@@ -297,20 +319,20 @@ static tap::TestSet tests ("model/edge", []{
 
     EdgeID firster_child;
     doesnt_throw([&]{
-        firster_child = create_first_child(write(model), first_node, "about:blank");
-    }, "create_first_child 2");
+        firster_child = make_first_child(write(model), nodes[0], nodes[2]);
+    }, "make_first_child 2");
     auto firster_child_data = model/firster_child;
     ok(firster_child_data->position > Bifractor(0));
     ok(firster_child_data->position < first_child_data->position);
 
     EdgeID last_child;
     doesnt_throw([&]{
-        last_child = create_last_child(write(model), first_node, "about:blank");
-    }, "create_last_child");
+        last_child = make_last_child(write(model), nodes[0], nodes[1]);
+    }, "make_last_child (also reuse to_node)");
     auto last_child_data = model/last_child;
-    is(last_child_data->opener_node, first_node);
-    is(last_child_data->from_node, first_node);
-    ok(last_child_data->to_node);
+    is(last_child_data->opener_node, nodes[0]);
+    is(last_child_data->from_node, nodes[0]);
+    is(last_child_data->to_node, nodes[1]);
     ok(last_child_data->position > first_child_data->position);
     ok(last_child_data->position < Bifractor(1));
     is(last_child_data->title, "");
@@ -319,12 +341,12 @@ static tap::TestSet tests ("model/edge", []{
 
     EdgeID prev_sibling;
     doesnt_throw([&]{
-        prev_sibling = create_prev_sibling(write(model), first_child_data->to_node, first_child, "about:blank");
-    }, "create_prev_sibling");
+        prev_sibling = make_prev_sibling(write(model), first_child, nodes[3]);
+    }, "make_prev_sibling");
     auto prev_sibling_data = model/prev_sibling;
     is(prev_sibling_data->opener_node, first_child_data->to_node);
-    is(prev_sibling_data->from_node, first_node);
-    ok(prev_sibling_data->to_node);
+    is(prev_sibling_data->from_node, nodes[0]);
+    is(prev_sibling_data->to_node, nodes[3]);
     ok(prev_sibling_data->position > firster_child_data->position);
     ok(prev_sibling_data->position < first_child_data->position);
     ok(prev_sibling_data->created_at);
@@ -333,12 +355,12 @@ static tap::TestSet tests ("model/edge", []{
 
     EdgeID next_sibling;
     doesnt_throw([&]{
-        next_sibling = create_next_sibling(write(model), first_child_data->to_node, first_child, "about:blank");
-    }, "create_next_sibling");
+        next_sibling = make_next_sibling(write(model), first_child, NodeID{});
+    }, "make_next_sibling (also to_node = 0)");
     auto next_sibling_data = model/next_sibling;
     is(next_sibling_data->opener_node, first_child_data->to_node);
-    is(next_sibling_data->from_node, first_node);
-    ok(next_sibling_data->to_node);
+    is(next_sibling_data->from_node, nodes[0]);
+    is(next_sibling_data->to_node, NodeID{});
     ok(next_sibling_data->position > first_child_data->position);
     ok(next_sibling_data->position < last_child_data->position);
     ok(next_sibling_data->created_at);
@@ -347,7 +369,7 @@ static tap::TestSet tests ("model/edge", []{
 
     vector<EdgeID> edges_from_first;
     doesnt_throw([&]{
-        edges_from_first = get_edges_from_node(model, first_node);
+        edges_from_first = get_edges_from_node(model, nodes[0]);
     }, "get_edges_from_node");
     is(edges_from_first.size(), 5);
     is(edges_from_first[0], firster_child);
@@ -356,13 +378,13 @@ static tap::TestSet tests ("model/edge", []{
     is(edges_from_first[3], next_sibling);
     is(edges_from_first[4], last_child);
 
-     // TODO: make and test APIs for multiple edges to the same node
     vector<EdgeID> edges_to_last;
     doesnt_throw([&]{
         edges_to_last = get_edges_to_node(model, last_child_data->to_node);
     }, "get_edges_to_node");
-    is(edges_to_last.size(), 1);
-    is(edges_to_last[0], last_child);
+    is(edges_to_last.size(), 2);
+    is(edges_to_last[0], first_child);
+    is(edges_to_last[1], last_child);
 
     doesnt_throw([&]{
         move_first_child(write(model), next_sibling, firster_child_data->to_node);
@@ -381,19 +403,19 @@ static tap::TestSet tests ("model/edge", []{
     doesnt_throw([&]{
         move_after(write(model), last_child, next_sibling);
     }, "move_after");
-    is(last_child_data->opener_node, first_node);
+    is(last_child_data->opener_node, nodes[0]);
     is(last_child_data->from_node, firster_child_data->to_node);
     ok(last_child_data->position > next_sibling_data->position);
     doesnt_throw([&]{
         move_before(write(model), first_child, prev_sibling);
     }, "move_before");
-    is(first_child_data->opener_node, first_node);
+    is(first_child_data->opener_node, nodes[0]);
     is(first_child_data->from_node, firster_child_data->to_node);
     ok(first_child_data->position < prev_sibling_data->position);
     ok(first_child_data->position > last_child_data->position);
 
     doesnt_throw([&]{
-        edges_from_first = get_edges_from_node(model, first_node);
+        edges_from_first = get_edges_from_node(model, nodes[0]);
     }, "get_edges_from_node 2");
     is(edges_from_first.size(), 1);
     is(edges_from_first[0], firster_child);

@@ -40,7 +40,7 @@ PRAGMA user_version = 6;
  -- node if they only differ by fragment?
  --
  -- _url: Currently TEXT but will be deduplicated in a separate table
- -- eventually
+ -- eventually.
  --
  -- _title is the actual title from the HTML node.  It will be "" if this
  -- node has not been loaded yet.
@@ -88,6 +88,8 @@ CREATE INDEX _nodes_by_visited_at ON _nodes (
  -- have a unique position.  Therefore edges must have their positions updated
  -- when nodes are merged into the same group.
  --
+ -- _to_node can be 0 but _from_node cannot be.
+ --
  -- _title is heuristically generated from the link on _from_node's page, and is
  -- used as the user-visible title of the _to_node before it's loaded.
 CREATE TABLE _edges (
@@ -101,7 +103,7 @@ CREATE TABLE _edges (
     _trashed_at REAL NOT NULL,
     CHECK(_id > 0),
     CHECK(_from_node > 0),
-    CHECK(_to_node > 0),
+    CHECK(_to_node >= 0),
     CHECK(_position BETWEEN X'00' AND X'FF'),
     CHECK(_created_at > 0),
     CHECK(_trashed_at >= 0)
@@ -158,17 +160,25 @@ CREATE TABLE _groups (
 ----- VIEWS
 
  -- A view represents a tree-like view of the graph.
- -- To preserver the path to the focused tab, views do two things:
- --   - They focus on edges, not nodes or groups, because edges know their parent
- --   - They require that a tab is expanded in only one place it occurs.
  --
- -- If _focused_tab is 0, that means the root node is focused.  This is a
- -- little weird, and frankly I'm not quite satisfied, but the root node might
- -- not have any edges associated with it.
+ -- To preserve the path to the focused tab, a tab corresponds to an edge, not
+ -- a node or a group, because an edge knows its parent.  As a consequence, only
+ -- one tab corresponding to a given node or group can be expanded at a time.
+ --
+ -- In terms of data, a "tab" and an "edge" are equivalent, but a tab is always
+ -- within the context of a particular view.  Model functions with "tab" in
+ -- their name will take both a ViewID and an EdgeID, and functions with "edge"
+ -- in their name only take an EdgeID.
+ --
+ -- _root_node must point to a node with a _url of "sequoia:view/<_id>".
+ -- Top-level tabs will have an edge with _from_node = _root_node.
+ --
+ -- _focused_tab may be 0, in which case there is no focused tab.
  --
  -- If _closed_at is NULL, there is an open desktop window viewing this view.
  --
- -- _expanded_tabs is a JSON array of edge IDs (0 = root node)
+ -- _expanded_tabs is a JSON array of edge IDs.  The order of expanded tabs is
+ -- not meaningful, but for consistency we'll store them sorted by ID.
 CREATE TABLE _views (
     _id INTEGER PRIMARY KEY,
     _root_node INTEGER NOT NULL,
@@ -186,7 +196,7 @@ CREATE TABLE _views (
     CHECK(_expanded_tabs LIKE '[%]')
 );
 
- -- These probably aren't necessary but whatever
+ -- These aren't really needed for performance, but they make semantic sense.
 CREATE INDEX _unclosed_views_by_created_at ON _views (
     _created_at
 ) WHERE _closed_at = 0;

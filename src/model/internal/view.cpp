@@ -140,7 +140,8 @@ void create_and_focus_last_child (WriteRef model, ViewID id, EdgeID parent_tab, 
     NodeID parent_node = parent_tab
         ? parent_node = load_mut(model, parent_tab)->from_node
         : data->root_node;
-    EdgeID edge = create_last_child(model, parent_node, url, title);
+    NodeID child = create_node(model, url, title);
+    EdgeID edge = make_last_child(model, parent_node, child);
     data->focused_tab = edge;
     data->expanded_tabs.insert(parent_tab);
     save(model, id, data);

@@ -28,15 +28,17 @@ std::vector<EdgeID> get_edges_to_node (ReadRef, NodeID node);
  // returns EdgeID{} if there are no non-deleted trashed edges
 EdgeID get_last_trashed_edge (ReadRef);
 
- // TODO: don't create node by default
-EdgeID create_first_child (WriteRef, NodeID parent, Str url, Str title = ""sv);
-EdgeID create_last_child (WriteRef, NodeID parent, Str url, Str title = ""sv);
-EdgeID create_next_sibling (WriteRef,
-    NodeID opener, EdgeID target, Str url, Str title = ""sv
-);
-EdgeID create_prev_sibling (WriteRef,
-    NodeID opener, EdgeID target, Str url, Str title = ""sv
-);
+ // The to node may be 0.
+EdgeID make_first_child (WriteRef, NodeID parent, NodeID to, Str title = "");
+EdgeID make_last_child (WriteRef, NodeID parent, NodeID to, Str title = "");
+EdgeID make_next_sibling (WriteRef, EdgeID prev, NodeID to, Str title = "");
+EdgeID make_prev_sibling (WriteRef, EdgeID next, NodeID to, Str title = "");
+
+ // These are just shortcuts for create_node and make_*
+EdgeID create_first_child (WriteRef, NodeID parent, Str url, Str title = "");
+EdgeID create_last_child (WriteRef, NodeID parent, Str url, Str title = "");
+EdgeID create_next_sibling (WriteRef, EdgeID prev, Str url, Str title = "");
+EdgeID create_prev_sibling (WriteRef, EdgeID next, Str url, Str title = "");
 
 void move_first_child (WriteRef, EdgeID, NodeID parent);
 void move_last_child (WriteRef, EdgeID, NodeID parent);
