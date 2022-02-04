@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <wrl.h>
 
-#include "../model/link.h"
+#include "../model/edge.h"
 #include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"
@@ -86,7 +86,7 @@ Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
             return S_OK;
         }).Get(), nullptr));
 
-         // This doesn't work for middle-clicking links
+         // This doesn't work for middle-clicking edges
          // TODO: How true is that now?  Investigate when this is called.
         AH(webview->add_NewWindowRequested(
             Callback<ICoreWebView2NewWindowRequestedEventHandler>([this](
@@ -184,7 +184,7 @@ void Activity::message_from_webview (const json::Value& message) {
             set_favicon_url(write(app.model), node, message[1]);
             break;
         }
-        case x31_hash("click_link"): {
+        case x31_hash("click_edge"): {
             std::string url = message[1];
             std::string title = message[2];
             int button = message[3];
@@ -200,11 +200,11 @@ void Activity::message_from_webview (const json::Value& message) {
     //                }
     //            }
                 if (alt && shift) {
-                    // TODO: get this activity's link id from view
-    //                link.move_before(node);
+                    // TODO: get this activity's edge id from view
+    //                edge.move_before(node);
                 }
                 else if (alt) {
-    //                link.move_after(node);
+    //                edge.move_after(node);
                 }
                 else if (shift) {
                     create_first_child(write(app.model), node, url, title);

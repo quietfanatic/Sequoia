@@ -8,7 +8,7 @@
 #include "../../util/json.h"
 #include "../../util/log.h"
 #include "../../util/time.h"
-#include "link-internal.h"
+#include "edge-internal.h"
 #include "model-internal.h"
 #include "node-internal.h"
 
@@ -38,7 +38,7 @@ ViewData* load_mut (ReadRef model, ViewID id) {
         data->closed_at = st[3];
         data->trashed_at = st[4];
         for (int64 l : json::Array(json::parse(st[5]))) {
-            data->expanded_tabs.insert(LinkID{l});
+            data->expanded_tabs.insert(EdgeID{l});
         }
     }
     return &*data;
@@ -77,7 +77,7 @@ static ViewID save (WriteRef model, ViewID id, const ViewData* data) {
 
     json::Array expanded_tabs_json;
     expanded_tabs_json.reserve(data->expanded_tabs.size());
-    for (LinkID tab : data->expanded_tabs) {
+    for (EdgeID tab : data->expanded_tabs) {
         expanded_tabs_json.push_back(int64{tab});
     }
 
@@ -98,7 +98,7 @@ ViewID create_view_and_node (WriteRef model, Str url) {
     LOG("create_view_and_node"sv, url);
     auto data = make_unique<ViewData>();
     data->root_node = create_node(model, url);
-    data->focused_tab = LinkID{};
+    data->focused_tab = EdgeID{};
     data->created_at = now();
     auto id = save(model, ViewID{}, &*data);
     auto [iter, emplaced] = model->views.cache.try_emplace(id, move(data));
@@ -127,39 +127,39 @@ void navigate_focused_node (WriteRef model, ViewID id, Str url) {
     }
 }
 
-void focus_tab (WriteRef model, ViewID id, LinkID tab) {
+void focus_tab (WriteRef model, ViewID id, EdgeID tab) {
     LOG("focus_tab"sv, id, tab);
     auto data = load_mut(model, id);
     data->focused_tab = tab;
     save(model, id, data);
 }
 
-void create_and_focus_last_child (WriteRef model, ViewID id, LinkID parent_tab, Str url, Str title) {
+void create_and_focus_last_child (WriteRef model, ViewID id, EdgeID parent_tab, Str url, Str title) {
     LOG("create_and_focus_last_child"sv, id, parent_tab, url);
     auto data = load_mut(model, id);
     NodeID parent_node = parent_tab
         ? parent_node = load_mut(model, parent_tab)->from_node
         : data->root_node;
-    LinkID link = create_last_child(model, parent_node, url, title);
-    data->focused_tab = link;
+    EdgeID edge = create_last_child(model, parent_node, url, title);
+    data->focused_tab = edge;
     data->expanded_tabs.insert(parent_tab);
     save(model, id, data);
 }
 
-void trash_tab (WriteRef model, ViewID id, LinkID tab) {
+void trash_tab (WriteRef model, ViewID id, EdgeID tab) {
     LOG("trash_tab"sv, id, tab);
     if (tab) trash(model, tab);
     else close(model, id);
 }
 
-void expand_tab (WriteRef model, ViewID id, LinkID tab) {
+void expand_tab (WriteRef model, ViewID id, EdgeID tab) {
     LOG("expand_tab"sv, id, tab);
     auto data = load_mut(model, id);
     data->expanded_tabs.insert(tab);
     save(model, id, data);
 }
 
-void contract_tab (WriteRef model, ViewID id, LinkID tab) {
+void contract_tab (WriteRef model, ViewID id, EdgeID tab) {
     LOG("contract_tab"sv, id, tab);
     auto data = load_mut(model, id);
     data->expanded_tabs.erase(tab);

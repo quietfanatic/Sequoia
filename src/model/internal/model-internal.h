@@ -3,7 +3,7 @@
 
 #include <sqlite3.h>
 
-#include "link-internal.h"
+#include "edge-internal.h"
 #include "node-internal.h"
 #include "view-internal.h"
 #include "write-internal.h"
@@ -22,7 +22,7 @@ struct Model {
     Database db;
 
     NodeModel nodes;
-    LinkModel links;
+    EdgeModel edges;
     ViewModel views;
     WriteModel writes;
 

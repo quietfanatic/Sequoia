@@ -3,6 +3,12 @@ BEGIN;
 PRAGMA application_id = 0x53657175; -- "Sequ"
 PRAGMA user_version = 6;
 
+----- OVERVIEW
+ -- On the most fundamental level, this database stores a directed graph.
+ -- The nodes and edges of this graph mostly correspond to webpages and the
+ -- links between them, though the shape can be edited by the user.
+-----
+
 ----- URLS (NYI)
 
  -- URLs in this database should be canonicalized to UTF-8 unicode form
@@ -66,24 +72,25 @@ CREATE INDEX _nodes_by_visited_at ON _nodes (
     _visited_at
 ) WHERE _visited_at > 0;
 
------ LINKS
+----- EDGES
 
- -- Links are between nodes, and usually indicate that the to_node was accessed
- -- via a link in the from_node, but they can be moved around by the user.
+ -- Edges are between nodes, and usually indicate that the to_node was accessed
+ -- via a link in the webpage of from_node, but they can also be moved around by
+ -- the user.
  --
- -- _opener_node is the node that the link was opened from, or NULL if
- -- manually created.  For normal parent/child links, this will be the same as
- -- _from_node, but for links opened as siblings or moved, it may differ.
+ -- _opener_node is the node that the edge was opened from, or NULL if
+ -- manually created.  For normal parent/child edges, this will be the same as
+ -- _from_node, but for edges opened as siblings or moved, it may differ.
  --
- -- _position is a sortable blob, see util/bifractor.h.  Every link with a given
+ -- _position is a sortable blob, see util/bifractor.h.  Every edge with a given
  -- _from_node must have a unique position, and although the database can't
- -- regulate this, every link whose from_node is in the same group should also
- -- have a unique position.  Therefore links must have their positions updated
+ -- regulate this, every edge whose from_node is in the same group should also
+ -- have a unique position.  Therefore edges must have their positions updated
  -- when nodes are merged into the same group.
  --
- -- _title is heuristically generated from the link on the _from_node, and is
+ -- _title is heuristically generated from the link on _from_node's page, and is
  -- used as the user-visible title of the _to_node before it's loaded.
-CREATE TABLE _links (
+CREATE TABLE _edges (
     _id INTEGER PRIMARY KEY,
     _opener_node INTEGER NOT NULL,
     _from_node INTEGER NOT NULL,
@@ -99,13 +106,13 @@ CREATE TABLE _links (
     CHECK(_created_at > 0),
     CHECK(_trashed_at >= 0)
 );
-CREATE UNIQUE INDEX _links_by_location ON _links (
+CREATE UNIQUE INDEX _edges_by_location ON _edges (
     _from_node, _position
 );
-CREATE INDEX _links_by_to_node ON _links (
+CREATE INDEX _edges_by_to_node ON _edges (
     _to_node, _created_at
 );
-CREATE INDEX _trashed_links_by_trashed_at ON _links (
+CREATE INDEX _trashed_edges_by_trashed_at ON _edges (
     _trashed_at
 ) WHERE _trashed_at > 0;
 
@@ -138,7 +145,7 @@ CREATE INDEX _node_tags_by_tag ON _node_tags (
 ----- GROUPS
 
  -- Putting nodes in a group means the user wants the nodes to be considered
- -- semantically the same node.  The database attaches links and tags to
+ -- semantically the same node.  The database attaches edges and tags to
  -- individual nodes instead of groups, so if nodes are merged into a group and
  -- then split up, each node remembers its own stuff.
 CREATE TABLE _groups (
@@ -152,16 +159,16 @@ CREATE TABLE _groups (
 
  -- A view represents a tree-like view of the graph.
  -- To preserver the path to the focused tab, views do two things:
- --   - They focus on links, not nodes or groups, because links know their parent
+ --   - They focus on edges, not nodes or groups, because edges know their parent
  --   - They require that a tab is expanded in only one place it occurs.
  --
  -- If _focused_tab is 0, that means the root node is focused.  This is a
  -- little weird, and frankly I'm not quite satisfied, but the root node might
- -- not have any links associated with it.
+ -- not have any edges associated with it.
  --
  -- If _closed_at is NULL, there is an open desktop window viewing this view.
  --
- -- _expanded_tabs is a JSON array of link IDs (0 = root node)
+ -- _expanded_tabs is a JSON array of edge IDs (0 = root node)
 CREATE TABLE _views (
     _id INTEGER PRIMARY KEY,
     _root_node INTEGER NOT NULL,

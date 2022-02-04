@@ -9,7 +9,7 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "../model/link.h"
+#include "../model/edge.h"
 #include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"

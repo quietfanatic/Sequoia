@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <wrl.h>
 
-#include "../model/link.h"
+#include "../model/edge.h"
 #include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"
@@ -104,29 +104,29 @@ void Shell::select_location () {
 
 static json::Array make_tab_json (
     const model::Model& model,
-    model::LinkID link, const model::Tab& tab
+    model::EdgeID edge, const model::Tab& tab
 ) {
      // Sending just id means tab should be removed
     if (!tab.node) {
-        return json::array(link);
+        return json::array(edge);
     }
-    auto link_data = model/link;
+    auto edge_data = model/edge;
     auto node_data = model/tab.node;
      // This code path will probably never be hit.
-    if (link && !link_data) {
-        return json::array(link);
+    if (edge && !edge_data) {
+        return json::array(edge);
     }
      // Choose title
     string title = node_data->title;
-     // TODO: don't use this if inverted link
-     // (TODO: support inverted links at all)
-    if (title.empty() && link) title = link_data->title;
+     // TODO: don't use this if inverted edge
+     // (TODO: support inverted edges at all)
+    if (title.empty() && edge) title = edge_data->title;
     if (title.empty()) title = node_data->url;
 
     return json::array(
-        link,
-        link ? json::Value(tab.parent) : json::Value(nullptr),
-        link ? link_data->position.hex() : "80"sv,
+        edge,
+        edge ? json::Value(tab.parent) : json::Value(nullptr),
+        edge ? edge_data->position.hex() : "80"sv,
         node_data->url,
         node_data->favicon_url,
         title,
@@ -210,58 +210,58 @@ void Shell::message_from_webview (const json::Value& message) {
         }
          // Tab actions
         case x31_hash("focus_tab"): {
-            focus_tab(write(app.model), view, model::LinkID{message[1]});
+            focus_tab(write(app.model), view, model::EdgeID{message[1]});
             break;
         }
         case x31_hash("new_child"): {
             create_and_focus_last_child(
                 write(app.model), view,
-                model::LinkID{message[1]}, "about:blank"sv
+                model::EdgeID{message[1]}, "about:blank"sv
             );
             break;
         }
         case x31_hash("trash_tab"): {
-            trash_tab(write(app.model), view, model::LinkID{message[1]});
+            trash_tab(write(app.model), view, model::EdgeID{message[1]});
             break;
         }
         case x31_hash("move_tab_before"): {
-            model::LinkID link {message[1]};
-            model::LinkID target {message[2]};
-            if (link && target) {
-                move_before(write(app.model), link, target);
+            model::EdgeID edge {message[1]};
+            model::EdgeID target {message[2]};
+            if (edge && target) {
+                move_before(write(app.model), edge, target);
             }
             break;
         }
         case x31_hash("move_tab_after"): {
-            model::LinkID link {message[1]};
-            model::LinkID target {message[2]};
-            if (link && target) {
-                move_after(write(app.model), link, target);
+            model::EdgeID edge {message[1]};
+            model::EdgeID target {message[2]};
+            if (edge && target) {
+                move_after(write(app.model), edge, target);
             }
             break;
         }
         case x31_hash("move_tab_first_child"): {
-            model::LinkID link {message[1]};
+            model::EdgeID edge {message[1]};
             model::NodeID parent {message[2]};
-            if (link) {
-                move_first_child(write(app.model), link, parent);
+            if (edge) {
+                move_first_child(write(app.model), edge, parent);
             }
             break;
         }
         case x31_hash("move_tab_last_child"): {
-            model::LinkID link {message[1]};
+            model::EdgeID edge {message[1]};
             model::NodeID parent {message[2]};
-            if (link) {
-                move_last_child(write(app.model), link, parent);
+            if (edge) {
+                move_last_child(write(app.model), edge, parent);
             }
             break;
         }
         case x31_hash("expand_tab"): {
-            expand_tab(write(app.model), view, model::LinkID{message[1]});
+            expand_tab(write(app.model), view, model::EdgeID{message[1]});
             break;
         }
         case x31_hash("contract_tab"): {
-            contract_tab(write(app.model), view, model::LinkID{message[1]});
+            contract_tab(write(app.model), view, model::EdgeID{message[1]});
             break;
         }
          // Main menu

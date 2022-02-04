@@ -7,7 +7,7 @@
 #include "../util/bifractor.h"
 #include "../util/error.h"
 #include "../util/types.h"
-#include "link.h"
+#include "edge.h"
 #include "model.h"
 
 namespace model {
@@ -15,11 +15,11 @@ namespace model {
 struct ViewData {
      // Mutable
     NodeID root_node;
-    LinkID focused_tab;
+    EdgeID focused_tab;
     double closed_at = 0;
     double created_at = 0;
     double trashed_at = 0;
-    std::unordered_set<LinkID> expanded_tabs;
+    std::unordered_set<EdgeID> expanded_tabs;
      // Temporary (not stored in db)
     bool fullscreen = false;
 };
@@ -39,15 +39,15 @@ ViewID create_view_and_node (WriteRef, Str url);
 void close (WriteRef, ViewID);
 void unclose (WriteRef, ViewID);
 void navigate_focused_node (WriteRef, ViewID, Str url);
-void focus_tab (WriteRef, ViewID, LinkID);
+void focus_tab (WriteRef, ViewID, EdgeID);
 
-void create_and_focus_last_child (WriteRef, ViewID view, LinkID focused_link, Str url, Str title = ""sv);
+void create_and_focus_last_child (WriteRef, ViewID view, EdgeID focused_edge, Str url, Str title = ""sv);
 
-void trash_tab (WriteRef, ViewID, LinkID);
-void delete_tab (WriteRef, ViewID, LinkID);
+void trash_tab (WriteRef, ViewID, EdgeID);
+void delete_tab (WriteRef, ViewID, EdgeID);
 
-void expand_tab (WriteRef, ViewID, LinkID);
-void contract_tab (WriteRef, ViewID, LinkID);
+void expand_tab (WriteRef, ViewID, EdgeID);
+void contract_tab (WriteRef, ViewID, EdgeID);
 
 void set_fullscreen (WriteRef, ViewID, bool);
 

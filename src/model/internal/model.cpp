@@ -64,7 +64,7 @@ Database::~Database () {
 Model::Model (Str db_path) :
     db(db_path),
     nodes(db),
-    links(db),
+    edges(db),
     views(db),
     writes(db)
 { }
@@ -85,8 +85,8 @@ const NodeData* operator/ (ReadRef model, NodeID id) {
     LOG("load Node"sv, id);
     return load_mut(model, id);
 }
-const LinkData* operator/ (ReadRef model, LinkID id) {
-    LOG("load Link"sv, id);
+const EdgeData* operator/ (ReadRef model, EdgeID id) {
+    LOG("load Edge"sv, id);
     return load_mut(model, id);
 }
 const ViewData* operator/ (ReadRef model, ViewID id) {

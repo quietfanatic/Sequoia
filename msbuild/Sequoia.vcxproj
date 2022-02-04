@@ -156,7 +156,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="../src/model/internal/link.cpp" />
+    <ClCompile Include="../src/model/internal/edge.cpp" />
     <ClCompile Include="../src/model/internal/model.cpp" />
     <ClCompile Include="../src/model/internal/node.cpp" />
     <ClCompile Include="../src/model/internal/observer.cpp" />
@@ -180,13 +180,13 @@
     <ClCompile Include="../src/win32app/window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../src/model/internal/link-internal.h" />
+    <ClInclude Include="../src/model/internal/edge-internal.h" />
     <ClInclude Include="../src/model/internal/model-internal.h" />
     <ClInclude Include="../src/model/internal/node-internal.h" />
     <ClInclude Include="../src/model/internal/statement.h" />
     <ClInclude Include="../src/model/internal/view-internal.h" />
     <ClInclude Include="../src/model/internal/write-internal.h" />
-    <ClInclude Include="../src/model/link.h" />
+    <ClInclude Include="../src/model/edge.h" />
     <ClInclude Include="../src/model/model.h" />
     <ClInclude Include="../src/model/node.h" />
     <ClInclude Include="../src/model/observer.h" />

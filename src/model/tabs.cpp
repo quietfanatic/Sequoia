@@ -1,7 +1,7 @@
 #include "tabs.h"
 
 #include "node.h"
-#include "link.h"
+#include "edge.h"
 #include "view.h"
 
 namespace model {
@@ -10,27 +10,27 @@ using namespace std;
 
 static void gen_tabs (
     ReadRef model,
-    unordered_map<LinkID, Tab>& tabs, const ViewData& view,
-    LinkID link, NodeID node, LinkID parent
+    unordered_map<EdgeID, Tab>& tabs, const ViewData& view,
+    EdgeID edge, NodeID node, EdgeID parent
 ) {
-    auto children = get_links_from_node(model, node);
+    auto children = get_edges_from_node(model, node);
     auto node_data = model/node;
-    auto link_data = model/link;
+    auto edge_data = model/edge;
 
     int flags = 0;
-    if (view.focused_tab == link) flags |= Tab::FOCUSED;
+    if (view.focused_tab == edge) flags |= Tab::FOCUSED;
     if (node_data->visited_at) flags |= Tab::VISITED;
     if (node_data->state == NodeState::LOADING) flags |= Tab::LOADING;
     if (node_data->state == NodeState::LOADED) flags |= Tab::LOADED;
-    if (link && link_data->trashed_at) flags |= Tab::TRASHED;
+    if (edge && edge_data->trashed_at) flags |= Tab::TRASHED;
     if (children.size()) flags |= Tab::EXPANDABLE; // TODO: don't use if inverted
-    if (view.expanded_tabs.count(link)) flags |= Tab::EXPANDED;
+    if (view.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
 
-    tabs.emplace(link, Tab{node, parent, Tab::Flags(flags)});
-    if (view.expanded_tabs.count(link)) {
-         // TODO: include get_links_to_node
-        for (LinkID child : children) {
-            gen_tabs(model, tabs, view, child, (model/child)->to_node, link);
+    tabs.emplace(edge, Tab{node, parent, Tab::Flags(flags)});
+    if (view.expanded_tabs.count(edge)) {
+         // TODO: include get_edges_to_node
+        for (EdgeID child : children) {
+            gen_tabs(model, tabs, view, child, (model/child)->to_node, edge);
         }
     }
 }
@@ -38,7 +38,7 @@ static void gen_tabs (
 TabTree create_tab_tree (ReadRef model, ViewID view) {
     TabTree r;
     auto view_data = model/view;
-    gen_tabs(model, r, *view_data, LinkID{}, view_data->root_node, LinkID{});
+    gen_tabs(model, r, *view_data, EdgeID{}, view_data->root_node, EdgeID{});
     return r;
 }
 
@@ -65,7 +65,7 @@ TabChanges get_changed_tabs (
         auto old = old_tabs.find(id);
         if (old == old_tabs.end()
             || tab.flags != old->second.flags
-            || update.links.count(id)
+            || update.edges.count(id)
             || update.nodes.count(tab.node)
         ) {
             r.emplace_back(id, tab);

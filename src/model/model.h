@@ -50,8 +50,8 @@ struct ModelID {
 
 struct NodeData;
 using NodeID = ModelID<NodeData>;
-struct LinkData;
-using LinkID = ModelID<LinkData>;
+struct EdgeData;
+using EdgeID = ModelID<EdgeData>;
 struct ViewData;
 using ViewID = ModelID<ViewData>;
 
@@ -66,7 +66,7 @@ using ViewID = ModelID<ViewData>;
  // operator[] would be best, but it can't be a non-member function, for no
  // particularly good reason I can see.
 const NodeData* operator / (ReadRef, NodeID);
-const LinkData* operator / (ReadRef, LinkID);
+const EdgeData* operator / (ReadRef, EdgeID);
 const ViewData* operator / (ReadRef, ViewID);
 
 } // namespace model

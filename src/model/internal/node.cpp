@@ -196,7 +196,7 @@ static tap::TestSet tests ("model/node", []{
         ok(update.nodes.count(node), "Update has node 1");
         ok(update.nodes.count(node2), "Update has node 2");
         ok(update.nodes.count(node3), "Update has node 3");
-        is(update.links.size(), 0, "Update has 0 links");
+        is(update.edges.size(), 0, "Update has 0 edges");
         is(update.views.size(), 0, "Update had 0 views");
     }};
     doesnt_throw([&]{ observe(model, &to1); }, "observe");
@@ -212,7 +212,7 @@ static tap::TestSet tests ("model/node", []{
         ok(!update.nodes.count(node), "Update doesn't have node 1");
         ok(update.nodes.count(node2), "Update has node 2");
         ok(update.nodes.count(node3), "Update has node 3");
-        is(update.links.size(), 0, "Update has 0 links");
+        is(update.edges.size(), 0, "Update has 0 edges");
         is(update.views.size(), 0, "Update had 0 views");
     }};
     observe(model, &to2);

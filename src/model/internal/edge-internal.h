@@ -1,5 +1,5 @@
 #pragma once
-#include "../link.h"
+#include "../edge.h"
 
 #include <memory>
 #include <unordered_map>
@@ -8,10 +8,10 @@
 
 namespace model {
 
-LinkData* load_mut (ReadRef, LinkID);
+EdgeData* load_mut (ReadRef, EdgeID);
 
-struct LinkModel {
-    mutable std::unordered_map<LinkID, std::unique_ptr<LinkData>> cache;
+struct EdgeModel {
+    mutable std::unordered_map<EdgeID, std::unique_ptr<EdgeData>> cache;
     Statement st_load;
     Statement st_from_node;
     Statement st_to_node;
@@ -19,7 +19,7 @@ struct LinkModel {
     Statement st_first_position_after;
     Statement st_last_position_before;
     Statement st_save;
-    LinkModel (sqlite3*);
+    EdgeModel (sqlite3*);
 };
 
 } // namespace model

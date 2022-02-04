@@ -16,9 +16,9 @@ namespace model {
  //
  // ...and let's be real, this is ants compared to the js dom.
  //
- // Tabs are keyed by their LinkID (which is outside of this struct).  This
- // unfortunately means there can only be one tab per link, so this may have
- // to change eventually.  A LinkID of 0 represents the root tab of a view.
+ // Tabs are keyed by their EdgeID (which is outside of this struct).  This
+ // unfortunately means there can only be one tab per edge, so this may have
+ // to change eventually.  A EdgeID of 0 represents the root tab of a view.
 struct Tab {
      // Must match constants in shell.js
      // TODO: loaded and loading don't match bools in NodeData
@@ -32,17 +32,17 @@ struct Tab {
         EXPANDED = 64,
     };
     NodeID node;
-    LinkID parent;
+    EdgeID parent;
     Flags flags;
 };
 
-using TabTree = std::unordered_map<LinkID, Tab>;
+using TabTree = std::unordered_map<EdgeID, Tab>;
 
 TabTree create_tab_tree (ReadRef model, ViewID view);
 
  // A removed tab is represented by a tab with 0 for its NodeID.  This is kind
  // of dumb and may change.
-using TabChanges = std::vector<std::pair<LinkID, Tab>>;
+using TabChanges = std::vector<std::pair<EdgeID, Tab>>;
 
  // Including an Update here is kinda weird, but it'll have to do until we get
  // a proper app model interface.

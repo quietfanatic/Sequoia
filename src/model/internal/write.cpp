@@ -25,8 +25,8 @@ Write::~Write () {
         for (NodeID node : update.nodes) {
             model.nodes.cache.erase(node);
         }
-        for (LinkID link : update.links) {
-            model.links.cache.erase(link);
+        for (EdgeID edge : update.edges) {
+            model.edges.cache.erase(edge);
         }
         for (ViewID view : update.views) {
             model.views.cache.erase(view);
