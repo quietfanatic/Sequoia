@@ -171,14 +171,14 @@ let $main_menu = $("nav", {id:"main-menu"},
     $("div", "Enter fullscreen", {
         click: menu_item("fullscreen"),
     }),
+    $("div", "Open selected links in tabs", {
+        click: menu_item("open_selected_links"),
+    }),
     $("div", "Fix database problems", {
         click: menu_item("fix_problems"),
     }),
     $("div", "Register as browser with Windows", {
         click: menu_item("register_as_browser"),
-    }),
-    $("div", "Open selected links in tabs", {
-        click: menu_item("open_selected_links"),
     }),
     $("div", "Quit", {
         click: menu_item("quit"),
@@ -245,6 +245,9 @@ let $context_menu = $("nav", {id:"context-menu"},
     }),
     $("div", "New Child", {
         click: context_menu_item("new_child"),
+    }),
+    $("div", "Show tab in new window", {
+        click: context_menu_item("show_in_new_window"),
     }),
      // Don't hide menu when clicking it.
     {click: e=>{ handled(e); }},

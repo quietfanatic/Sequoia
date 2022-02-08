@@ -430,6 +430,11 @@ void Window::message_from_shell (json::Value&& message) {
         expanded_tabs.erase(tab);
         break;
     }
+    case x31_hash("show_in_new_window"): {
+        int64 tab = message[1];
+        create_window(tab, tab);
+        break;
+    }
      // Main menu
     case x31_hash("fullscreen"): {
         fullscreen ? leave_fullscreen() : enter_fullscreen();
