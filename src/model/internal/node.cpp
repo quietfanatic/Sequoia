@@ -39,11 +39,17 @@ SELECT _id FROM _nodes WHERE _url_hash = ? AND _url = ?
 ORDER BY _id
 )"sv;
 
-vector<NodeID> get_nodes_with_url (ReadRef model, Str url) {
+std::vector<NodeID> get_nodes_with_url (ReadRef model, Str url) {
     LOG("get_nodes_with_url", url);
     UseStatement st (model->nodes.st_with_url);
     st.params(x31_hash(url), url);
     return st.collect<NodeID>();
+}
+
+NodeID get_node_with_url (ReadRef model, Str url) {
+    auto res = get_nodes_with_url(model, url);
+    AA(res.size() <= 1);
+    return res.size() == 1 ? res[0] : NodeID{};
 }
 
 static constexpr Str sql_save = R"(
@@ -76,6 +82,11 @@ NodeID create_node (WriteRef model, Str url, Str title) {
     auto [iter, emplaced] = model->nodes.cache.try_emplace(id, move(data));
     AA(emplaced);
     return id;
+}
+
+NodeID ensure_node_with_url (WriteRef model, Str url) {
+    NodeID id = get_node_with_url(model, url);
+    return id ? id : create_node(model, url);
 }
 
 void set_url (WriteRef model, NodeID id, Str url) {

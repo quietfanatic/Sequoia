@@ -44,12 +44,12 @@ int App::run (const vector<String>& urls) {
         unclose(write(model), view);
     }
     else {
-        create_view_and_node(write(model), "about:blank"sv);
+        create_view_with_tab(write(model), "about:blank"sv);
     }
      // Open new window if requested
     if (!urls.empty()) {
         if (urls.size() > 1) ERR("Multiple URL arguments NYI"sv);
-        create_view_and_node(write(model), urls[0]);
+        create_view_with_tab(write(model), urls[0]);
     }
      // Run message loop
     MSG msg;

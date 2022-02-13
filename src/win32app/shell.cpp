@@ -164,7 +164,11 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("navigate"): {
-            navigate_focused_node(write(app.model), view, message[1]);
+             // TODO: is this actually what we want to do?
+            auto node = focused_node(app.model, view);
+            if (node) {
+                set_url(write(app.model), node, message[1]);
+            }
             break;
         }
          // Toolbar buttons
@@ -214,10 +218,10 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("new_child"): {
-            create_and_focus_last_child(
-                write(app.model), view,
-                model::EdgeID{message[1]}, "about:blank"sv
-            );
+            auto w = write(app.model);
+            auto node = create_node(w, "about:blank"sv);
+            auto edge = make_last_child(w, focused_node(w, view), node);
+            focus_tab(w, view, edge);
             break;
         }
         case x31_hash("trash_tab"): {

@@ -16,9 +16,8 @@ struct ViewData {
      // Mutable
     NodeID root_node;
     EdgeID focused_tab;
-    double closed_at = 0;
     double created_at = 0;
-    double trashed_at = 0;
+    double closed_at = 0;
     std::unordered_set<EdgeID> expanded_tabs;
      // Temporary (not stored in db)
     bool fullscreen = false;
@@ -32,19 +31,19 @@ static inline NodeID focused_node (ReadRef model, ViewID view) {
     auto data = model/view;
     return data->focused_tab
         ? (model/data->focused_tab)->to_node
-        : data->root_node;
+        : NodeID{};
 }
 
-ViewID create_view_and_node (WriteRef, Str url);
+std::vector<EdgeID> get_toplevel_tabs (ReadRef, ViewID);
+
+ViewID create_view (WriteRef);
+ViewID create_view_with_tab (WriteRef, Str url, Str title = "");
+
 void close (WriteRef, ViewID);
 void unclose (WriteRef, ViewID);
-void navigate_focused_node (WriteRef, ViewID, Str url);
 void focus_tab (WriteRef, ViewID, EdgeID);
 
-void create_and_focus_last_child (WriteRef, ViewID view, EdgeID focused_edge, Str url, Str title = ""sv);
-
 void trash_tab (WriteRef, ViewID, EdgeID);
-void delete_tab (WriteRef, ViewID, EdgeID);
 
 void expand_tab (WriteRef, ViewID, EdgeID);
 void contract_tab (WriteRef, ViewID, EdgeID);

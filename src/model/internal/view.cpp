@@ -16,8 +16,12 @@ using namespace std;
 
 namespace model {
 
+static String view_url(ViewID id) {
+    return "sequoia:view/" + std::to_string(int64(id));
+};
+
 static constexpr Str sql_load = R"(
-SELECT _root_node, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs
+SELECT _focused_tab, _created_at, _closed_at, _expanded_tabs
 FROM _views WHERE _id = ?
 )"sv;
 
@@ -31,13 +35,12 @@ ViewData* load_mut (ReadRef model, ViewID id) {
     UseStatement st (model->views.st_load);
     st.params(id);
     if (st.step()) {
-        data = make_unique<ViewData>();
-        data->root_node = st[0];
-        data->focused_tab = st[1];
-        data->created_at = st[2];
-        data->closed_at = st[3];
-        data->trashed_at = st[4];
-        for (int64 l : json::Array(json::parse(st[5]))) {
+        data->root_node = get_node_with_url(model, view_url(id));
+        AA(data->root_node);
+        data->focused_tab = st[0];
+        data->created_at = st[1];
+        data->closed_at = st[2];
+        for (int64 l : json::Array(json::parse(st[4]))) {
             data->expanded_tabs.insert(EdgeID{l});
         }
     }
@@ -66,9 +69,14 @@ ViewID get_last_closed_view (ReadRef model) {
     else return ViewID{};
 }
 
+std::vector<EdgeID> get_toplevel_tabs (ReadRef model, ViewID id) {
+    auto data = model/id;
+    return get_edges_from_node(model, data->root_node);
+}
+
 static constexpr Str sql_save = R"(
-INSERT OR REPLACE INTO _views (_id, _root_node, _focused_tab, _created_at, _closed_at, _trashed_at, _expanded_tabs)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT OR REPLACE INTO _views (_id, _focused_tab, _created_at, _closed_at, _expanded_tabs)
+VALUES (?, ?, ?, ?, ?)
 )"sv;
 
 static ViewID save (WriteRef model, ViewID id, const ViewData* data) {
@@ -83,8 +91,8 @@ static ViewID save (WriteRef model, ViewID id, const ViewData* data) {
 
     UseStatement st (model->views.st_save);
     st.params(
-        null_default(id), data->root_node, data->focused_tab,
-        data->created_at, data->closed_at, data->trashed_at,
+        null_default(id), data->focused_tab,
+        data->created_at, data->closed_at,
         json::stringify(expanded_tabs_json)
     );
     st.run();
@@ -94,15 +102,22 @@ static ViewID save (WriteRef model, ViewID id, const ViewData* data) {
     return id;
 }
 
-ViewID create_view_and_node (WriteRef model, Str url) {
-    LOG("create_view_and_node"sv, url);
+ViewID create_view (WriteRef model) {
+    LOG("create_view"sv);
     auto data = make_unique<ViewData>();
-    data->root_node = create_node(model, url);
     data->focused_tab = EdgeID{};
     data->created_at = now();
     auto id = save(model, ViewID{}, &*data);
+    data->root_node = ensure_node_with_url(model, view_url(id));
     auto [iter, emplaced] = model->views.cache.try_emplace(id, move(data));
     AA(emplaced);
+    return id;
+}
+
+ViewID create_view_with_tab (WriteRef model, Str url, Str title) {
+    auto id = create_view(model);
+    auto node = create_node(model, url, title);
+    make_last_child(model, (model/id)->root_node, node);
     return id;
 }
 
@@ -120,13 +135,6 @@ void unclose (WriteRef model, ViewID id) {
     save(model, id, data);
 }
 
-void navigate_focused_node (WriteRef model, ViewID id, Str url) {
-    LOG("navigate_focused_node"sv, id, url);
-    if (NodeID node = focused_node(model, id)) {
-        set_url(model, node, url);
-    }
-}
-
 void focus_tab (WriteRef model, ViewID id, EdgeID tab) {
     LOG("focus_tab"sv, id, tab);
     auto data = load_mut(model, id);
@@ -134,23 +142,11 @@ void focus_tab (WriteRef model, ViewID id, EdgeID tab) {
     save(model, id, data);
 }
 
-void create_and_focus_last_child (WriteRef model, ViewID id, EdgeID parent_tab, Str url, Str title) {
-    LOG("create_and_focus_last_child"sv, id, parent_tab, url);
-    auto data = load_mut(model, id);
-    NodeID parent_node = parent_tab
-        ? parent_node = load_mut(model, parent_tab)->from_node
-        : data->root_node;
-    NodeID child = create_node(model, url, title);
-    EdgeID edge = make_last_child(model, parent_node, child);
-    data->focused_tab = edge;
-    data->expanded_tabs.insert(parent_tab);
-    save(model, id, data);
-}
-
 void trash_tab (WriteRef model, ViewID id, EdgeID tab) {
     LOG("trash_tab"sv, id, tab);
-    if (tab) trash(model, tab);
-    else close(model, id);
+    AA(tab);
+    trash(model, tab);
+     // TODO: close this view if it's the last tab
 }
 
 void expand_tab (WriteRef model, ViewID id, EdgeID tab) {

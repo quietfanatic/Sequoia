@@ -28,7 +28,15 @@ struct NodeData {
     ViewID viewing_view;
 };
 
+ // Returns NodeID{} if the node doesn't exist
+NodeID get_node_with_url (ReadRef, Str url);
+ // Creates node if it doesn't exist or gets it if it does.
+NodeID ensure_node_with_url (WriteRef, Str url);
+
 std::vector<NodeID> get_nodes_with_url (ReadRef, Str url);
+
+ // TODO: move this back to internal once the about:blank stuff is gone
+NodeID create_node (WriteRef, Str url, Str title = ""sv);
 
 void set_url (WriteRef, NodeID, Str);
 void set_title (WriteRef, NodeID, Str);

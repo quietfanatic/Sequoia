@@ -35,9 +35,8 @@ PRAGMA user_version = 6;
 
 ----- NODES
 
- -- Generally there will be one node per URL, but the user can make multiple
- -- nodes for the same URL.  TODO: Do we want to allow multiple URLs for one
- -- node if they only differ by fragment?
+ -- For now, there can only be one node per URL.  At this time, it's not clear
+ -- how best to support that.
  --
  -- _url: Currently TEXT but will be deduplicated in a separate table
  -- eventually.
@@ -57,7 +56,8 @@ CREATE TABLE _nodes (
     _group INTEGER NOT NULL,
     CHECK(_id > 0),
     CHECK(_url <> ''),
-    CHECK(_visited_at >= 0)
+    CHECK(_visited_at >= 0),
+    CHECK(_group >= 0)
 );
 CREATE INDEX _nodes_by_url_hash ON _nodes (
     _url_hash
@@ -66,7 +66,7 @@ CREATE INDEX _nodes_by_url_hash ON _nodes (
  -- visited, the one with the largest id (last created).
 CREATE INDEX _nodes_by_group ON _nodes (
     _group, _visited_at, _id
-) WHERE _group <> 0;
+) WHERE _group > 0;
 
 CREATE INDEX _nodes_by_visited_at ON _nodes (
     _visited_at
@@ -81,6 +81,7 @@ CREATE INDEX _nodes_by_visited_at ON _nodes (
  -- _opener_node is the node that the edge was opened from, or NULL if
  -- manually created.  For normal parent/child edges, this will be the same as
  -- _from_node, but for edges opened as siblings or moved, it may differ.
+ -- (DEPRECATED)
  --
  -- _position is a sortable blob, see util/bifractor.h.  Every edge with a given
  -- _from_node must have a unique position, and although the database can't
@@ -120,42 +121,7 @@ CREATE INDEX _trashed_edges_by_trashed_at ON _edges (
 
 ----- TAGS
 
-CREATE TABLE _tags (
-    _id INTEGER PRIMARY KEY,
-    _name TEXT NOT NULL,
-    _trashed_at REAL NOT NULL,
-    CHECK(_id > 0),
-    CHECK(LENGTH(_name) > 0),
-    CHECK(_trashed_at >= 0)
-);
-
-CREATE TABLE _node_tags (
-    _node INTEGER NOT NULL,
-    _tag INTEGER NOT NULL,
-    PRIMARY KEY(_node, _tag),
-    CHECK(_node > 0),
-    CHECK(_tag > 0)
-) WITHOUT ROWID;
-
- -- SQLite properly deduplicates columns in the table's primary key that are
- -- also in the index's key, so this index should be exactly the same size as
- -- its table.
-CREATE INDEX _node_tags_by_tag ON _node_tags (
-    _tag, _node
-);
-
------ GROUPS
-
- -- Putting nodes in a group means the user wants the nodes to be considered
- -- semantically the same node.  The database attaches edges and tags to
- -- individual nodes instead of groups, so if nodes are merged into a group and
- -- then split up, each node remembers its own stuff.
-CREATE TABLE _groups (
-    _id INTEGER PRIMARY KEY,
-    _current_node INTEGER NOT NULL
-    CHECK(_id > 0),
-    CHECK(_current_node > 0)
-);
+ -- NYI
 
 ----- VIEWS
 
@@ -170,34 +136,31 @@ CREATE TABLE _groups (
  -- their name will take both a ViewID and an EdgeID, and functions with "edge"
  -- in their name only take an EdgeID.
  --
- -- _root_node must point to a node with a _url of "sequoia:view/<_id>".
- -- Top-level tabs will have an edge with _from_node = _root_node.
+ -- Top-level tabs of this view are edges with a _from_node with a _url of
+ -- sequoia:view/<_view_nodes._id>.
  --
  -- _focused_tab may be 0, in which case there is no focused tab.
  --
- -- If _closed_at is NULL, there is an open desktop window viewing this view.
+ -- If _closed_at is not 0, there is an open window tracking this view.
  --
  -- _expanded_tabs is a JSON array of edge IDs.  The order of expanded tabs is
  -- not meaningful, but for consistency we'll store them sorted by ID.
 CREATE TABLE _views (
     _id INTEGER PRIMARY KEY,
-    _root_node INTEGER NOT NULL,
     _focused_tab INTEGER NOT NULL,
     _created_at REAL NOT NULL,
     _closed_at REAL NOT NULL,
-    _trashed_at REAL NOT NULL,
     _expanded_tabs TEXT NOT NULL,
     CHECK(_id > 0),
-    CHECK(_root_node > 0),
     CHECK(_focused_tab >= 0),
     CHECK(_created_at > 0),
     CHECK(_closed_at >= 0),
-    CHECK(_trashed_at >= 0),
     CHECK(_expanded_tabs LIKE '[%]')
 );
 
- -- These aren't really needed for performance, but they make semantic sense.
-CREATE INDEX _unclosed_views_by_created_at ON _views (
+ -- These aren't really necessary for efficiency, but they semantically make
+ -- sense.
+CREATE INDEX _open_views_by_created_at ON _views (
     _created_at
 ) WHERE _closed_at = 0;
 

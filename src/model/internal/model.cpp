@@ -106,13 +106,18 @@ ModelTestEnvironment::ModelTestEnvironment () {
 ModelTestEnvironment::~ModelTestEnvironment () {
      // The runtime on Windows is not very helpful when an exception is thrown
      //  in a destructor.
-    try {
+    if (uncaught_exceptions()) {
+        try {
+            uninit_log();
+            filesystem::remove_all(test_folder);
+        }
+        catch (std::exception& e) {
+            tap::diag(e.what());
+        }
+    }
+    else {
         uninit_log();
         filesystem::remove_all(test_folder);
-    }
-    catch (std::exception& e) {
-        tap::diag(e.what());
-        tap::BAIL_OUT();
     }
 }
 #endif
