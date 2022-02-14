@@ -326,7 +326,7 @@ function update_item (data) {
         item.$item.classList.toggle("expanded", flags & EXPANDED);
         if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
 
-        item.$title.innerText = title
+        item.$title.innerText = title;
         item.$tab.title = title + "\n" + url;
 
         if (favicon_url) {

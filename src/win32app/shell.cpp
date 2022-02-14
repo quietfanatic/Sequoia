@@ -104,34 +104,39 @@ void Shell::select_location () {
 
 static json::Array make_tab_json (
     const model::Model& model,
-    model::EdgeID edge, const model::Tab& tab
+    model::EdgeID edge, const Tab& tab
 ) {
-     // Sending just id means tab should be removed
-    if (!tab.node) {
-        return json::array(edge);
-    }
+    AA(edge);
     auto edge_data = model/edge;
-    auto node_data = model/tab.node;
-     // This code path will probably never be hit.
-    if (edge && !edge_data) {
+    if (!edge_data) {
         return json::array(edge);
     }
-     // Choose title
-    string title = node_data->title;
-     // TODO: don't use this if inverted edge
-     // (TODO: support inverted edges at all)
-    if (title.empty() && edge) title = edge_data->title;
-    if (title.empty()) title = node_data->url;
+    if (tab.node) {
+        auto node_data = model/tab.node;
+         // This code path will probably never be hit.
+        string title = node_data->title;
+        if (title.empty()) title = edge_data->title;
+        if (title.empty()) title = node_data->url;
 
-    return json::array(
-        edge,
-        edge ? json::Value(tab.parent) : json::Value(nullptr),
-        edge ? edge_data->position.hex() : "80"sv,
-        node_data->url,
-        node_data->favicon_url,
-        title,
-        tab.flags
-    );
+        return json::array(
+            edge,
+            tab.parent,
+            edge_data->position.hex(),
+            node_data->url,
+            node_data->favicon_url,
+            title,
+            tab.flags
+        );
+    }
+    else {
+        return json::array(
+            edge,
+            tab.parent,
+            edge_data->position.hex(),
+            ""s, ""s, ""s,
+            tab.flags
+        );
+    }
 }
 
 void Shell::message_from_webview (const json::Value& message) {
@@ -146,10 +151,10 @@ void Shell::message_from_webview (const json::Value& message) {
                     std::pair{"theme"sv, app.settings.theme}
                 )
             ));
-            tabs = create_tab_tree(app.model, view);
+            current_tabs = create_tab_tree(app.model, view);
             json::Array tab_updates;
-            tab_updates.reserve(tabs.size());
-            for (auto& [id, tab] : tabs) {
+            tab_updates.reserve(current_tabs.size());
+            for (auto& [id, tab] : current_tabs) {
                 tab_updates.emplace_back(make_tab_json(app.model, id, tab));
             }
             message_to_webview(json::array("view"sv, tab_updates));
@@ -219,8 +224,7 @@ void Shell::message_from_webview (const json::Value& message) {
         }
         case x31_hash("new_child"): {
             auto w = write(app.model);
-            auto node = create_node(w, "about:blank"sv);
-            auto edge = make_last_child(w, focused_node(w, view), node);
+            auto edge = make_last_child(w, focused_node(w, view), model::NodeID{});
             focus_tab(w, view, edge);
             break;
         }
@@ -304,15 +308,20 @@ void Shell::message_from_webview (const json::Value& message) {
 
 void Shell::update (const model::Update& update) {
      // Generate new tab collection
-    model::TabTree old_tabs = move(tabs);
-    tabs = create_tab_tree(app.model, view);
+    TabTree old_tabs = move(current_tabs);
+    current_tabs = create_tab_tree(app.model, view);
      // Send changed tabs to shell
     if (ready) {
-        model::TabChanges changes = get_changed_tabs(update, old_tabs, tabs);
+        TabChanges changes = get_changed_tabs(update, old_tabs, current_tabs);
         json::Array tab_updates;
         tab_updates.reserve(changes.size());
         for (auto& [id, tab] : changes) {
-            tab_updates.emplace_back(make_tab_json(app.model, id, tab));
+            if (tab) {
+                tab_updates.emplace_back(make_tab_json(app.model, id, *tab));
+            }
+            else {
+                tab_updates.emplace_back(json::array(id));
+            }
         }
         if (tab_updates.size()) {
             message_to_webview(json::array("update"sv, tab_updates));

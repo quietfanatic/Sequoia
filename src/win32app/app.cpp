@@ -38,18 +38,23 @@ int App::run (const vector<String>& urls) {
     else if (!urls.empty()) {
          // Open urls later
     }
-    else if (auto view = get_last_closed_view(model)) {
+    else if (auto closed_view = get_last_closed_view(model)) {
          // TODO: unclose multiple views if they were closed in
          // quick succession
-        unclose(write(model), view);
+        unclose(write(model), closed_view);
     }
     else {
-        create_view_with_tab(write(model), "about:blank"sv);
+        auto w = write(model);
+        auto view = create_view(w);
+        make_last_child(w, (w/view)->root_node, model::NodeID{});
     }
      // Open new window if requested
     if (!urls.empty()) {
         if (urls.size() > 1) ERR("Multiple URL arguments NYI"sv);
-        create_view_with_tab(write(model), urls[0]);
+        auto w = write(model);
+        auto view = create_view(w);
+        auto node = ensure_node_with_url(w, urls[0]);
+        make_last_child(w, (w/view)->root_node, node);
     }
      // Run message loop
     MSG msg;

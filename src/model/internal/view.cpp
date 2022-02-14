@@ -114,13 +114,6 @@ ViewID create_view (WriteRef model) {
     return id;
 }
 
-ViewID create_view_with_tab (WriteRef model, Str url, Str title) {
-    auto id = create_view(model);
-    auto node = create_node(model, url, title);
-    make_last_child(model, (model/id)->root_node, node);
-    return id;
-}
-
 void close (WriteRef model, ViewID id) {
     LOG("close View"sv, id);
     auto data = load_mut(model, id);

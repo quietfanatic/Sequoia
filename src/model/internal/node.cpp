@@ -39,15 +39,11 @@ SELECT _id FROM _nodes WHERE _url_hash = ? AND _url = ?
 ORDER BY _id
 )"sv;
 
-std::vector<NodeID> get_nodes_with_url (ReadRef model, Str url) {
-    LOG("get_nodes_with_url", url);
+NodeID get_node_with_url (ReadRef model, Str url) {
+    LOG("get_node_with_url", url);
     UseStatement st (model->nodes.st_with_url);
     st.params(x31_hash(url), url);
-    return st.collect<NodeID>();
-}
-
-NodeID get_node_with_url (ReadRef model, Str url) {
-    auto res = get_nodes_with_url(model, url);
+    auto res = st.collect<NodeID>();
     AA(res.size() <= 1);
     return res.size() == 1 ? res[0] : NodeID{};
 }
@@ -72,21 +68,17 @@ static NodeID save (WriteRef model, NodeID id, const NodeData* data) {
     return id;
 }
 
-NodeID create_node (WriteRef model, Str url, Str title) {
-    LOG("create_node"sv, url, title);
+NodeID ensure_node_with_url (WriteRef model, Str url) {
     AA(url != ""sv);
+    NodeID id = get_node_with_url(model, url);
+    if (id) return id;
+    LOG("creating node"sv, url);
     auto data = make_unique<NodeData>();
     data->url = url;
-    data->title = title;
-    NodeID id = save(model, NodeID{}, &*data);
+    id = save(model, NodeID{}, &*data);
     auto [iter, emplaced] = model->nodes.cache.try_emplace(id, move(data));
     AA(emplaced);
     return id;
-}
-
-NodeID ensure_node_with_url (WriteRef model, Str url) {
-    NodeID id = get_node_with_url(model, url);
-    return id ? id : create_node(model, url);
 }
 
 void set_url (WriteRef model, NodeID id, Str url) {
@@ -146,10 +138,9 @@ static tap::TestSet tests ("model/node", []{
     Write* tr = nullptr;
     doesnt_throw([&]{ tr = new Write (model); }, "Start write transaction");
     doesnt_throw([&]{
-        node = create_node(*tr, "test url", "test title");
+        node = ensure_node_with_url(*tr, "test url");
     }, "create_node");
-    doesnt_throw([&]{ set_url(*tr, node, "url 2"); }, "set_url");
-    doesnt_throw([&]{ set_title(*tr, node, "title 2"); }, "set_title");
+    doesnt_throw([&]{ set_title(*tr, node, "test title"); }, "set_title");
     doesnt_throw([&]{ set_favicon_url(*tr, node, "con"); }, "set_favicon_url");
     double before = now();
     doesnt_throw([&]{ set_visited(*tr, node); }, "set_visited");
@@ -158,21 +149,21 @@ static tap::TestSet tests ("model/node", []{
 
     const NodeData* data;
     doesnt_throw([&]{ data = model/node; }, "load Node from cache");
-    is(data->url, "url 2", "url from cache");
-    is(data->title, "title 2", "title from cache");
+    is(data->url, "test url", "url from cache");
+    is(data->title, "test title", "title from cache");
     is(data->favicon_url, "con", "favicon_url from cache");
     between(data->visited_at, before, after, "visited_at from cache");
     is(data->state, NodeState::LOADING, "state from cache");
 
     model.nodes.cache.clear();
     doesnt_throw([&]{ data = model/node; }, "load node from db");
-    is(data->url, "url 2", "url from db");
-    is(data->title, "title 2", "title from db");
+    is(data->url, "test url", "url from db");
+    is(data->title, "test title", "title from db");
     is(data->favicon_url, "con", "favicon_url from db");
     between(data->visited_at, before, after, "visited_at from db");
     is(data->state, NodeState::UNLOADED, "state resets when reading from db");
 
-    NodeID node2 = create_node(*tr, "url 2");
+    NodeID node2 = ensure_node_with_url(*tr, "url 2");
     const NodeData* data2 = model/node2;
     is(data2->title, "", "default title from cache");
     is(data2->favicon_url, "", "default favicon_url from cache");
@@ -184,12 +175,10 @@ static tap::TestSet tests ("model/node", []{
     is(data2->favicon_url, "", "default favicon_url from db");
     is(data2->visited_at, 0, "default visited_at from cache");
 
-    NodeID node3 = create_node(*tr, "url 3", "title 4");
-    auto nodes = get_nodes_with_url(model, "url 2");
-    is(nodes.size(), 2, "get_nodes_with_url");
-     // Results should be sorted by id
-    is(nodes[0], node, "get_nodes_with_url[0]");
-    is(nodes[1], node2, "get_nodes_with_url[1]");
+    NodeID node3 = ensure_node_with_url(*tr, "url 3");
+
+    NodeID node_copy = ensure_node_with_url(*tr, "test url");
+    is(node_copy, node, "ensure_node_with_url can return existing node");
 
     struct TestObserver : Observer {
         std::function<void(const Update&)> f;

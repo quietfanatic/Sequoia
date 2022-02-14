@@ -13,10 +13,11 @@
 namespace model {
 
 struct ViewData {
-     // Mutable
-    NodeID root_node;
-    EdgeID focused_tab;
+     // Immutable
     double created_at = 0;
+    NodeID root_node;
+     // Mutable
+    EdgeID focused_tab;
     double closed_at = 0;
     std::unordered_set<EdgeID> expanded_tabs;
      // Temporary (not stored in db)
@@ -36,8 +37,11 @@ static inline NodeID focused_node (ReadRef model, ViewID view) {
 
 std::vector<EdgeID> get_toplevel_tabs (ReadRef, ViewID);
 
+ // Contains the set of tabs visible within this view; includes toplevel tabs
+ // and tabs recursively available through expanded_tabs.
+std::unordered_set<EdgeID> get_visible_tabs (ReadRef, ViewID);
+
 ViewID create_view (WriteRef);
-ViewID create_view_with_tab (WriteRef, Str url, Str title = "");
 
 void close (WriteRef, ViewID);
 void unclose (WriteRef, ViewID);

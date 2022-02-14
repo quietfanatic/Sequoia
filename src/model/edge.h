@@ -34,12 +34,6 @@ EdgeID make_last_child (WriteRef, NodeID parent, NodeID to, Str title = "");
 EdgeID make_next_sibling (WriteRef, EdgeID prev, NodeID to, Str title = "");
 EdgeID make_prev_sibling (WriteRef, EdgeID next, NodeID to, Str title = "");
 
- // These are just shortcuts for create_node and make_*
-EdgeID create_first_child (WriteRef, NodeID parent, Str url, Str title = "");
-EdgeID create_last_child (WriteRef, NodeID parent, Str url, Str title = "");
-EdgeID create_next_sibling (WriteRef, EdgeID prev, Str url, Str title = "");
-EdgeID create_prev_sibling (WriteRef, EdgeID next, Str url, Str title = "");
-
 void move_first_child (WriteRef, EdgeID, NodeID parent);
 void move_last_child (WriteRef, EdgeID, NodeID parent);
 void move_after (WriteRef, EdgeID, EdgeID prev);

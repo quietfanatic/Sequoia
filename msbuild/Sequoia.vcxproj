@@ -162,7 +162,6 @@
     <ClCompile Include="../src/model/internal/observer.cpp" />
     <ClCompile Include="../src/model/internal/view.cpp" />
     <ClCompile Include="../src/model/internal/write.cpp" />
-    <ClCompile Include="../src/model/tabs.cpp" />
     <ClCompile Include="../src/sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="../src/tap/tap.cpp" />
     <ClCompile Include="../src/util/bifractor.cpp" />
@@ -177,6 +176,7 @@
     <ClCompile Include="../src/win32app/nursery.cpp" />
     <ClCompile Include="../src/win32app/profile.cpp" />
     <ClCompile Include="../src/win32app/shell.cpp" />
+    <ClCompile Include="../src/win32app/tabs.cpp" />
     <ClCompile Include="../src/win32app/window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -190,7 +190,6 @@
     <ClInclude Include="../src/model/model.h" />
     <ClInclude Include="../src/model/node.h" />
     <ClInclude Include="../src/model/observer.h" />
-    <ClInclude Include="../src/model/tabs.h" />
     <ClInclude Include="../src/model/view.h" />
     <ClInclude Include="../src/model/write.h" />
     <ClInclude Include="../src/sqlite-amalgamation-3300100/sqlite3.h" />
@@ -208,6 +207,7 @@
     <ClInclude Include="../src/win32app/nursery.h" />
     <ClInclude Include="../src/win32app/profile.h" />
     <ClInclude Include="../src/win32app/shell.h" />
+    <ClInclude Include="../src/win32app/tabs.h" />
     <ClInclude Include="../src/win32app/window.h" />
   </ItemGroup>
   <ItemGroup>

@@ -95,7 +95,11 @@ Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
-            create_last_child(write(app.model), node, from_utf16(url.get()));
+
+            auto w = write(app.model);
+            auto child = ensure_node_with_url(w, from_utf16(url.get()));
+            make_last_child(w, node, child);
+
             args->put_Handled(TRUE);
             return S_OK;
         }).Get(), nullptr));
@@ -193,24 +197,19 @@ void Activity::message_from_webview (const json::Value& message) {
             bool alt = message[6];
             bool ctrl = message[7];
             if (button == 1) {
-    //            if (double_click) {
-    //                if (last_created_new_child && window) {
-    //                     // TODO: figure out why the new tab doesn't get loaded
-    //                    set_window_focused_tab(window->id, last_created_new_child);
-    //                }
-    //            }
-                if (alt && shift) {
-                    // TODO: get this activity's edge id from view
-    //                edge.move_before(node);
-                }
-                else if (alt) {
-    //                edge.move_after(node);
-                }
-                else if (shift) {
-                    create_first_child(write(app.model), node, url, title);
+                if (double_click) {
+                     // TODO: focus last created tab
                 }
                 else {
-                    create_last_child(write(app.model), node, url, title);
+                    auto w = write(app.model);
+                    auto child = ensure_node_with_url(w, url);
+                     // TODO: alt to make sibling
+                    if (shift) {
+                        make_first_child(w, node, child, title);
+                    }
+                    else {
+                        make_last_child(w, node, child, title);
+                    }
                 }
             }
             break;

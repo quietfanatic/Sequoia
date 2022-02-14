@@ -1,17 +1,16 @@
 #include "tabs.h"
 
-#include "node.h"
-#include "edge.h"
-#include "view.h"
+#include "../model/edge.h"
+#include "../model/node.h"
+#include "../model/view.h"
 
-namespace model {
+namespace win32app {
 
 using namespace std;
 
 static void gen_tabs (
-    ReadRef model,
-    unordered_map<EdgeID, Tab>& tabs, const ViewData& view,
-    EdgeID edge, NodeID node, EdgeID parent
+    model::ReadRef model, TabTree& tabs, const model::ViewData& view,
+    model::EdgeID edge, model::NodeID node, model::EdgeID parent
 ) {
     auto children = get_edges_from_node(model, node);
     auto node_data = model/node;
@@ -20,41 +19,36 @@ static void gen_tabs (
     int flags = 0;
     if (view.focused_tab == edge) flags |= Tab::FOCUSED;
     if (node_data->visited_at) flags |= Tab::VISITED;
-    if (node_data->state == NodeState::LOADING) flags |= Tab::LOADING;
-    if (node_data->state == NodeState::LOADED) flags |= Tab::LOADED;
+    if (node_data->state == model::NodeState::LOADING) flags |= Tab::LOADING;
+    if (node_data->state == model::NodeState::LOADED) flags |= Tab::LOADED;
     if (edge && edge_data->trashed_at) flags |= Tab::TRASHED;
-    if (children.size()) flags |= Tab::EXPANDABLE; // TODO: don't use if inverted
+    if (children.size()) flags |= Tab::EXPANDABLE;
     if (view.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
 
     tabs.emplace(edge, Tab{node, parent, Tab::Flags(flags)});
     if (view.expanded_tabs.count(edge)) {
-         // TODO: include get_edges_to_node
-        for (EdgeID child : children) {
+        for (model::EdgeID child : children) {
             gen_tabs(model, tabs, view, child, (model/child)->to_node, edge);
         }
     }
 }
 
-TabTree create_tab_tree (ReadRef model, ViewID view) {
+TabTree create_tab_tree (model::ReadRef model, model::ViewID view) {
     TabTree r;
     auto view_data = model/view;
-    gen_tabs(model, r, *view_data, EdgeID{}, view_data->root_node, EdgeID{});
+    gen_tabs(model, r, *view_data, model::EdgeID{}, view_data->root_node, model::EdgeID{});
     return r;
 }
 
 TabChanges get_changed_tabs (
-    const Update& update,
+    const model::Update& update,
     const TabTree& old_tabs, const TabTree& new_tabs
 ) {
     TabChanges r;
      // Remove tabs that are no longer visible
     for (auto& [id, tab] : old_tabs) {
-        // Using Tab{} causes MSVC to say things like "no appropriate default
-        // constructor available" and "Invalid aggregate intitialization".
-        // Compiler bug?
-        Tab empty;
         if (!new_tabs.count(id)) {
-            r.emplace_back(id, empty);
+            r.emplace_back(id, std::nullopt);
         }
     }
      // Add tabs that:

@@ -206,19 +206,6 @@ EdgeID make_prev_sibling (WriteRef model, EdgeID next, NodeID to, Str title) {
     return create_edge(model, move(data));
 }
 
-EdgeID create_first_child (WriteRef model, NodeID parent, Str url, Str title) {
-    return make_first_child(model, parent, create_node(model, url, title));
-}
-EdgeID create_last_child (WriteRef model, NodeID parent, Str url, Str title) {
-    return make_last_child(model, parent, create_node(model, url, title));
-}
-EdgeID create_next_sibling (WriteRef model, EdgeID prev, Str url, Str title) {
-    return make_next_sibling(model, prev, create_node(model, url, title));
-}
-EdgeID create_prev_sibling (WriteRef model, EdgeID next, Str url, Str title) {
-    return make_prev_sibling(model, next, create_node(model, url, title));
-}
-
 void move_first_child (WriteRef model, EdgeID id, NodeID parent) {
     LOG("move_first_child"sv, id, parent);
     AA(parent);
@@ -298,8 +285,12 @@ static tap::TestSet tests ("model/edge", []{
 
     std::vector<NodeID> nodes;
     for (size_t i = 0; i < 30; i++) {
+        auto w = write(model);
+        auto url = "data:text/plain," + std::to_string(i);
         auto title = "node "s + std::to_string(i);
-        nodes.push_back(create_node(write(model), "about:blank", title));
+        auto node = ensure_node_with_url(w, url);
+        set_title(w, node, title);
+        nodes.push_back(node);
     }
 
     EdgeID first_child;

@@ -45,7 +45,10 @@ static LRESULT CALLBACK nursery_WndProc (
             switch (x31_hash(command)) {
                 case x31_hash("new_window"): {
                     ReplyMessage(0);
-                    create_view_with_tab(write(self->app.model), message[1]);
+                    auto w = write(self->app.model);
+                    auto view = create_view(w);
+                    auto node = ensure_node_with_url(w, message[1]);
+                    make_last_child(w, (w/view)->root_node, node);
                     return 0;
                 }
                 default: return 1;

@@ -3,8 +3,8 @@
 #include <wil/com.h>
 #include <WebView2.h>
 
-#include "../model/tabs.h"
 #include "../model/model.h"
+#include "tabs.h"
 
 namespace json { struct Value; }
 
@@ -29,7 +29,7 @@ struct Shell {
     void message_from_webview (const json::Value& message);
 
      ///// Updating
-    model::TabTree tabs;
+    TabTree current_tabs;
     void update (const model::Update&);
 };
 
