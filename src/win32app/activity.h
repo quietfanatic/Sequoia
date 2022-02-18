@@ -1,12 +1,12 @@
 #pragma once
 
 #include <wil/com.h>
-#include <WebView2.h>
-#include <windows.h>
 
 #include "../model/model.h"
 #include "../util/types.h"
 
+struct ICoreWebView2;
+struct ICoreWebView2Controller;
 namespace json { struct Value; }
 
 namespace win32app {
@@ -24,9 +24,10 @@ struct Activity {
      // and also to work around special URLs not surviving a round-trip through
      // navigation.
     String current_url;
+    bool loading = true;
 
     Activity (App&, model::NodeID);
-    void node_updated ();
+    void update ();
 
     bool navigate_url (Str url);
     void navigate_search (Str search);

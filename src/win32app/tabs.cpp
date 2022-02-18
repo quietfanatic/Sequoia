@@ -3,24 +3,30 @@
 #include "../model/edge.h"
 #include "../model/node.h"
 #include "../model/view.h"
+#include "activity.h"
+#include "activity_collection.h"
+#include "app.h"
 
 namespace win32app {
 
 using namespace std;
 
 static void gen_tabs (
-    model::ReadRef model, TabTree& tabs, const model::ViewData& view,
+    App& app, TabTree& tabs, const model::ViewData& view,
     model::EdgeID edge, model::NodeID node, model::EdgeID parent
 ) {
-    auto children = get_edges_from_node(model, node);
-    auto node_data = model/node;
-    auto edge_data = model/edge;
+    auto children = get_edges_from_node(app.model, node);
+    auto node_data = app.model/node;
+    auto edge_data = app.model/edge;
 
     int flags = 0;
     if (view.focused_tab == edge) flags |= Tab::FOCUSED;
     if (node_data->visited_at) flags |= Tab::VISITED;
-    if (node_data->state == model::NodeState::LOADING) flags |= Tab::LOADING;
-    if (node_data->state == model::NodeState::LOADED) flags |= Tab::LOADED;
+    Activity* activity = app.activities->get_for_node(node);
+    if (activity) {
+        if (activity->loading) flags |= Tab::LOADING;
+        else flags |= Tab::LOADED;
+    }
     if (edge && edge_data->trashed_at) flags |= Tab::TRASHED;
     if (children.size()) flags |= Tab::EXPANDABLE;
     if (view.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
@@ -28,15 +34,15 @@ static void gen_tabs (
     tabs.emplace(edge, Tab{node, parent, Tab::Flags(flags)});
     if (view.expanded_tabs.count(edge)) {
         for (model::EdgeID child : children) {
-            gen_tabs(model, tabs, view, child, (model/child)->to_node, edge);
+            gen_tabs(app, tabs, view, child, (app.model/child)->to_node, edge);
         }
     }
 }
 
-TabTree create_tab_tree (model::ReadRef model, model::ViewID view) {
+TabTree create_tab_tree (App& app, model::ViewID view) {
     TabTree r;
-    auto view_data = model/view;
-    gen_tabs(model, r, *view_data, model::EdgeID{}, view_data->root_node, model::EdgeID{});
+    auto view_data = app.model/view;
+    gen_tabs(app, r, *view_data, model::EdgeID{}, view_data->root_node, model::EdgeID{});
     return r;
 }
 

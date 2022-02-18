@@ -8,6 +8,7 @@
 #include "../model/write.h"
 #include "../util/error.h"
 #include "activity.h"
+#include "activity_collection.h"
 #include "shell.h"
 #include "window.h"
 
@@ -19,7 +20,8 @@ App::App (Profile&& p) :
     profile(std::move(p)),
     settings(profile.load_settings()),
     nursery(*this),
-    model(*model::new_model(profile.db_path()))
+    model(*model::new_model(profile.db_path())),
+    activities(std::make_unique<ActivityCollection>(*this))
 {
     observe(model, this);
 }
@@ -76,24 +78,9 @@ Window* App::window_for_view (model::ViewID view) {
     else return nullptr;
 }
 
-Window* App::window_for_node (model::NodeID node) {
-    if (auto view = (model/node)->viewing_view) {
-        Window* window = window_for_view(view);
-        AA(window);
-        return window;
-    }
-    else return nullptr;
-}
-
 Shell* App::shell_for_view (model::ViewID view) {
     auto iter = shells.find(view);
     if (iter != shells.end()) return iter->second.get();
-    else return nullptr;
-}
-
-Activity* App::activity_for_node (model::NodeID node) {
-    auto iter = activities.find(node);
-    if (iter != activities.end()) return iter->second.get();
     else return nullptr;
 }
 
@@ -113,14 +100,7 @@ void App::Observer_after_commit (const model::Update& update) {
             windows.erase(view);
         }
     }
-    for (model::NodeID node : update.nodes) {
-        auto node_data = model/node;
-        if (node_data && node_data->state != model::NodeState::UNLOADED) {
-            auto& activity = activities[node];
-            if (!activity) activity = make_unique<Activity>(*this, node);
-        }
-        else activities.erase(node);
-    }
+    activities->update(update);
      // Quit if there are no more windows.
     if (windows.empty()) {
         AA(shells.empty());
@@ -133,13 +113,10 @@ void App::Observer_after_commit (const model::Update& update) {
         }
     }
     for (model::NodeID node : update.nodes) {
-        if (Activity* activity = activity_for_node(node)) {
-            activity->node_updated();
-        }
-        if (Window* window = window_for_node(node)) {
+//        if (Window* window = window_for_node(node)) {
              // TODO: avoid calling this twice?
-            window->node_updated();
-        }
+//            window->node_updated();
+//        }
     }
      // Shells are responsible for figuring out when they want to update.
     for (auto& [_, shell] : shells) {

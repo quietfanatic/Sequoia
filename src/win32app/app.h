@@ -10,6 +10,7 @@
 #include "nursery.h"
 
 namespace win32app {
+struct ActivityCollection;
 struct Activity;
 struct Shell;
 struct Window;
@@ -19,15 +20,12 @@ struct App : model::Observer {
     Settings settings;
     Nursery nursery;
     model::Model& model;
-    std::unique_ptr<model::Model> model2;
-    std::unordered_map<model::NodeID, std::unique_ptr<Activity>> activities;
+    std::unique_ptr<ActivityCollection> activities;
     std::unordered_map<model::ViewID, std::unique_ptr<Shell>> shells;
     std::unordered_map<model::ViewID, std::unique_ptr<Window>> windows;
 
     Window* window_for_view (model::ViewID);
-    Window* window_for_node (model::NodeID);
     Shell* shell_for_view (model::ViewID);
-    Activity* activity_for_node (model::NodeID);
 
     App (Profile&& profile);
     ~App();

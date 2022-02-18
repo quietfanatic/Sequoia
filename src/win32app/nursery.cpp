@@ -15,7 +15,6 @@
 #include "../util/json.h"
 #include "../util/text.h"
 #include "app.h"
-#include "activity.h"
 #include "profile.h"
 #include "window.h"
 

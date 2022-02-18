@@ -105,13 +105,6 @@ void set_visited (WriteRef model, NodeID id) {
     data->visited_at = now();
     save(model, id, data);
 }
-void set_state (WriteRef model, NodeID id, NodeState state) {
-    LOG("set_state Node"sv, id, state);
-    auto data = load_mut(model, id);
-    data->state = state;
-     // No need to save, since state isn't written to DB
-    touch(model, id);
-}
 
 void touch (WriteRef model, NodeID id) {
     model->writes.current_update.nodes.insert(id);
@@ -145,7 +138,6 @@ static tap::TestSet tests ("model/node", []{
     double before = now();
     doesnt_throw([&]{ set_visited(*tr, node); }, "set_visited");
     double after = now();
-    doesnt_throw([&]{ set_state(*tr, node, NodeState::LOADING); }, "set_state");
 
     const NodeData* data;
     doesnt_throw([&]{ data = model/node; }, "load Node from cache");
@@ -153,7 +145,6 @@ static tap::TestSet tests ("model/node", []{
     is(data->title, "test title", "title from cache");
     is(data->favicon_url, "con", "favicon_url from cache");
     between(data->visited_at, before, after, "visited_at from cache");
-    is(data->state, NodeState::LOADING, "state from cache");
 
     model.nodes.cache.clear();
     doesnt_throw([&]{ data = model/node; }, "load node from db");
@@ -161,14 +152,12 @@ static tap::TestSet tests ("model/node", []{
     is(data->title, "test title", "title from db");
     is(data->favicon_url, "con", "favicon_url from db");
     between(data->visited_at, before, after, "visited_at from db");
-    is(data->state, NodeState::UNLOADED, "state resets when reading from db");
 
     NodeID node2 = ensure_node_with_url(*tr, "url 2");
     const NodeData* data2 = model/node2;
     is(data2->title, "", "default title from cache");
     is(data2->favicon_url, "", "default favicon_url from cache");
     is(data2->visited_at, 0, "default visited_at from cache");
-    is(data2->state, NodeState::UNLOADED, "default state from cache");
     model.nodes.cache.clear();
     data2 = model/node2;
     is(data2->title, "", "default title from db");

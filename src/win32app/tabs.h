@@ -8,6 +8,7 @@
 #include "../model/observer.h"
 
 namespace win32app {
+struct App;
 
  // Mirrors the structure of the tree view in the shell.
  // I hate to resort to using a shadow dom to manage updates because of the
@@ -36,7 +37,7 @@ struct Tab {
 
 using TabTree = std::unordered_map<model::EdgeID, Tab>;
 
-TabTree create_tab_tree (model::ReadRef model, model::ViewID view);
+TabTree create_tab_tree (App& app, model::ViewID view);
 
 using TabChanges = std::vector<std::pair<model::EdgeID, std::optional<Tab>>>;
 

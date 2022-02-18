@@ -20,6 +20,7 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "activity.h"
+#include "activity_collection.h"
 #include "app.h"
 #include "nursery.h"
 #include "shell.h"
@@ -87,7 +88,7 @@ void Window::reflow () {
         bounds.right -= uint(side_width * scale);
     }
      // TODO: make sure this is actually our node
-    Activity* activity = app.activity_for_node(current_focused_node);
+    Activity* activity = app.activities->get_for_node(current_focused_node);
     if (activity && activity->controller) {
         AH(activity->controller->put_ParentWindow(hwnd));
         AH(activity->controller->put_Bounds(bounds));
@@ -106,7 +107,7 @@ static LRESULT CALLBACK window_WndProc (
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
                      // TODO: make sure this is actually our node
-                    Activity* activity = window->app.activity_for_node(
+                    Activity* activity = window->app.activities->get_for_node(
                         window->current_focused_node
                     );
                     if (activity && activity->controller) {
@@ -262,7 +263,7 @@ void Window::view_updated () {
         );
         reflow();
          // TODO: make sure this is actually our activity
-        Activity* activity = app.activity_for_node(current_focused_node);
+        Activity* activity = app.activities->get_for_node(current_focused_node);
         if (activity) activity->leave_fullscreen();
         fullscreen = nullopt;
     }

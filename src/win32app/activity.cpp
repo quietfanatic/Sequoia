@@ -1,6 +1,7 @@
 #include "activity.h"
 
 #include <stdexcept>
+#include <webview2.h>
 #include <wrl.h>
 
 #include "../model/edge.h"
@@ -22,8 +23,12 @@ using namespace std;
 
 namespace win32app {
 
-Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
+Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
     LOG("new Activity"sv, this, node);
+    AA(node);
+
+    // Announce loading state
+    touch(write(app.model), node);
 
     app.nursery.new_webview([this](
         ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd
@@ -31,15 +36,6 @@ Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
-
-        AH(webview->add_NavigationStarting(
-            Callback<ICoreWebView2NavigationStartingEventHandler>([this](
-                ICoreWebView2* sender,
-                ICoreWebView2NavigationStartingEventArgs* args) -> HRESULT
-        {
-            set_state(write(app.model), node, model::NodeState::LOADING);
-            return S_OK;
-        }).Get(), nullptr));
 
         AH(webview->add_DocumentTitleChanged(
             Callback<ICoreWebView2DocumentTitleChangedEventHandler>(
@@ -49,7 +45,7 @@ Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
              // save the title in that case.
             wil::unique_cotaskmem_string source;
             webview->get_Source(&source);
-            if (source.get() == L"about:blank"sv) {
+            if (source.get() != L"about:blank"sv) {
                 wil::unique_cotaskmem_string title;
                 webview->get_DocumentTitle(&title);
                 set_title(write(app.model), node, from_utf16(title.get()));
@@ -82,7 +78,8 @@ Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
-            set_state(write(app.model), node, model::NodeState::LOADED);
+            loading = false;
+            touch(write(app.model), node);
             return S_OK;
         }).Get(), nullptr));
 
@@ -132,7 +129,8 @@ Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            Window* window = app.window_for_node(node);
+            // TODO: keep track of viewing view
+            Window* window = nullptr;
             if (!window) return S_OK;
             COREWEBVIEW2_KEY_EVENT_KIND kind;
             AH(args->get_KeyEventKind(&kind));
@@ -161,15 +159,14 @@ Activity::Activity (App& a, model::NodeID p) : app(a), node(p) {
             Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
                 [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-            if (auto view = (app.model/node)->viewing_view) {
-                set_fullscreen(write(app.model), view, is_fullscreen());
-            }
+            // TODO: Keep track of viewing view and set fullscreen
             return S_OK;
         }).Get(), nullptr));
 
-        if (Window* window = app.window_for_node(node)) {
-            window->reflow();
-        }
+        // TODO: keep track of viewing view
+//        if (Window* window = app.window_for_node(node)) {
+//            window->reflow();
+//        }
     });
 }
 
@@ -232,7 +229,7 @@ void Activity::message_from_webview (const json::Value& message) {
     }
 }
 
-void Activity::node_updated () {
+void Activity::update () {
     auto url = (app.model/node)->url;
     if (url != current_url) navigate(url);
 }
@@ -241,6 +238,10 @@ bool Activity::navigate_url (Str url) {
     LOG("navigate_url"sv, node, url);
     auto hr = webview->Navigate(to_utf16(url).c_str());
     if (SUCCEEDED(hr)) {
+        if (!loading) {
+            loading = true;
+            touch(write(app.model), node);
+        }
         current_url = url;
         return true;
     }
