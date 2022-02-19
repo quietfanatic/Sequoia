@@ -4,6 +4,8 @@
  //   - Holds a global message window for IPC
  //   - Makes webviews
  // Eventually these should be split.
+ //
+ // (A nursery is a place where new trees are grown)
 
 #include <windows.h>
 #include <wil/com.h>
