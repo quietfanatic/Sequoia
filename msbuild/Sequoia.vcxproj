@@ -170,6 +170,7 @@
     <ClCompile Include="../src/util/json.cpp" />
     <ClCompile Include="../src/util/log.cpp" />
     <ClCompile Include="../src/util/text.cpp" />
+    <ClCompile Include="../src/util/weak.cpp" />
     <ClCompile Include="../src/win32app/activity.cpp" />
     <ClCompile Include="../src/win32app/activity_collection.cpp" />
     <ClCompile Include="../src/win32app/app.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="../src/util/log.h" />
     <ClInclude Include="../src/util/types.h" />
     <ClInclude Include="../src/util/text.h" />
+    <ClInclude Include="../src/util/weak.h" />
     <ClInclude Include="../src/win32app/activity.h" />
     <ClInclude Include="../src/win32app/activity_collection.h" />
     <ClInclude Include="../src/win32app/app.h" />
