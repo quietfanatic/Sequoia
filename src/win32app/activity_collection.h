@@ -21,6 +21,7 @@ struct ActivityCollection {
     void insert (std::unique_ptr<Activity>&&);
     std::unique_ptr<Activity> extract_for_node (model::NodeID);
 
+     // Deletes activities if their node is gone, but does not create any.
     void update (const model::Update&);
 };
 

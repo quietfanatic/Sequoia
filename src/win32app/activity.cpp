@@ -230,6 +230,7 @@ void Activity::message_from_webview (const json::Value& message) {
 }
 
 void Activity::update () {
+     // TODO: retire this along with set_url
     auto url = (app.model/node)->url;
     if (url != current_url) navigate(url);
 }

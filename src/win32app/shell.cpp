@@ -13,7 +13,6 @@
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
-#include "activity_collection.h"
 #include "activity.h"
 #include "app.h"
 #include "nursery.h"
@@ -179,7 +178,7 @@ void Shell::message_from_webview (const json::Value& message) {
         }
          // Toolbar buttons
         case x31_hash("back"): {
-            Activity* activity = app.activities->get_for_node(
+            Activity* activity = app.activity_for_node(
                 focused_node(app.model, view)
             );
             if (activity && activity->webview) {
@@ -188,7 +187,7 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("forward"): {
-            Activity* activity = app.activities->get_for_node(
+            Activity* activity = app.activity_for_node(
                 focused_node(app.model, view)
             );
             if (activity && activity->webview) {
@@ -197,7 +196,7 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("reload"): {
-            Activity* activity = app.activities->get_for_node(
+            Activity* activity = app.activity_for_node(
                 focused_node(app.model, view)
             );
             if (activity && activity->webview) {
@@ -206,7 +205,7 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("stop"): {
-            Activity* activity = app.activities->get_for_node(
+            Activity* activity = app.activity_for_node(
                 focused_node(app.model, view)
             );
             if (activity && activity->webview) {
@@ -284,7 +283,7 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("open_selected_links"): {
-            if (Activity* activity = app.activities->get_for_node(
+            if (Activity* activity = app.activity_for_node(
                 focused_node(app.model, view)
             )) {
                 activity->message_to_webview(

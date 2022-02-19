@@ -10,8 +10,9 @@
 #include "nursery.h"
 
 namespace win32app {
-struct ActivityCollection;
 struct Activity;
+struct ActivityCollection;
+struct AppViewCollection;
 struct Shell;
 struct Window;
 
@@ -21,14 +22,17 @@ struct App : model::Observer {
     Nursery nursery;
     model::Model& model;
     std::unique_ptr<ActivityCollection> activities;
-    std::unordered_map<model::ViewID, std::unique_ptr<Shell>> shells;
-    std::unordered_map<model::ViewID, std::unique_ptr<Window>> windows;
-
-    Window* window_for_view (model::ViewID);
-    Shell* shell_for_view (model::ViewID);
+    std::unique_ptr<AppViewCollection> app_views;
 
     App (Profile&& profile);
     ~App();
+
+     // Just shortcuts for *Collection
+    Activity* activity_for_node (model::NodeID);
+    Activity* ensure_activity_for_node (model::NodeID);
+    Shell* shell_for_view (model::ViewID);
+    Window* window_for_view (model::ViewID);
+
      // Doesn't return until quit is called
     int run (const std::vector<String>& urls);
     void quit ();
