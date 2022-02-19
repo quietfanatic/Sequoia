@@ -36,13 +36,14 @@ struct App : model::Observer {
     Shell* shell_for_view (model::ViewID);
     Window* window_for_view (model::ViewID);
 
+     // Make windows for open views, open window for urls, and if none
+     // of those happens, makes a default window.
+    void start (const std::vector<String>& urls);
      // Opens a new window with these URLs.
     void open_urls (const std::vector<String>& urls);
 
-     // Like run, but doesn't start the message loop.
-    void start (const std::vector<String>& urls);
-     // Doesn't return until quit is called
-    int run (const std::vector<String>& urls);
+     // Runs a standard win32 message loop until quit() is called.
+    int run ();
     void quit (int code = 0);
 
     void Observer_after_commit (const model::Update&) override;

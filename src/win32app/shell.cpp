@@ -159,6 +159,10 @@ void Shell::message_from_webview (const json::Value& message) {
             }
             message_to_webview(json::array("view"sv, tab_updates));
             ready = true;
+            if (waiting_for_ready) {
+                waiting_for_ready = false;
+                app.quit();
+            }
             break;
         }
         case x31_hash("resize"): {
@@ -336,4 +340,31 @@ void Shell::message_to_webview (const json::Value& message) {
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
+void Shell::wait_for_ready () {
+    if (ready) return;
+    waiting_for_ready = true;
+    app.run();
+}
+
 } // namespace win32app
+
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+
+static tap::TestSet tests ("win32app/shell", []{
+    using namespace win32app;
+    using namespace tap;
+    ProfileTestEnvironment env;
+
+    App app (Profile(env.profile_name, env.profile_folder));
+    app.headless = true;
+    app.start({});
+    auto open_views = get_open_views(app.model);
+    AA(open_views.size() == 1);
+    doesnt_throw([&]{
+        app.shell_for_view(open_views[0])->wait_for_ready();
+    }, "Shell is ready");
+    done_testing();
+});
+
+#endif

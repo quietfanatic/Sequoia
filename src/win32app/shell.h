@@ -31,6 +31,10 @@ struct Shell {
      ///// Updating
     TabTree current_tabs;
     void update (const model::Update&);
+
+     // Mainly for testing
+    void wait_for_ready ();
+    bool waiting_for_ready = false;
 };
 
 } // namespace win32app

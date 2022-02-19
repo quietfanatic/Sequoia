@@ -97,7 +97,8 @@ const ViewData* operator/ (ReadRef model, ViewID id) {
 #ifndef TAP_DISABLE_TESTS
 ModelTestEnvironment::ModelTestEnvironment () {
     test_folder = exe_relative("test"sv);
-    filesystem::remove_all(test_folder);
+     // TODO: fix ProfileTestEnvironment so it doesn't hog this folder
+    //filesystem::remove_all(test_folder);
     filesystem::create_directories(test_folder);
     init_log(test_folder + "/test.log"s);
     db_path = test_folder + "/test-db.sqlite"s;
@@ -109,7 +110,7 @@ ModelTestEnvironment::~ModelTestEnvironment () {
     if (uncaught_exceptions()) {
         try {
             uninit_log();
-            filesystem::remove_all(test_folder);
+//            filesystem::remove_all(test_folder);
         }
         catch (std::exception& e) {
             tap::diag(e.what());
@@ -117,7 +118,7 @@ ModelTestEnvironment::~ModelTestEnvironment () {
     }
     else {
         uninit_log();
-        filesystem::remove_all(test_folder);
+//        filesystem::remove_all(test_folder);
     }
 }
 #endif

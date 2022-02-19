@@ -133,7 +133,7 @@ ProfileTestEnvironment::~ProfileTestEnvironment () {
     if (uncaught_exceptions()) {
         try {
             uninit_log();
-            filesystem::remove_all(test_folder);
+//            filesystem::remove_all(test_folder);
         }
         catch (std::exception& e) {
             tap::diag(e.what());
@@ -141,7 +141,8 @@ ProfileTestEnvironment::~ProfileTestEnvironment () {
     }
     else {
         uninit_log();
-        filesystem::remove_all(test_folder);
+           // TODO: make this work (wait for browser process to close?)
+//        filesystem::remove_all(test_folder);
     }
 }
 #endif

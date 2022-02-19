@@ -43,7 +43,7 @@ struct TestPointable : WeakPointable {
     TestPointable (int f) : foo(f) { }
 };
 
-tap::TestSet tests ("util/weak", []{
+static tap::TestSet tests ("util/weak", []{
     using namespace tap;
 
     TestPointable* foo;

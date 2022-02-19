@@ -92,7 +92,8 @@ int main (int argc, char** argv) {
         }
 
         App app (std::move(profile));
-        return app.run(positional_args);
+        app.start(positional_args);
+        return app.run();
     }
     catch (exception& e) {
         ERR("Uncaught exception: "sv + e.what());

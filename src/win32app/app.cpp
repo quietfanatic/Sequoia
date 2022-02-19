@@ -81,9 +81,7 @@ void App::start (const vector<String>& urls) {
     }
 }
 
-int App::run (const vector<String>& urls) {
-    start(urls);
-     // Run message loop
+int App::run () {
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {
         if (!IsDialogMessage(GetAncestor(msg.hwnd, GA_ROOT), &msg)) {
@@ -138,6 +136,12 @@ static tap::TestSet tests ("win32app/app", []{
     }, "open_urls");
     is(app->app_views->count(), 2, "Window was created for one url");
     is(get_open_views(app->model).size(), 2, "A new view was created");
+
+    doesnt_throw([&]{
+         // Doing this in this order should make run quit immediately.
+        app->quit();
+        app->run();
+    }, "quit and run");
 
     doesnt_throw([&]{
         delete app;
