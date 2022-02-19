@@ -102,43 +102,6 @@ void Shell::select_location () {
     AH(controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
 }
 
-static json::Array make_tab_json (
-    const model::Model& model,
-    model::EdgeID edge, const Tab& tab
-) {
-    AA(edge);
-    auto edge_data = model/edge;
-    if (!edge_data) {
-        return json::array(edge);
-    }
-    if (tab.node) {
-        auto node_data = model/tab.node;
-         // This code path will probably never be hit.
-        string title = node_data->title;
-        if (title.empty()) title = edge_data->title;
-        if (title.empty()) title = node_data->url;
-
-        return json::array(
-            edge,
-            tab.parent,
-            edge_data->position.hex(),
-            node_data->url,
-            node_data->favicon_url,
-            title,
-            tab.flags
-        );
-    }
-    else {
-        return json::array(
-            edge,
-            tab.parent,
-            edge_data->position.hex(),
-            ""s, ""s, ""s,
-            tab.flags
-        );
-    }
-}
-
 void Shell::message_from_webview (const json::Value& message) {
     try {
 
@@ -155,7 +118,7 @@ void Shell::message_from_webview (const json::Value& message) {
             json::Array tab_updates;
             tab_updates.reserve(current_tabs.size());
             for (auto& [id, tab] : current_tabs) {
-                tab_updates.emplace_back(make_tab_json(app.model, id, tab));
+                tab_updates.emplace_back(make_tab_json(app.model, id, &tab));
             }
             message_to_webview(json::array("view"sv, tab_updates));
             ready = true;
@@ -320,12 +283,9 @@ void Shell::update (const model::Update& update) {
         json::Array tab_updates;
         tab_updates.reserve(changes.size());
         for (auto& [id, tab] : changes) {
-            if (tab) {
-                tab_updates.emplace_back(make_tab_json(app.model, id, *tab));
-            }
-            else {
-                tab_updates.emplace_back(json::array(id));
-            }
+            tab_updates.emplace_back(make_tab_json(
+                app.model, id, tab ? &*tab : nullptr
+            ));
         }
         if (tab_updates.size()) {
             message_to_webview(json::array("update"sv, tab_updates));

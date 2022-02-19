@@ -86,4 +86,40 @@ TabChanges get_changed_tabs (
     return r;
 }
 
+json::Array make_tab_json (
+    const model::Model& model,
+    model::EdgeID edge, const Tab* tab
+) {
+    AA(edge);
+    auto edge_data = model/edge;
+    if (!edge_data || !tab) {
+        return json::array(edge);
+    }
+    if (tab->node) {
+        auto node_data = model/tab->node;
+        string title = node_data->title;
+        if (title.empty()) title = edge_data->title;
+        if (title.empty()) title = node_data->url;
+
+        return json::array(
+            edge,
+            tab->parent,
+            edge_data->position.hex(),
+            node_data->url,
+            node_data->favicon_url,
+            title,
+            tab->flags
+        );
+    }
+    else {
+        return json::array(
+            edge,
+            tab->parent,
+            edge_data->position.hex(),
+            ""s, ""s, ""s,
+            tab->flags
+        );
+    }
+}
+
 } // namespace model

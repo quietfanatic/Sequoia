@@ -6,6 +6,7 @@
 
 #include "../model/model.h"
 #include "../model/observer.h"
+#include "../util/json.h"
 
 namespace win32app {
 struct App;
@@ -44,6 +45,11 @@ using TabChanges = std::vector<std::pair<model::EdgeID, std::optional<Tab>>>;
 TabChanges get_changed_tabs (
     const model::Update& update,
     const TabTree& old_tree, const TabTree& new_tree
+);
+
+json::Array make_tab_json (
+    const model::Model& model,
+    model::EdgeID edge, const Tab* tab
 );
 
 } // namespace win32app

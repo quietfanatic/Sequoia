@@ -355,7 +355,7 @@ function place_item ([id, parent, position, url, favicon_url, title, flags]) {
     let item = items_by_id[id];
     item.parent = parent;
     item.position = position;
-    let $parent_list = (parent == null ? $toplist : items_by_id[parent].$list);
+    let $parent_list = (parent ? items_by_id[parent].$list : $toplist);
     for (let $sibling of $parent_list.children) {
         let sibling = items_by_id[+$sibling.id];
         if (position < sibling.position) {
