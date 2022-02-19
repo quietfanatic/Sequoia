@@ -49,7 +49,7 @@ ViewData* load_mut (ReadRef model, ViewID id) {
 }
 
 static constexpr Str sql_get_open = R"(
-SELECT _id FROM _views WHERE _closed_at IS NULL
+SELECT _id FROM _views WHERE _closed_at = 0
 )"sv;
 
 vector<ViewID> get_open_views (ReadRef model) {
@@ -60,7 +60,7 @@ vector<ViewID> get_open_views (ReadRef model) {
 
 static constexpr Str sql_last_closed = R"(
 SELECT _id FROM _views
-WHERE _closed_at IS NOT NULL ORDER BY _closed_at DESC LIMIT 1
+WHERE _closed_at > 0 ORDER BY _closed_at DESC LIMIT 1
 )"sv;
 
 ViewID get_last_closed_view (ReadRef model) {
@@ -176,3 +176,45 @@ ViewModel::ViewModel (sqlite3* db) :
 { }
 
 } // namespace model
+
+#ifndef TAP_DISABLE_TESTS
+#include "../../tap/tap.h"
+
+static tap::TestSet tests ("model/view", []{
+    using namespace model;
+    using namespace tap;
+    ModelTestEnvironment env;
+    Model& model = *new_model(env.db_path);
+
+    is(get_open_views(model).size(), 0, "No open views yet");
+    is(get_last_closed_view(model), ViewID{}, "No closed views yet");
+
+    auto first_view = create_view(write(model));
+    auto open_views = get_open_views(model);
+    is(open_views.size(), 1, "View starts open");
+    is(open_views[0], first_view);
+    is(get_last_closed_view(model), ViewID{}, "View hasn't been closed yet");
+
+    close(write(model), first_view);
+    is(get_open_views(model).size(), 0);
+    is(get_last_closed_view(model), first_view);
+
+    unclose(write(model), first_view);
+    open_views = get_open_views(model);
+    is(open_views.size(), 1);
+    is(open_views[0], first_view);
+    is(get_last_closed_view(model), ViewID{});
+
+    const ViewData* first_data = model/first_view;
+    ok(first_data->root_node, "View has root_node by default");
+    const NodeData* root_data = model/first_data->root_node;
+    ok(root_data, "View's initial root_node exists");
+    is(root_data->url, "sequoia:view/" + std::to_string(int64(first_view)),
+        "root_node has correct URL"
+    );
+
+    delete_model(&model);
+    done_testing();
+});
+
+#endif
