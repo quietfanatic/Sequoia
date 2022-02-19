@@ -153,9 +153,11 @@ ProfileTestEnvironment::~ProfileTestEnvironment () {
 static tap::TestSet tests ("win32app/profile", []{
     using namespace win32app;
     using namespace tap;
+    ProfileTestEnvironment env;
+
     Profile* profile;
     doesnt_throw([&]{
-        profile = new Profile("test-profile", exe_relative("test/test-profile"));
+        profile = new Profile(env.profile_name, env.profile_folder);
     }, "constructor");
     doesnt_throw([&]{
         profile->load_settings();

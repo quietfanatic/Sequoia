@@ -48,7 +48,16 @@ Window* App::window_for_view (model::ViewID view) {
     return app_view ? &*app_view->window : nullptr;
 }
 
-int App::run (const vector<String>& urls) {
+void App::open_urls (const vector<String>& urls) {
+    AA(!urls.empty());
+    if (urls.size() > 1) ERR("Multiple URL arguments NYI"sv);
+    auto w = write(model);
+    auto view = create_view(w);
+    auto node = ensure_node_with_url(w, urls[0]);
+    make_last_child(w, (w/view)->root_node, node);
+}
+
+void App::start (const vector<String>& urls) {
      // Start browser
     app_views->initialize(model);
      // If no URLs were given and there aren't any open views, make sure at
@@ -68,12 +77,12 @@ int App::run (const vector<String>& urls) {
     }
      // Open new window if requested
     if (!urls.empty()) {
-        if (urls.size() > 1) ERR("Multiple URL arguments NYI"sv);
-        auto w = write(model);
-        auto view = create_view(w);
-        auto node = ensure_node_with_url(w, urls[0]);
-        make_last_child(w, (w/view)->root_node, node);
+        open_urls(urls);
     }
+}
+
+int App::run (const vector<String>& urls) {
+    start(urls);
      // Run message loop
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {
@@ -85,8 +94,8 @@ int App::run (const vector<String>& urls) {
     return (int)msg.wParam;
 }
 
-void App::quit () {
-    PostQuitMessage(0);
+void App::quit (int code) {
+    PostQuitMessage(code);
 }
 
 void App::Observer_after_commit (const model::Update& update) {
@@ -102,11 +111,38 @@ void App::Observer_after_commit (const model::Update& update) {
 } // namespace win32app
 
 #ifndef TAP_DISABLE_TESTS
+#include "../model/model.h"
 #include "../tap/tap.h"
 
 static tap::TestSet tests ("win32app/app", []{
     using namespace win32app;
     using namespace tap;
+
+    ProfileTestEnvironment env;
+
+    App* app;
+    doesnt_throw([&]{
+        app = new App(Profile(env.profile_name, env.profile_folder));
+    }, "constructor");
+
+    app->headless = true;
+
+    doesnt_throw([&]{
+        app->start({});
+    }, "Start with no URLs");
+    is(app->app_views->count(), 1, "Default window was created");
+    is(get_open_views(app->model).size(), 1, "A model view was created");
+
+    doesnt_throw([&]{
+        app->open_urls({"http://example.com/"s});
+    }, "open_urls");
+    is(app->app_views->count(), 2, "Window was created for one url");
+    is(get_open_views(app->model).size(), 2, "A new view was created");
+
+    doesnt_throw([&]{
+        delete app;
+    }, "destructor");
+
     done_testing();
 });
 

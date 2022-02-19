@@ -48,6 +48,7 @@ Window::Window (App& a, model::ViewID v) :
         AW(RegisterClassExW(&c));
         return true;
     }();
+
     hwnd = CreateWindowW(
         class_name,
         L"Sequoia",
@@ -61,7 +62,9 @@ Window::Window (App& a, model::ViewID v) :
     );
     AW(hwnd);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
-    ShowWindow(hwnd, SW_SHOWDEFAULT);
+    if (!app.headless) {
+        ShowWindow(hwnd, SW_SHOWDEFAULT);
+    }
 };
 
 Window::~Window () {
