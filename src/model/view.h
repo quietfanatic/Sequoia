@@ -35,16 +35,13 @@ static inline NodeID focused_node (ReadRef model, ViewID view) {
         : NodeID{};
 }
 
-std::vector<EdgeID> get_toplevel_tabs (ReadRef, ViewID);
-
- // Contains the set of tabs visible within this view; includes toplevel tabs
- // and tabs recursively available through expanded_tabs.
-std::unordered_set<EdgeID> get_visible_tabs (ReadRef, ViewID);
+std::vector<EdgeID> get_top_tabs (ReadRef, ViewID);
 
 ViewID create_view (WriteRef);
 
 void close (WriteRef, ViewID);
 void unclose (WriteRef, ViewID);
+
 void focus_tab (WriteRef, ViewID, EdgeID);
 
 void trash_tab (WriteRef, ViewID, EdgeID);

@@ -8,9 +8,9 @@
 #include "../../util/json.h"
 #include "../../util/log.h"
 #include "../../util/time.h"
-#include "edge-internal.h"
+#include "../edge.h"
+#include "../node.h"
 #include "model-internal.h"
-#include "node-internal.h"
 
 using namespace std;
 
@@ -70,7 +70,7 @@ ViewID get_last_closed_view (ReadRef model) {
     else return ViewID{};
 }
 
-std::vector<EdgeID> get_toplevel_tabs (ReadRef model, ViewID id) {
+std::vector<EdgeID> get_top_tabs (ReadRef model, ViewID id) {
     auto data = model/id;
     return get_edges_from_node(model, data->root_node);
 }
@@ -195,11 +195,15 @@ static tap::TestSet tests ("model/view", []{
     is(open_views[0], first_view);
     is(get_last_closed_view(model), ViewID{}, "View hasn't been closed yet");
 
-    close(write(model), first_view);
+    doesnt_throw([&]{
+        close(write(model), first_view);
+    }, "close");
     is(get_open_views(model).size(), 0);
     is(get_last_closed_view(model), first_view);
 
-    unclose(write(model), first_view);
+    doesnt_throw([&]{
+        unclose(write(model), first_view);
+    }, "unclose");
     open_views = get_open_views(model);
     is(open_views.size(), 1);
     is(open_views[0], first_view);
@@ -212,6 +216,56 @@ static tap::TestSet tests ("model/view", []{
     is(root_data->url, "sequoia:view/" + std::to_string(int64(first_view)),
         "root_node has correct URL"
     );
+
+    is(get_top_tabs(model, first_view).size(), 0);
+    NodeID nodes [5];
+    EdgeID edges [5];
+    for (uint i = 0; i < 5; i++) {
+        nodes[i] = ensure_node_with_url(
+            write(model),
+            "http://example.com/#" + std::to_string(i)
+        );
+        edges[i] = make_last_child(
+            write(model),
+            first_data->root_node,
+            nodes[i],
+            "Test edge " + std::to_string(i)
+        );
+    }
+    auto top_tabs = get_top_tabs(model, first_view);
+    is(top_tabs.size(), 5, "get_top_tabs");
+
+    is(first_data->focused_tab, EdgeID{}, "No focused tab by default");
+    focus_tab(write(model), first_view, edges[2]);
+    is(first_data->focused_tab, edges[2], "Focused tab set");
+
+    ok(first_data->expanded_tabs.empty(), "No expanded_tabs yet");
+    doesnt_throw([&]{
+        expand_tab(write(model), first_view, edges[0]);
+        expand_tab(write(model), first_view, edges[1]);
+        expand_tab(write(model), first_view, edges[4]);
+    }, "expand_tab");
+    is(first_data->expanded_tabs.size(), 3);
+    is(first_data->expanded_tabs.count(edges[0]), 1);
+    is(first_data->expanded_tabs.count(edges[1]), 1);
+    is(first_data->expanded_tabs.count(edges[4]), 1);
+
+    doesnt_throw([&]{
+        contract_tab(write(model), first_view, edges[0]);
+        contract_tab(write(model), first_view, edges[4]);
+    }, "contract_tab");
+    is(first_data->expanded_tabs.size(), 1);
+    is(first_data->expanded_tabs.count(edges[1]), 1);
+
+    ok(!first_data->fullscreen);
+    doesnt_throw([&]{
+        set_fullscreen(write(model), first_view, true);
+    }, "set_fullscreen true");
+    ok(first_data->fullscreen);
+    doesnt_throw([&]{
+        set_fullscreen(write(model), first_view, false);
+    }, "set_fullscreen false");
+    ok(!first_data->fullscreen);
 
     delete_model(&model);
     done_testing();
