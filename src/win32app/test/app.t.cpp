@@ -16,7 +16,7 @@ static void app_tests () {
 
     App* app;
     doesnt_throw([&]{
-        app = new App(Profile(env.profile_name, env.profile_folder));
+        app = new App(std::move(env.profile));
     }, "constructor");
 
     app->headless = true;

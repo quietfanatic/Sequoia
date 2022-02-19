@@ -13,7 +13,7 @@ static void shell_tests () {
     using namespace tap;
     ProfileTestEnvironment env;
 
-    App app (Profile(env.profile_name, env.profile_folder));
+    App app (std::move(env.profile));
     app.headless = true;
     app.start({});
     auto open_views = get_open_views(app.model);

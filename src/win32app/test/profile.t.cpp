@@ -8,17 +8,16 @@ namespace win32app {
 
 void profile_tests () {
     using namespace tap;
-    ProfileTestEnvironment env;
+    ProfileTestEnvironment* env;
 
-    Profile* profile;
     doesnt_throw([&]{
-        profile = new Profile(env.profile_name, env.profile_folder);
+        env = new ProfileTestEnvironment;
     }, "constructor");
     doesnt_throw([&]{
-        profile->load_settings();
+        env->profile.load_settings();
     }, "load_settings");
     doesnt_throw([&]{
-        delete profile;
+        delete env;
     }, "destructor");
 
     done_testing();

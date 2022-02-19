@@ -17,6 +17,7 @@ ProfileTestEnvironment::ProfileTestEnvironment () {
     profile_folder = test_folder + "/"s + profile_name;
     filesystem::remove_all(test_folder);
     filesystem::create_directories(test_folder);
+    profile = Profile(profile_name, profile_folder);
 }
 
 ProfileTestEnvironment::~ProfileTestEnvironment () {
