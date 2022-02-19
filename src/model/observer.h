@@ -1,7 +1,7 @@
 #pragma once
-#include "model.h"
 
 #include <unordered_set>
+#include "model.h"
 
 namespace model {
 

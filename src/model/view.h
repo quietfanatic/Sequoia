@@ -1,9 +1,7 @@
 #pragma once
 
-#include <string>
 #include <unordered_set>
 #include <vector>
-
 #include "../util/bifractor.h"
 #include "../util/error.h"
 #include "../util/types.h"

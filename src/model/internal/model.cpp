@@ -1,16 +1,10 @@
 #include "model-internal.h"
 
 #include <filesystem>
-
-#include <sqlite3.h>
 #include "../../util/error.h"
 #include "../../util/files.h"
 #include "../../util/log.h"
 #include "statement.h"
-
-#ifndef TAP_DISABLE_TESTS
-#include "../../tap/tap.h"
-#endif
 
 using namespace std;
 
@@ -94,58 +88,4 @@ const ViewData* operator/ (ReadRef model, ViewID id) {
     return load_mut(model, id);
 }
 
-#ifndef TAP_DISABLE_TESTS
-ModelTestEnvironment::ModelTestEnvironment () {
-    test_folder = exe_relative("test"sv);
-     // TODO: fix ProfileTestEnvironment so it doesn't hog this folder
-    //filesystem::remove_all(test_folder);
-    filesystem::create_directories(test_folder);
-    init_log(test_folder + "/test.log"s);
-    db_path = test_folder + "/test-db.sqlite"s;
-}
-
-ModelTestEnvironment::~ModelTestEnvironment () {
-     // The runtime on Windows is not very helpful when an exception is thrown
-     //  in a destructor.
-    if (uncaught_exceptions()) {
-        try {
-            uninit_log();
-//            filesystem::remove_all(test_folder);
-        }
-        catch (std::exception& e) {
-            tap::diag(e.what());
-        }
-    }
-    else {
-        uninit_log();
-//        filesystem::remove_all(test_folder);
-    }
-}
-#endif
-
 } // namespace model
-
-#ifndef TAP_DISABLE_TESTS
-
-static tap::TestSet tests ("model/model", []{
-    using namespace model;
-    using namespace tap;
-    ModelTestEnvironment env;
-
-    Model* model;
-    doesnt_throw([&]{
-        model = new_model(env.db_path);
-    }, "new_model can create new DB file");
-    doesnt_throw([&]{
-        delete_model(model);
-    }, "delete_model");
-    ok(filesystem::file_size(env.db_path) > 0, "delete_model leaves DB file");
-    doesnt_throw([&]{
-        model = new_model(env.db_path);
-        delete_model(model);
-    }, "new_model can use existing DB file");
-
-    done_testing();
-});
-
-#endif

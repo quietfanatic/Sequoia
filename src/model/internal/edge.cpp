@@ -1,8 +1,5 @@
 #include "edge-internal.h"
 
-#include <memory>
-#include <unordered_map>
-
 #include <sqlite3.h>
 #include "../../util/error.h"
 #include "../../util/log.h"

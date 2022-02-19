@@ -3,9 +3,7 @@
 #include <optional>
 #include <type_traits>
 #include <vector>
-
 #include <sqlite3.h>
-
 #include "../util/bifractor.h"
 #include "../util/error.h"
 #include "../model.h"

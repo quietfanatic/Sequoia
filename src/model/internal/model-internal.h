@@ -2,7 +2,6 @@
 #include "../model.h"
 
 #include <sqlite3.h>
-
 #include "edge-internal.h"
 #include "node-internal.h"
 #include "view-internal.h"
@@ -29,14 +28,5 @@ struct Model {
     Model (Str db_path);
     ~Model ();
 };
-
-#ifndef TAP_DISABLE_TESTS
-struct ModelTestEnvironment {
-    String test_folder;
-    String db_path;
-    ModelTestEnvironment ();
-    ~ModelTestEnvironment ();
-};
-#endif
 
 } // namespace model

@@ -1,11 +1,13 @@
 #ifndef TAP_DISABLE_TESTS
-#include "../../../tap/tap.h"
 #include "../../edge.h"
-#include "../model-internal.h"
+
+#include "../../node.h"
+#include "../../write.h"
+#include "model_test_environment.h"
 
 namespace model {
 
-static void edge_tests () {
+void edge_tests () {
     using namespace tap;
     ModelTestEnvironment env;
     Model& model = *new_model(env.db_path);
@@ -170,4 +172,4 @@ static tap::TestSet tests ("model/edge", edge_tests);
 
 } // namespace model
 
-#endif
+#endif // TAP_DISABLE_TESTS
