@@ -3,7 +3,7 @@
 let host = window.chrome.webview;
 let $html = document.documentElement;
 
- // Must match enum ShellItemFlags in Window.cpp
+ // Must match Tab::Flags in tabs.h
 const FOCUSED = 1;
 const VISITED = 2;
 const LOADING = 4;
@@ -16,10 +16,12 @@ const EXPANDED = 64;
 
  // Although the data model at the bottom is a graph of pages and links, it's
  // presented to the user as a tree of tabs, which looks in the DOM like
- //     [Item [Tab] [List
- //         [Item [Tab]]
+ //     [List
  //         [Item [Tab] [List
  //             [Item [Tab]]
+ //             [Item [Tab] [List
+ //                 [Item [Tab]]
+ //             ]
  //         ]
  //     ]
  // The conversion is done on the app side, and communicated to this shell as

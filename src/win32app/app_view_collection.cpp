@@ -31,7 +31,8 @@ void AppViewCollection::initialize (model::ReadRef model) {
 void AppViewCollection::update (const model::Update& update) {
      // Update existing views
     for (auto& [view, app_view] : by_view) {
-        if (app.model/view) {
+        auto view_data = app.model/view;
+        if (view_data && !view_data->closed_at) {
             if (update.views.count(view)) {
                 app_view.window->view_updated();
             }
@@ -46,7 +47,8 @@ void AppViewCollection::update (const model::Update& update) {
      // TODO: update existing windows per node
      // Create and delete
     for (auto view : update.views) {
-        if (app.model/view) {
+        auto view_data = app.model/view;
+        if (view_data && !view_data->closed_at) {
             auto& app_view = by_view[view];
             AA(!!app_view.shell == !!app_view.window);
             if (!app_view.shell) {
