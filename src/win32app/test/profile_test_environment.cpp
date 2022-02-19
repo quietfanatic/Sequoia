@@ -1,25 +1,25 @@
 #ifndef TAP_DISABLE_TESTS
-#include "model_test_environment.h"
+#include "profile_test_environment.h"
 
 #include <filesystem>
 #include <stdexcept>
-#include "../../../util/files.h"
-#include "../../../util/log.h"
+#include "../../tap/tap.h"
+#include "../../util/files.h"
+#include "../../util/log.h"
 
 using namespace std;
 
-namespace model {
+namespace win32app {
 
-ModelTestEnvironment::ModelTestEnvironment () {
+ProfileTestEnvironment::ProfileTestEnvironment () {
     test_folder = exe_relative("test"sv);
-     // TODO: fix ProfileTestEnvironment so it doesn't hog this folder
-    //filesystem::remove_all(test_folder);
+    profile_name = "test-profile"s;
+    profile_folder = test_folder + "/"s + profile_name;
+    filesystem::remove_all(test_folder);
     filesystem::create_directories(test_folder);
-    init_log(test_folder + "/test.log"s);
-    db_path = test_folder + "/test-db.sqlite"s;
 }
 
-ModelTestEnvironment::~ModelTestEnvironment () {
+ProfileTestEnvironment::~ProfileTestEnvironment () {
      // The runtime on Windows is not very helpful when an exception is thrown
      //  in a destructor.
     if (uncaught_exceptions()) {
@@ -33,10 +33,11 @@ ModelTestEnvironment::~ModelTestEnvironment () {
     }
     else {
         uninit_log();
+           // TODO: make this work (wait for browser process to close?)
 //        filesystem::remove_all(test_folder);
     }
 }
 
-} // namespace model
+} // namespace win32app
 
 #endif // TAP_DISABLE_TESTS

@@ -347,24 +347,3 @@ void Shell::wait_for_ready () {
 }
 
 } // namespace win32app
-
-#ifndef TAP_DISABLE_TESTS
-#include "../tap/tap.h"
-
-static tap::TestSet tests ("win32app/shell", []{
-    using namespace win32app;
-    using namespace tap;
-    ProfileTestEnvironment env;
-
-    App app (Profile(env.profile_name, env.profile_folder));
-    app.headless = true;
-    app.start({});
-    auto open_views = get_open_views(app.model);
-    AA(open_views.size() == 1);
-    doesnt_throw([&]{
-        app.shell_for_view(open_views[0])->wait_for_ready();
-    }, "Shell is ready");
-    done_testing();
-});
-
-#endif

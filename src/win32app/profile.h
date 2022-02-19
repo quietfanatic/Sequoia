@@ -21,14 +21,4 @@ struct Profile {
     void register_as_browser ();
 };
 
-#ifndef TAP_DISABLE_TESTS
-struct ProfileTestEnvironment {
-    String test_folder;
-    String profile_name;
-    String profile_folder;
-    ProfileTestEnvironment();
-    ~ProfileTestEnvironment();
-};
-#endif
-
 } // namespace win32app
