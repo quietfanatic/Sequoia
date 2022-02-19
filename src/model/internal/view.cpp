@@ -267,6 +267,8 @@ static tap::TestSet tests ("model/view", []{
     }, "set_fullscreen false");
     ok(!first_data->fullscreen);
 
+     // TODO: test trash_tab
+
     delete_model(&model);
     done_testing();
 });

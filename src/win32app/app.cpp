@@ -100,3 +100,14 @@ void App::Observer_after_commit (const model::Update& update) {
 };
 
 } // namespace win32app
+
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+
+static tap::TestSet tests ("win32app/app", []{
+    using namespace win32app;
+    using namespace tap;
+    done_testing();
+});
+
+#endif

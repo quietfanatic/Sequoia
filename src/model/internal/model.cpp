@@ -96,11 +96,11 @@ const ViewData* operator/ (ReadRef model, ViewID id) {
 
 #ifndef TAP_DISABLE_TESTS
 ModelTestEnvironment::ModelTestEnvironment () {
-    test_folder = exe_relative("test");
+    test_folder = exe_relative("test"sv);
     filesystem::remove_all(test_folder);
     filesystem::create_directories(test_folder);
-    init_log(test_folder + "/test.log");
-    db_path = test_folder + "/test-db.sqlite";
+    init_log(test_folder + "/test.log"s);
+    db_path = test_folder + "/test-db.sqlite"s;
 }
 
 ModelTestEnvironment::~ModelTestEnvironment () {
@@ -125,7 +125,6 @@ ModelTestEnvironment::~ModelTestEnvironment () {
 } // namespace model
 
 #ifndef TAP_DISABLE_TESTS
-#include "../../tap/tap.h"
 
 static tap::TestSet tests ("model/model", []{
     using namespace model;

@@ -24,6 +24,9 @@ struct App : model::Observer {
     std::unique_ptr<ActivityCollection> activities;
     std::unique_ptr<AppViewCollection> app_views;
 
+     // Makes all windows hidden; mainly for testing.
+    bool headless = false;
+
     App (Profile&& profile);
     ~App();
 
