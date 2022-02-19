@@ -35,12 +35,13 @@ ViewData* load_mut (ReadRef model, ViewID id) {
     UseStatement st (model->views.st_load);
     st.params(id);
     if (st.step()) {
+        data = std::make_unique<ViewData>();
         data->root_node = get_node_with_url(model, view_url(id));
         AA(data->root_node);
         data->focused_tab = st[0];
         data->created_at = st[1];
         data->closed_at = st[2];
-        for (int64 l : json::Array(json::parse(st[4]))) {
+        for (int64 l : json::Array(json::parse(st[3]))) {
             data->expanded_tabs.insert(EdgeID{l});
         }
     }
