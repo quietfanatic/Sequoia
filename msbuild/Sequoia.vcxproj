@@ -156,6 +156,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="../src/model/internal/test/edge.t.cpp" />
     <ClCompile Include="../src/model/internal/edge.cpp" />
     <ClCompile Include="../src/model/internal/model.cpp" />
     <ClCompile Include="../src/model/internal/node.cpp" />
