@@ -30,31 +30,41 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
     // Announce loading state
     touch(write(app.model), node);
 
-    app.nursery.new_webview([this](
+    // Theoretically this activity could be destroyed before the webview
+    // creation finished, so use a weak pointer to keep track of it.
+    // The event handlers are fine because the activity closes the webview
+    // in its destructor, so no events will fire after that.
+    WeakPtr<Activity> weak_self = this;
+    app.nursery.new_webview([weak_self](
         ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd
     ) {
-        controller = wvc;
-        webview = wv;
-        webview_hwnd = hwnd;
+        Activity* self = weak_self;
+        if (!self) {
+            wvc->Close();
+            return;
+        }
+        self->controller = wvc;
+        self->webview = wv;
+        self->webview_hwnd = hwnd;
 
-        AH(webview->add_DocumentTitleChanged(
+        AH(self->webview->add_DocumentTitleChanged(
             Callback<ICoreWebView2DocumentTitleChangedEventHandler>(
-                [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
+                [self](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
              // WebView2 tends to have spurious navigations to about:blank, so don't
              // save the title in that case.
             wil::unique_cotaskmem_string source;
-            webview->get_Source(&source);
+            self->webview->get_Source(&source);
             if (source.get() != L"about:blank"sv) {
                 wil::unique_cotaskmem_string title;
-                webview->get_DocumentTitle(&title);
-                set_title(write(app.model), node, from_utf16(title.get()));
+                self->webview->get_DocumentTitle(&title);
+                set_title(write(self->app.model), self->node, from_utf16(title.get()));
             }
             return S_OK;
         }).Get(), nullptr));
 
-        AH(webview->add_SourceChanged(
-            Callback<ICoreWebView2SourceChangedEventHandler>([this](
+        AH(self->webview->add_SourceChanged(
+            Callback<ICoreWebView2SourceChangedEventHandler>([self](
                 ICoreWebView2* sender,
                 ICoreWebView2SourceChangedEventArgs* args) -> HRESULT
         {
@@ -62,40 +72,40 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
              // WebView2 tends to have spurious navigations to about:blank, so don't
              // save the url in that case.
             wil::unique_cotaskmem_string source;
-            webview->get_Source(&source);
+            self->webview->get_Source(&source);
             if (source.get() != L""sv && source.get() != L"about:blank"sv) {
-                current_url = from_utf16(source.get());
-                if ((app.model/node)->url != current_url) {
-                    set_url(write(app.model), node, current_url);
+                self->current_url = from_utf16(source.get());
+                if ((self->app.model/self->node)->url != self->current_url) {
+                    set_url(write(self->app.model), self->node, self->current_url);
                 }
             }
 
             return S_OK;
         }).Get(), nullptr));
 
-        AH(webview->add_NavigationCompleted(
-            Callback<ICoreWebView2NavigationCompletedEventHandler>([this](
+        AH(self->webview->add_NavigationCompleted(
+            Callback<ICoreWebView2NavigationCompletedEventHandler>([self](
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
-            loading = false;
-            touch(write(app.model), node);
+            self->loading = false;
+            touch(write(self->app.model), self->node);
             return S_OK;
         }).Get(), nullptr));
 
          // This doesn't work for middle-clicking edges
          // TODO: How true is that now?  Investigate when this is called.
-        AH(webview->add_NewWindowRequested(
-            Callback<ICoreWebView2NewWindowRequestedEventHandler>([this](
+        AH(self->webview->add_NewWindowRequested(
+            Callback<ICoreWebView2NewWindowRequestedEventHandler>([self](
                 ICoreWebView2* sender,
                 ICoreWebView2NewWindowRequestedEventArgs* args) -> HRESULT
         {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
 
-            auto w = write(app.model);
+            auto w = write(self->app.model);
             auto child = ensure_node_with_url(w, from_utf16(url.get()));
-            make_last_child(w, node, child);
+            make_last_child(w, self->node, child);
 
             args->put_Handled(TRUE);
             return S_OK;
@@ -104,11 +114,13 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
         static std::wstring injection = to_utf16(
             slurp(exe_relative("res/win32app/activity.js"sv))
         );
-        AH(webview->AddScriptToExecuteOnDocumentCreated(injection.c_str(), nullptr));
+        AH(self->webview->AddScriptToExecuteOnDocumentCreated(
+            injection.c_str(), nullptr
+        ));
 
-        AH(webview->add_WebMessageReceived(
+        AH(self->webview->add_WebMessageReceived(
             Callback<ICoreWebView2WebMessageReceivedEventHandler>(
-                [this](
+                [self](
                     ICoreWebView2* sender,
                     ICoreWebView2WebMessageReceivedEventArgs* args
                 )
@@ -118,13 +130,13 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
             string raw = from_utf16(raw16.get());
             LOG("Activity::message_from_webview"sv, raw);
             json::Value message = json::parse(raw);
-            message_from_webview(message);
+            self->message_from_webview(message);
             return S_OK;
         }).Get(), nullptr));
 
-        AH(controller->add_AcceleratorKeyPressed(
+        AH(self->controller->add_AcceleratorKeyPressed(
             Callback<ICoreWebView2AcceleratorKeyPressedEventHandler>(
-                [this](
+                [self](
                     ICoreWebView2Controller* sender,
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
@@ -155,9 +167,9 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
             return S_OK;
         }).Get(), nullptr));
 
-        AH(webview->add_ContainsFullScreenElementChanged(
+        AH(self->webview->add_ContainsFullScreenElementChanged(
             Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
-                [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
+                [self](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
             // TODO: Keep track of viewing view and set fullscreen
             return S_OK;

@@ -46,6 +46,8 @@ struct App : model::Observer {
     void quit (int code = 0);
 
     void Observer_after_commit (const model::Update&) override;
+
+    std::unordered_map<uint64, App*> weak_factory;
 };
 
 } // namespace win32app

@@ -99,6 +99,11 @@ Nursery::Nursery (App& a) : app(a) {
 
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 }
+Nursery::~Nursery () {
+    if (next_controller) {
+        next_controller->Close();
+    }
+}
 
 static void create (
     Nursery& nursery,
@@ -111,6 +116,11 @@ static void create (
         >([&nursery, then](
             HRESULT hr, ICoreWebView2Controller* controller
         ) -> HRESULT {
+            if (hr == E_ABORT) {
+                 // Nursery was deleted and environment expired.
+                return S_OK;
+            }
+
             LOG("Nursery: new webview created"sv);
             AH(hr);
             HWND hwnd = GetWindow(nursery.hwnd, GW_CHILD);
@@ -128,7 +138,6 @@ static void create (
 static void queue (
     Nursery& nursery
 ) {
-     // TODO: use-after-free
     create(nursery, [&nursery](
         ICoreWebView2Controller* controller,
         ICoreWebView2* webview,

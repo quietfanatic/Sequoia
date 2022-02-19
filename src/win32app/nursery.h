@@ -25,6 +25,7 @@ HWND existing_nursery (const Profile&);
 struct Nursery {
     App& app;
     Nursery (App&);
+    ~Nursery ();
 
     HWND hwnd = nullptr;
 

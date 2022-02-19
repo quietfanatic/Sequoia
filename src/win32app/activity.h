@@ -4,6 +4,7 @@
 
 #include "../model/model.h"
 #include "../util/types.h"
+#include "../util/weak.h"
 
 struct ICoreWebView2;
 struct ICoreWebView2Controller;
@@ -12,7 +13,7 @@ namespace json { struct Value; }
 namespace win32app {
 struct App;
 
-struct Activity {
+struct Activity : WeakPointable {
     App& app;
     model::NodeID node;
 
