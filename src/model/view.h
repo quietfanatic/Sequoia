@@ -42,6 +42,8 @@ void unclose (WriteRef, ViewID);
 
 void focus_tab (WriteRef, ViewID, EdgeID);
 
+void navigate_tab (WriteRef, ViewID, EdgeID);
+
 void trash_tab (WriteRef, ViewID, EdgeID);
 
 void expand_tab (WriteRef, ViewID, EdgeID);

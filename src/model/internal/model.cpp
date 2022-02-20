@@ -75,16 +75,17 @@ void delete_model (Model* model) {
     delete model;
 }
 
+ // TODO: move these out
 const NodeData* operator/ (ReadRef model, NodeID id) {
-    LOG("load Node"sv, id);
     return load_mut(model, id);
 }
 const EdgeData* operator/ (ReadRef model, EdgeID id) {
-    LOG("load Edge"sv, id);
     return load_mut(model, id);
 }
 const ViewData* operator/ (ReadRef model, ViewID id) {
-    LOG("load View"sv, id);
+    return load_mut(model, id);
+}
+const ActivityData* operator/ (ReadRef model, ActivityID id) {
     return load_mut(model, id);
 }
 

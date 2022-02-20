@@ -10,6 +10,7 @@ struct Update {
     std::unordered_set<NodeID> nodes;
     std::unordered_set<EdgeID> edges;
     std::unordered_set<ViewID> views;
+    std::unordered_set<ActivityID> activities;
 };
 
  // Whenever the model is changed (see write.h), all Observers attached to the

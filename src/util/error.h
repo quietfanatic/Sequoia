@@ -52,7 +52,7 @@ String error_message_win32 ();
  // Using lambdas instead of function-like macros, because some compilers
  // aren't very good at displaying line numbers when function-like macros are
  // involved.
-#define AA [](auto res){ if (!res) DERR(error_message_assert()); }
+#define AA [](auto&& res){ if (!res) DERR(error_message_assert()); }
 #define AH [](uint32 hr){ if (hr != 0) DERR(error_message_hresult(hr)); }
 #define AS [](sqlite3* db, int rc){ if (rc) DERR(error_message_sqlite3(db, rc)); }
 #define AW [](auto res){ if (!res) DERR(error_message_win32()); }

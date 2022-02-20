@@ -29,7 +29,12 @@ Write::~Write () {
             model.edges.cache.erase(edge);
         }
         for (ViewID view : update.views) {
+             // TODO: how to reset fullscreen
             model.views.cache.erase(view);
+        }
+        for (ActivityID activity : update.activities) {
+             // TODO: not sure what to do here.
+            ERR("Rollback changes to activities NYI"sv);
         }
     }
     else {

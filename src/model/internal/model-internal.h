@@ -2,6 +2,7 @@
 #include "../model.h"
 
 #include <sqlite3.h>
+#include "activity-internal.h"
 #include "edge-internal.h"
 #include "node-internal.h"
 #include "view-internal.h"
@@ -23,6 +24,7 @@ struct Model {
     NodeModel nodes;
     EdgeModel edges;
     ViewModel views;
+    ActivityModel activities;
     WriteModel writes;
 
     Model (Str db_path);

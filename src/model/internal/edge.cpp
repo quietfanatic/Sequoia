@@ -144,7 +144,7 @@ static EdgeID save (WriteRef model, EdgeID id, const EdgeData* data) {
     return id;
 }
 
-static EdgeID create_edge (WriteRef model, unique_ptr<EdgeData>&& data) {
+static EdgeID create_edge (WriteRef model, unique_ptr<EdgeData> data) {
     AA(!data->created_at);
     data->created_at = now();
     EdgeID id = save(model, EdgeID{}, &*data);

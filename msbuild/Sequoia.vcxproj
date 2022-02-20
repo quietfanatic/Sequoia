@@ -161,6 +161,7 @@
     <ClCompile Include="../src/model/internal/test/model_test_environment.cpp" />
     <ClCompile Include="../src/model/internal/test/node.t.cpp" />
     <ClCompile Include="../src/model/internal/test/view.t.cpp" />
+    <ClCompile Include="../src/model/internal/activity.cpp" />
     <ClCompile Include="../src/model/internal/edge.cpp" />
     <ClCompile Include="../src/model/internal/model.cpp" />
     <ClCompile Include="../src/model/internal/node.cpp" />
@@ -193,12 +194,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../src/model/internal/test/model_test_environment.h" />
+    <ClInclude Include="../src/model/internal/activity-internal.h" />
     <ClInclude Include="../src/model/internal/edge-internal.h" />
     <ClInclude Include="../src/model/internal/model-internal.h" />
     <ClInclude Include="../src/model/internal/node-internal.h" />
     <ClInclude Include="../src/model/internal/statement.h" />
     <ClInclude Include="../src/model/internal/view-internal.h" />
     <ClInclude Include="../src/model/internal/write-internal.h" />
+    <ClInclude Include="../src/model/activity.h" />
     <ClInclude Include="../src/model/edge.h" />
     <ClInclude Include="../src/model/model.h" />
     <ClInclude Include="../src/model/node.h" />

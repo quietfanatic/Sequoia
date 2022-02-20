@@ -53,6 +53,8 @@ struct EdgeData;
 using EdgeID = ModelID<EdgeData>;
 struct ViewData;
 using ViewID = ModelID<ViewData>;
+struct ActivityData;
+using ActivityID = ModelID<ActivityData>;
 
  // Loading operators.  I'll go ahead and declare them here so that you ge
  // better error messages if you forget to include node.h or similar.
@@ -67,6 +69,7 @@ using ViewID = ModelID<ViewData>;
 const NodeData* operator / (ReadRef, NodeID);
 const EdgeData* operator / (ReadRef, EdgeID);
 const ViewData* operator / (ReadRef, ViewID);
+const ActivityData* operator / (ReadRef, ActivityID);
 
 } // namespace model
 
