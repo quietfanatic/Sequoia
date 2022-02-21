@@ -40,6 +40,8 @@ ViewID create_view (WriteRef);
 void close (WriteRef, ViewID);
 void unclose (WriteRef, ViewID);
 
+ // Sets the focused tab, but does not affect activities.
+ // See focus_activity_for_tab.
 void focus_tab (WriteRef, ViewID, EdgeID);
 
 void navigate_tab (WriteRef, ViewID, EdgeID);

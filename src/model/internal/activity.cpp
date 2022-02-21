@@ -1,5 +1,7 @@
 #include "activity-internal.h"
 
+#include "../../util/time.h"
+#include "../edge.h"
 #include "model-internal.h"
 
 using namespace std;
@@ -12,6 +14,15 @@ ActivityData* load_mut (ReadRef model, ActivityID id) {
     auto iter = a.by_id.find(id);
     AA(iter != a.by_id.end());
     return &*iter->second;
+}
+
+std::vector<ActivityID> get_activities (ReadRef model) {
+    std::vector<ActivityID> r;
+    r.reserve(model->activities.by_id.size());
+    for (auto& [id, data] : model->activities.by_id) {
+        r.push_back(id);
+    }
+    return r;
 }
 
 static ActivityID get_activity_for_node (ReadRef model, NodeID node) {
@@ -61,8 +72,15 @@ static ActivityID create (WriteRef model, std::unique_ptr<ActivityData> data) {
         data->old_nodeless_edge = data->edge;
     }
     if (data->view) {
-        auto [iter, emplaced] = a.by_view.emplace(data->view, id);
-        AA(emplaced);
+         // Kick out activity that already has this view
+        auto& existing_id = a.by_view[data->view];
+        if (existing_id) {
+            auto iter = a.by_id.find(existing_id);
+            AA(iter != a.by_id.end());
+            iter->second->old_view = ViewID{};
+            iter->second->view = ViewID{};
+        }
+        existing_id = id;
         data->old_view = data->view;
     }
      // Insert
@@ -133,7 +151,7 @@ void focus_activity_for_tab (WriteRef model, ViewID view, EdgeID edge) {
             data->edge = edge;
             data->view = view;
              // Should start loading the node's url.
-            data->loading = true;
+            data->loading_at = now();
             create(model, std::move(data));
         }
     }
@@ -174,8 +192,8 @@ void navigate_activity_for_tab (
         if (view_data->focused_tab == edge) {
             data->view = view;
         }
-        data->request_address = address;
-        data->loading = true;
+        data->loading_address = address;
+        data->loading_at = now();
         create(model, std::move(data));
     }
 }
@@ -185,8 +203,8 @@ void navigate (WriteRef model, ActivityID id, Str address) {
     AA(!address.empty());
     auto data = load_mut(model, id);
     AA(data);
-    data->request_address = address;
-    data->loading = true;
+    data->loading_address = address;
+    data->loading_at = now();
     save(model, id, data);
 }
 
@@ -194,7 +212,28 @@ void reload (WriteRef model, ActivityID id) {
     AA(id);
     auto data = load_mut(model, id);
     AA(data);
-    data->request_reload = true;
+    data->reloading = true;
+    data->loading_at = now();
+    save(model, id, data);
+}
+
+void started_loading (WriteRef model, ActivityID id) {
+    AA(id);
+    auto data = load_mut(model, id);
+    AA(data);
+    data->loading_at = now();
+    save(model, id, data);
+}
+
+void finished_loading (WriteRef model, ActivityID id) {
+    AA(id);
+    auto data = load_mut(model, id);
+    AA(data);
+     // These probably don't matter, but clear them for cleanliness.
+    data->loading_address = ""s;
+    data->reloading = false;
+     // This matters.
+    data->loading_at = 0;
     save(model, id, data);
 }
 
@@ -215,8 +254,16 @@ void url_changed (WriteRef model, ActivityID id, Str url) {
     AA(!url.empty());
     auto data = load_mut(model, id);
     AA(data);
-     // This call should only come from the navigation of an active webpage.
-    AA(data->node);
+    if (!data->node) {
+         // Node doesn't exist, create it.
+        AA(data->edge);
+        auto node = ensure_node_with_url(model, url);
+        new_to_node(model, data->edge, node);
+        data->node = node;
+        save(model, id, data);
+        return;
+    }
+    //else...
     auto node_data = *model/data->node;
     AA(node_data);
     if (node_data->url == url) {
@@ -257,14 +304,6 @@ void url_changed (WriteRef model, ActivityID id, Str url) {
     auto new_node = ensure_node_with_url(model, url);
     auto new_edge = make_last_child(model, data->node, new_node);
     move_activity(model, id, new_node, new_edge);
-}
-
-void finished_loading (WriteRef model, ActivityID id) {
-    AA(id);
-    auto data = load_mut(model, id);
-    AA(data);
-    data->loading = false;
-    save(model, id, data);
 }
 
 void delete_activity (WriteRef model, ActivityID id) {

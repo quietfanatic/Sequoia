@@ -168,6 +168,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="../src/model/internal/test/activity.t.cpp" />
     <ClCompile Include="../src/model/internal/test/edge.t.cpp" />
     <ClCompile Include="../src/model/internal/test/model.t.cpp" />
     <ClCompile Include="../src/model/internal/test/model_test_environment.cpp" />

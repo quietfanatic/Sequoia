@@ -13,7 +13,7 @@ namespace model {
 ModelTestEnvironment::ModelTestEnvironment () {
     test_folder = exe_relative("test"sv);
      // TODO: fix ProfileTestEnvironment so it doesn't hog this folder
-    //filesystem::remove_all(test_folder);
+    filesystem::remove_all(test_folder);
     filesystem::create_directories(test_folder);
     init_log(test_folder + "/test.log"s);
     db_path = test_folder + "/test-db.sqlite"s;

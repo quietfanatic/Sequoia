@@ -241,6 +241,14 @@ void move_before (WriteRef model, EdgeID id, EdgeID next) {
     save(model, id, data);
 }
 
+void new_to_node (WriteRef model, EdgeID id, NodeID node) {
+    LOG("new_to_node"sv, id, node);
+    auto data = load_mut(model, id);
+    AA(!data->to_node);
+    data->to_node = node;
+    save(model, id, data);
+}
+
 void trash (WriteRef model, EdgeID id) {
     LOG("trash Edge"sv, id);
     auto data = load_mut(model, id);
