@@ -15,31 +15,41 @@ static void gen_tabs (
     model::EdgeID edge, model::EdgeID parent
 ) {
     AA(edge);
-    auto edge_data = app.model/edge;
-    auto node = edge_data->to_node;
-    auto node_data = app.model/node;
-    auto children = get_edges_from_node(app.model, node);
-
-    int flags = 0;
-    if (view.focused_tab == edge) flags |= Tab::FOCUSED;
     auto activity_id = get_activity_for_edge(app.model, edge);
-    if (activity_id) {
-        auto activity_data = app.model/activity_id;
-        if (activity_data->loading_at) flags |= Tab::LOADING;
-        else flags |= Tab::LOADED;
-    }
-    if (node_data) {
+    auto edge_data = app.model/edge;
+    if (auto node = edge_data->to_node) {
+        auto node_data = app.model/node;
+        auto children = get_edges_from_node(app.model, node);
+
+        int flags = 0;
+        if (view.focused_tab == edge) flags |= Tab::FOCUSED;
+        if (activity_id) {
+            auto activity_data = app.model/activity_id;
+            if (activity_data->loading_at) flags |= Tab::LOADING;
+            else flags |= Tab::LOADED;
+        }
         if (node_data->visited_at) flags |= Tab::VISITED;
         if (children.size()) flags |= Tab::EXPANDABLE;
-    }
-    if (view.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
-    if (edge_data->trashed_at) flags |= Tab::TRASHED;
+        if (view.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
+        if (edge_data->trashed_at) flags |= Tab::TRASHED;
 
-    tabs.emplace(edge, Tab(node, parent, Tab::Flags(flags)));
-    if (view.expanded_tabs.count(edge)) {
-        for (model::EdgeID child : children) {
-            gen_tabs(app, tabs, view, child, edge);
+        tabs.emplace(edge, Tab(node, parent, Tab::Flags(flags)));
+        if (view.expanded_tabs.count(edge)) {
+            for (model::EdgeID child : children) {
+                gen_tabs(app, tabs, view, child, edge);
+            }
         }
+    }
+    else {
+        int flags = 0;
+        if (view.focused_tab == edge) flags |= Tab::FOCUSED;
+         // If activity isn't currently loading, there should be a node.
+        if (activity_id) flags |= Tab::LOADING;
+         // This probably should never happen
+        if (view.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
+        if (edge_data->trashed_at) flags |= Tab::TRASHED;
+
+        tabs.emplace(edge, Tab({}, parent, Tab::Flags(flags)));
     }
 }
 

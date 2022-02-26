@@ -40,7 +40,8 @@ template <class T>
 struct ModelID {
     int64 id;
 
-    explicit constexpr ModelID (int64 id = 0) : id(id) { AA(id >= 0); }
+    constexpr ModelID () : id(0) { }
+    explicit constexpr ModelID (int64 id) : id(id) { AA(id >= 0); }
     ModelID (const ModelID& o) : id(o.id) { }
     explicit constexpr operator bool () const { return id; }
     constexpr operator int64 () const { return id; }

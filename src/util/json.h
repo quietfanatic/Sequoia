@@ -66,10 +66,10 @@ struct Value {
     explicit Value (Object*&& v) : type(OBJECT), object(v) { v = nullptr; }
 
     template <class T>
-    Value (T* v) { static_assert(false, "Can't convert this pointer to json::Value"); }
+    Value (T* v) { static_assert((T*)nullptr, "Can't convert this pointer to json::Value"); }
 
     template <class T>
-    bool is () const { static_assert(false, "Can't call json::Value::is<>() with this type because it isn't a type json::Value can be casted to."); }
+    bool is () const { static_assert((T*)nullptr, "Can't call json::Value::is<>() with this type because it isn't a type json::Value can be casted to."); }
     template <> bool is<bool> () const { return type == BOOL; }
     template <> bool is<signed char> () const { return type == NUMBER; }
     template <> bool is<unsigned char> () const { return type == NUMBER; }
