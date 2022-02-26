@@ -3,7 +3,6 @@
 
 #include "../../model/view.h"
 #include "../../tap/tap.h"
-#include "../app_view_collection.h"
 #include "../profile.h"
 #include "profile_test_environment.h"
 
@@ -24,13 +23,13 @@ static void app_tests () {
     doesnt_throw([&]{
         app->start({});
     }, "Start with no URLs");
-    is(app->app_views->count(), 1, "Default window was created");
+    is(app->app_views.size(), 1, "Default window was created");
     is(get_open_views(app->model).size(), 1, "A model view was created");
 
     doesnt_throw([&]{
         app->open_urls({"http://example.com/"s});
     }, "open_urls");
-    is(app->app_views->count(), 2, "Window was created for one url");
+    is(app->app_views.size(), 2, "Window was created for one url");
     is(get_open_views(app->model).size(), 2, "A new view was created");
 
     doesnt_throw([&]{

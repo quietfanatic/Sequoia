@@ -26,6 +26,7 @@ namespace win32app {
 static const wchar_t* class_name = L"Sequoia Nursery";
 
 HWND existing_nursery (const Profile& profile) {
+     // TODO: less L strings
     String16 window_title = L"Sequoia Nursery for "sv + to_utf16(profile.name);
 
     return FindWindowExW(HWND_MESSAGE, NULL, class_name, window_title.c_str());
@@ -37,6 +38,7 @@ static LRESULT CALLBACK nursery_WndProc (
     switch (message) {
         case WM_COPYDATA: {
             auto self = (Nursery*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            AA(self);
             auto message = json::parse(
                 (const char*)((COPYDATASTRUCT*)l)->lpData
             );
@@ -99,6 +101,7 @@ Nursery::Nursery (App& a) : app(a) {
 
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
 }
+
 Nursery::~Nursery () {
     if (next_controller) {
         next_controller->Close();

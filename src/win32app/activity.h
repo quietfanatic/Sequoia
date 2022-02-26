@@ -15,7 +15,7 @@ struct App;
 
 struct Activity : WeakPointable {
     App& app;
-    model::NodeID node;
+    model::ActivityID id;
 
     wil::com_ptr<ICoreWebView2Controller> controller;
     wil::com_ptr<ICoreWebView2> webview;
@@ -25,15 +25,13 @@ struct Activity : WeakPointable {
      // and also to work around special URLs not surviving a round-trip through
      // navigation.
     String current_url;
-    bool loading = true;
+     // If activity's loading_at is newer, start a new load
+    double current_loading_at;
 
-    Activity (App&, model::NodeID);
+    Activity (App&, model::ActivityID);
     void update ();
 
-    bool navigate_url (Str url);
-    void navigate_search (Str search);
-    void navigate (Str address);
-
+     // TODO: make these internal
     void message_to_webview (const json::Value& message);
     void message_from_webview (const json::Value& message);
 

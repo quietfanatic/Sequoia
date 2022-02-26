@@ -23,12 +23,9 @@ using namespace std;
 
 namespace win32app {
 
-Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
-    LOG("new Activity"sv, this, node);
-    AA(node);
-
-    // Announce loading state
-    touch(write(app.model), node);
+Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
+    LOG("new Activity"sv, this, id);
+    AA(id);
 
     // Theoretically this activity could be destroyed before the webview
     // creation finished, so use a weak pointer to keep track of it.
@@ -47,18 +44,22 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
         self->webview = wv;
         self->webview_hwnd = hwnd;
 
+         // TODO: add NavigationStarting to start_loading
         AH(self->webview->add_DocumentTitleChanged(
             Callback<ICoreWebView2DocumentTitleChangedEventHandler>(
                 [self](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-             // WebView2 tends to have spurious navigations to about:blank, so don't
-             // save the title in that case.
+             // WebView2 tends to have spurious navigations to about:blank,
+             // so don't save the title in that case.
             wil::unique_cotaskmem_string source;
             self->webview->get_Source(&source);
             if (source.get() != L"about:blank"sv) {
                 wil::unique_cotaskmem_string title;
                 self->webview->get_DocumentTitle(&title);
-                set_title(write(self->app.model), self->node, from_utf16(title.get()));
+                auto node = (self->app.model/self->id)->node;
+                set_title(write(self->app.model),
+                    node, from_utf16(title.get())
+                );
             }
             return S_OK;
         }).Get(), nullptr));
@@ -69,14 +70,17 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
                 ICoreWebView2SourceChangedEventArgs* args) -> HRESULT
         {
              // TODO: Make new node instead of changing this one!
-             // WebView2 tends to have spurious navigations to about:blank, so don't
-             // save the url in that case.
+             // WebView2 tends to have spurious navigations to about:blank,
+             // so don't save the url in that case.
             wil::unique_cotaskmem_string source;
             self->webview->get_Source(&source);
             if (source.get() != L""sv && source.get() != L"about:blank"sv) {
                 self->current_url = from_utf16(source.get());
-                if ((self->app.model/self->node)->url != self->current_url) {
-                    set_url(write(self->app.model), self->node, self->current_url);
+                auto node = (self->app.model/self->id)->node;
+                if ((self->app.model/node)->url != self->current_url) {
+                    url_changed(write(self->app.model),
+                        self->id, self->current_url
+                    );
                 }
             }
 
@@ -88,8 +92,8 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
                 ICoreWebView2* sender,
                 ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
         {
-            self->loading = false;
-            touch(write(self->app.model), self->node);
+            self->current_loading_at = 0;
+            finished_loading(write(self->app.model), self->id);
             return S_OK;
         }).Get(), nullptr));
 
@@ -103,9 +107,11 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
 
+             // TODO: autoload
             auto w = write(self->app.model);
             auto child = ensure_node_with_url(w, from_utf16(url.get()));
-            make_last_child(w, self->node, child);
+            auto activity_data = self->app.model/self->id;
+            make_last_child(w, activity_data->node, child);
 
             args->put_Handled(TRUE);
             return S_OK;
@@ -175,10 +181,8 @@ Activity::Activity (App& a, model::NodeID n) : app(a), node(n) {
             return S_OK;
         }).Get(), nullptr));
 
-        // TODO: keep track of viewing view
-//        if (Window* window = app.window_for_node(node)) {
-//            window->reflow();
-//        }
+         // TODO reflow window
+        self->update();
     });
 }
 
@@ -194,6 +198,7 @@ void Activity::message_from_webview (const json::Value& message) {
 
     switch (x31_hash(command)) {
         case x31_hash("favicon"): {
+            auto node = (app.model/id)->node;
             set_favicon_url(write(app.model), node, message[1]);
             break;
         }
@@ -211,6 +216,7 @@ void Activity::message_from_webview (const json::Value& message) {
                 }
                 else {
                     auto w = write(app.model);
+                    auto node = (app.model/id)->node;
                     auto child = ensure_node_with_url(w, url);
                      // TODO: alt to make sibling
                     if (shift) {
@@ -241,51 +247,70 @@ void Activity::message_from_webview (const json::Value& message) {
     }
 }
 
-void Activity::update () {
-     // TODO: retire this along with set_url
-    auto url = (app.model/node)->url;
-    if (url != current_url) navigate(url);
-}
-
-bool Activity::navigate_url (Str url) {
-    LOG("navigate_url"sv, node, url);
-    auto hr = webview->Navigate(to_utf16(url).c_str());
+static bool navigate_url (Activity& self, Str url) {
+    LOG("navigate_url"sv, self.id, url);
+    auto hr = self.webview->Navigate(to_utf16(url).c_str());
     if (SUCCEEDED(hr)) {
-        if (!loading) {
-            loading = true;
-            touch(write(app.model), node);
-        }
-        current_url = url;
+        self.current_url = url;
         return true;
     }
     if (hr != E_INVALIDARG) AH(hr);
     return false;
 }
 
-void Activity::navigate_search (Str search) {
-    LOG("navigate_search"sv, node, search);
+static void navigate_search (Activity& self, Str search) {
+    LOG("navigate_search"sv, self.id, search);
      // Escape URL characters
     String url = "https://duckduckgo.com/?q="sv + escape_url(search);
      // If the search URL is invalid, treat it as a bug
-    AA(navigate_url(url));
+    AA(navigate_url(self, url));
 }
 
-void Activity::navigate (Str address) {
-    if (webview) {
-        if (navigate_url(address)) return;
-        if (address.find(' ') != string::npos
-            || address.find('.') == string::npos
-        ) {
-            navigate_search(address);
-        }
-        else {
-            String url = "http://"sv + address;
-            if (navigate_url(url)) return;
-            navigate_search(address);
-        }
+static void navigate (Activity& self, Str address) {
+    AA(self.webview);
+    if (navigate_url(self, address)) return;
+    if (address.find(' ') != string::npos
+        || address.find('.') == string::npos
+    ) {
+        navigate_search(self, address);
     }
     else {
-        set_url(write(app.model), node, current_url = address);
+        String url = "http://"sv + address;
+        if (navigate_url(self, url)) return;
+        navigate_search(self, address);
+    }
+}
+
+void Activity::update () {
+    if (!webview) {
+         // We'll come back here when the webview is ready.
+        return;
+    }
+    auto data = app.model/id;
+    AA(data);
+    if (data->loading_at) {
+        AA(data->loading_at >= current_loading_at);
+        if (data->loading_at > current_loading_at) {
+            current_loading_at = data->loading_at;
+            if (!data->loading_address.empty()) {
+                AA(!data->reloading);
+                navigate(*this, data->loading_address);
+            }
+            else if (data->reloading) {
+                webview->Reload();
+            }
+            else {
+                 // This shouldn't happen.  The only time where loading_at &&
+                 // !loading_address && !reloading is when we ourselves set
+                 // loading_at, in which case our current_loading_at should
+                 // match it.
+                AA(false);
+            }
+        }
+    }
+    else if (current_loading_at) {
+        webview->Stop();
+        current_loading_at = 0;
     }
 }
 
@@ -297,7 +322,10 @@ bool Activity::is_fullscreen () {
 
 void Activity::leave_fullscreen () {
     if (!is_fullscreen()) return;
-    webview->ExecuteScript(to_utf16("document.exitFullscreen()"sv).c_str(), nullptr);
+    webview->ExecuteScript(
+        to_utf16("document.exitFullscreen()"sv).c_str(),
+        nullptr
+    );
 }
 
 Activity::~Activity () {

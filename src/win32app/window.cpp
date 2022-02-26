@@ -20,7 +20,6 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "activity.h"
-#include "activity_collection.h"
 #include "app.h"
 #include "nursery.h"
 #include "shell.h"
@@ -32,10 +31,7 @@ namespace win32app {
 
 static LRESULT CALLBACK window_WndProc (HWND, UINT, WPARAM, LPARAM);
 
-Window::Window (App& a, model::ViewID v) :
-    app(a), view(v),
-    current_focused_node(focused_node(app.model, view))
-{
+Window::Window (App& a, model::ViewID v) : app(a), view(v) {
     static auto class_name = L"Sequoia";
     static bool init = []{
         WNDCLASSEXW c {};
@@ -90,50 +86,48 @@ void Window::reflow () {
             ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
     }
-     // TODO: make sure this is actually our node
-    Activity* activity = app.activities->get_for_node(current_focused_node);
-    if (activity && activity->controller) {
-        AH(activity->controller->put_ParentWindow(hwnd));
-        AH(activity->controller->put_Bounds(bounds));
-        AH(activity->controller->put_IsVisible(TRUE));
+    if (Activity* activity = app.activity_for_view(view)) {
+        if (activity->controller) {
+            AH(activity->controller->put_ParentWindow(hwnd));
+            AH(activity->controller->put_Bounds(bounds));
+            AH(activity->controller->put_IsVisible(TRUE));
+        }
     }
 }
 
 static LRESULT CALLBACK window_WndProc (
     HWND hwnd, UINT message, WPARAM w, LPARAM l
 ) {
-    auto window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    if (!window) return DefWindowProc(hwnd, message, w, l);
+    auto self = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    if (!self) return DefWindowProc(hwnd, message, w, l);
     switch (message) {
         case WM_SIZE:
             switch (w) {
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
-                     // TODO: make sure this is actually our node
-                    Activity* activity = window->app.activities->get_for_node(
-                        window->current_focused_node
-                    );
-                    if (activity && activity->controller) {
-                        activity->controller->put_IsVisible(FALSE);
-                    }
-                    Shell* shell = window->app.shell_for_view(window->view);
+                    Shell* shell = self->app.shell_for_view(self->view);
                     if (shell && shell->controller) {
                         shell->controller->put_IsVisible(FALSE);
                     }
+                    if (Activity* activity = self->app.activity_for_view(self->view)) {
+                        if (activity->controller) {
+                            AH(activity->controller->put_IsVisible(FALSE));
+                        }
+                    }
                 }
                 default:
-                    window->reflow();
+                    self->reflow();
                     break;
             }
             return 0;
         case WM_DPICHANGED:
-            window->reflow();
+            self->reflow();
             return 0;
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN: {
              // Since our application is only webviews, I'm not sure we ever
              // get here
-            auto handler = window->get_key_handler(
+            auto handler = self->get_key_handler(
                 uint(w),
                 GetKeyState(VK_SHIFT) < 0,
                 GetKeyState(VK_CONTROL) < 0,
@@ -148,7 +142,7 @@ static LRESULT CALLBACK window_WndProc (
         }
         case WM_CLOSE:
              // TODO: respond to session manager messages
-            close(write(window->app.model), window->view);
+            close(write(self->app.model), self->view);
             return 0;
     }
     return DefWindowProc(hwnd, message, w, l);
@@ -236,8 +230,10 @@ std::function<void()> Window::get_key_handler (
     return nullptr;
 }
 
-void Window::view_updated () {
+void Window::update (const model::Update& update) {
     auto view_data = app.model/view;
+    AA(view_data);
+
     if (view_data->fullscreen && !fullscreen) {
         fullscreen = Fullscreen{};
         MONITORINFO monitor = {sizeof(MONITORINFO)};
@@ -265,22 +261,28 @@ void Window::view_updated () {
                 | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
         );
         reflow();
-         // TODO: make sure this is actually our activity
-        Activity* activity = app.activities->get_for_node(current_focused_node);
-        if (activity) activity->leave_fullscreen();
+        if (Activity* activity = app.activity_for_view(view)) {
+            activity->leave_fullscreen();
+        }
         fullscreen = nullopt;
     }
-    auto new_focused_node = focused_node(app.model, view);
-    if (new_focused_node != current_focused_node) {
-        node_updated();
-    }
-    current_focused_node = new_focused_node;
-}
 
-void Window::node_updated () {
-    Str title = (app.model/focused_node(app.model, view))->title;
-    String display = title.empty() ? "Sequoia"s : (title + " – Sequoia"sv);
-    AW(SetWindowTextW(hwnd, to_utf16(display).c_str()));
+    bool update_title = false;
+    if (auto activity_id = get_activity_for_view(app.model, view)) {
+        auto activity_data = app.model/activity_id;
+        if (activity_data->node != current_node) {
+            current_node = activity_data->node;
+            update_title = true;
+        }
+    }
+    if (update.nodes.count(current_node)) {
+        update_title = true;
+    }
+    if (update_title) {
+        Str title = (app.model/current_node)->title;
+        String display = title.empty() ? "Sequoia"s : (title + " – Sequoia"sv);
+        AW(SetWindowTextW(hwnd, to_utf16(display).c_str()));
+    }
 }
 
 } // namespace win32app

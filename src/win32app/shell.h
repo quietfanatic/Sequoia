@@ -25,6 +25,7 @@ struct Shell {
     wil::com_ptr<ICoreWebView2> webview;
     HWND webview_hwnd = nullptr;
     bool ready = false;
+     // TODO: make these internal
     void message_to_webview (const json::Value& message);
     void message_from_webview (const json::Value& message);
 

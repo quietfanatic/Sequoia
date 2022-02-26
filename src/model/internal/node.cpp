@@ -81,12 +81,6 @@ NodeID ensure_node_with_url (WriteRef model, Str url) {
     return id;
 }
 
-void set_url (WriteRef model, NodeID id, Str url) {
-    LOG("set_url Node"sv, id, url);
-    auto data = load_mut(model, id);
-    data->url = url;
-    save(model, id, data);
-}
 void set_title (WriteRef model, NodeID id, Str title) {
     LOG("set_title Node"sv, id, title);
     auto data = load_mut(model, id);

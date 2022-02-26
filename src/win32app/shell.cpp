@@ -136,47 +136,42 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("navigate"): {
-             // TODO: is this actually what we want to do?
-            auto node = focused_node(app.model, view);
-            if (node) {
-                set_url(write(app.model), node, message[1]);
-            }
+            auto view_data = app.model/view;
+            navigate_activity_for_tab(
+                write(app.model), view, view_data->focused_tab,
+                message[1]
+            );
             break;
         }
          // Toolbar buttons
         case x31_hash("back"): {
-            Activity* activity = app.activity_for_node(
-                focused_node(app.model, view)
-            );
+             // Connecting directly to win32app::Activity, because
+             // model::ActivityData doesn't have concept of history
+             // TODO: add enum LoadingType to model::ActiviyData
+            auto activity = app.activity_for_view(view);
             if (activity && activity->webview) {
                 activity->webview->GoBack();
             }
             break;
         }
         case x31_hash("forward"): {
-            Activity* activity = app.activity_for_node(
-                focused_node(app.model, view)
-            );
+            auto activity = app.activity_for_view(view);
             if (activity && activity->webview) {
                 activity->webview->GoForward();
             }
             break;
         }
         case x31_hash("reload"): {
-            Activity* activity = app.activity_for_node(
-                focused_node(app.model, view)
-            );
-            if (activity && activity->webview) {
-                activity->webview->Reload();
+            auto activity_id = get_activity_for_view(app.model, view);
+            if (activity_id) {
+                reload(write(app.model), activity_id);
             }
             break;
         }
         case x31_hash("stop"): {
-            Activity* activity = app.activity_for_node(
-                focused_node(app.model, view)
-            );
-            if (activity && activity->webview) {
-                activity->webview->Stop();
+            auto activity_id = get_activity_for_view(app.model, view);
+            if (activity_id) {
+                finished_loading(write(app.model), activity_id);
             }
             break;
         }
@@ -186,7 +181,10 @@ void Shell::message_from_webview (const json::Value& message) {
         }
          // Tab actions
         case x31_hash("focus_tab"): {
-            focus_tab(write(app.model), view, model::EdgeID{message[1]});
+            auto tab = model::EdgeID{message[1]};
+            auto w = write(app.model);
+            focus_tab(w, view, tab);
+            focus_activity_for_tab(w, view, tab);
             break;
         }
         case x31_hash("new_child"): {
@@ -250,13 +248,14 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("open_selected_links"): {
-            if (Activity* activity = app.activity_for_node(
-                focused_node(app.model, view)
-            )) {
-                activity->message_to_webview(
-                    json::array("open_selected_links"sv)
-                );
-            }
+            // TODO
+//            if (Activity* activity = app.activity_for_node(
+//                focused_node(app.model, view)
+//            )) {
+//                activity->message_to_webview(
+//                    json::array("open_selected_links"sv)
+//                );
+//            }
             break;
         }
         case x31_hash("quit"): {
@@ -274,11 +273,12 @@ void Shell::message_from_webview (const json::Value& message) {
 }
 
 void Shell::update (const model::Update& update) {
-     // Generate new tab collection
-    TabTree old_tabs = move(current_tabs);
-    current_tabs = create_tab_tree(app, view);
-     // Send changed tabs to shell
     if (ready) {
+         // Generate new tab collection
+        TabTree old_tabs = move(current_tabs);
+        current_tabs = create_tab_tree(app, view);
+         // Send changed tabs to shell
+         // TODO: do less when tree structure hasn't changed?
         TabChanges changes = get_changed_tabs(update, old_tabs, current_tabs);
         json::Array tab_updates;
         tab_updates.reserve(changes.size());

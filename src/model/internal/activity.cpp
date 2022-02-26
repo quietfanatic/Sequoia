@@ -51,6 +51,14 @@ ActivityID get_activity_for_edge (ReadRef model, EdgeID edge) {
     else return get_activity_for_nodeless_edge(model, edge);
 }
 
+ActivityID get_activity_for_view (ReadRef model, ViewID view) {
+    AA(view);
+    auto& a = model->activities;
+    auto iter = a.by_view.find(view);
+    if (iter == a.by_view.end()) return ActivityID{};
+    else return iter->second;
+}
+
 static void touch (WriteRef model, ActivityID id) {
     model->writes.current_update.activities.insert(id);
 }

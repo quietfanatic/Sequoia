@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../model/activity.h"
 #include "../model/model.h"
 #include "../model/observer.h"
 #include "profile.h"
@@ -11,18 +12,21 @@
 
 namespace win32app {
 struct Activity;
-struct ActivityCollection;
-struct AppViewCollection;
 struct Shell;
 struct Window;
+
+struct AppView {
+    std::unique_ptr<Shell> shell;
+    std::unique_ptr<Window> window;
+};
 
 struct App : model::Observer {
     Profile profile;
     Settings settings;
     Nursery nursery;
     model::Model& model;
-    std::unique_ptr<ActivityCollection> activities;
-    std::unique_ptr<AppViewCollection> app_views;
+    std::unordered_map<model::ActivityID, std::unique_ptr<Activity>> activities;
+    std::unordered_map<model::ViewID, AppView> app_views;
 
      // Makes all windows hidden; mainly for testing.
     bool headless = false;
@@ -30,9 +34,8 @@ struct App : model::Observer {
     App (Profile&& profile);
     ~App();
 
-     // Just shortcuts for *Collection
-    Activity* activity_for_node (model::NodeID);
-    Activity* ensure_activity_for_node (model::NodeID);
+    Activity* activity_for_id (model::ActivityID);
+    Activity* activity_for_view (model::ViewID);
     Shell* shell_for_view (model::ViewID);
     Window* window_for_view (model::ViewID);
 
@@ -47,8 +50,6 @@ struct App : model::Observer {
     void quit (int code = 0);
 
     void Observer_after_commit (const model::Update&) override;
-
-    std::unordered_map<uint64, App*> weak_factory;
 };
 
 } // namespace win32app

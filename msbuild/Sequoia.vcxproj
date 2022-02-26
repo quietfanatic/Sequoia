@@ -195,9 +195,7 @@
     <ClCompile Include="../src/win32app/test/profile_test_environment.cpp" />
     <ClCompile Include="../src/win32app/test/shell.t.cpp" />
     <ClCompile Include="../src/win32app/activity.cpp" />
-    <ClCompile Include="../src/win32app/activity_collection.cpp" />
     <ClCompile Include="../src/win32app/app.cpp" />
-    <ClCompile Include="../src/win32app/app_view_collection.cpp" />
     <ClCompile Include="../src/win32app/main.cpp" />
     <ClCompile Include="../src/win32app/nursery.cpp" />
     <ClCompile Include="../src/win32app/profile.cpp" />
@@ -234,9 +232,7 @@
     <ClInclude Include="../src/util/weak.h" />
     <ClInclude Include="../src/win32app/test/profile_test_environment.h" />
     <ClInclude Include="../src/win32app/activity.h" />
-    <ClInclude Include="../src/win32app/activity_collection.h" />
     <ClInclude Include="../src/win32app/app.h" />
-    <ClInclude Include="../src/win32app/app_view_collection.h" />
     <ClInclude Include="../src/win32app/nursery.h" />
     <ClInclude Include="../src/win32app/profile.h" />
     <ClInclude Include="../src/win32app/shell.h" />

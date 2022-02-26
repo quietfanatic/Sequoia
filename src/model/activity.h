@@ -29,6 +29,8 @@ std::vector<ActivityID> get_activities (ReadRef);
 
 ActivityID get_activity_for_edge (ReadRef, EdgeID);
 
+ActivityID get_activity_for_view (ReadRef, ViewID);
+
  // If activity exists, sets its view and edge.
  // If it doesn't exist, but edge has a to_node, creates activity.
  // If edge doesn't have a to_node, does nothing.

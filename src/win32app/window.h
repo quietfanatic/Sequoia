@@ -5,6 +5,7 @@
 #include <windows.h>
 
 #include "../model/model.h"
+#include "../model/observer.h"
 
 namespace win32app {
 struct App;
@@ -35,9 +36,9 @@ struct Window {
     void reflow ();
 
      ///// Updating
-    model::NodeID current_focused_node;
-    void view_updated ();
-    void node_updated ();
+    void update (const model::Update&);
+     // TODO: Should it be necessary to store this?
+    model::NodeID current_node;
 };
 
 } // namespace win32app
