@@ -38,6 +38,10 @@ struct Activity : WeakPointable {
     bool is_fullscreen ();
     void leave_fullscreen ();
 
+     // For testing
+    void wait_for_ready ();
+    bool waiting_for_ready = false;
+
     ~Activity();
 };
 

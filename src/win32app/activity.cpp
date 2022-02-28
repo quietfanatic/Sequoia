@@ -175,8 +175,15 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
             return S_OK;
         }).Get(), nullptr));
 
-         // TODO reflow window
+        auto data = self->app.model/self->id;
+        if (data->view) {
+            self->app.window_for_view(data->view)->reflow();
+        }
         self->update();
+        if (self->waiting_for_ready) {
+            self->waiting_for_ready = false;
+            self->app.quit();
+        }
     });
 }
 
@@ -303,11 +310,10 @@ void Activity::update () {
                 webview->Reload();
             }
             else {
-                 // This shouldn't happen.  The only time where loading_at &&
-                 // !loading_address && !reloading is when we ourselves set
-                 // loading_at, in which case our current_loading_at should
-                 // match it.
-                AA(false);
+                 // This will happen when loading an existing node.
+                AA(data->node);
+                auto node_data = app.model/data->node;
+                navigate_url(*this, node_data->url);
             }
         }
     }
@@ -329,6 +335,12 @@ void Activity::leave_fullscreen () {
         to_utf16("document.exitFullscreen()"sv).c_str(),
         nullptr
     );
+}
+
+void Activity::wait_for_ready () {
+    if (webview) return;
+    waiting_for_ready = true;
+    app.run();
 }
 
 Activity::~Activity () {

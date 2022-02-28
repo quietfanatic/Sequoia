@@ -33,6 +33,7 @@ Activity* App::activity_for_id (model::ActivityID id) {
     AA(id);
     auto iter = activities.find(id);
     AA(iter != activities.end());
+    AA(iter->second);
     return &*iter->second;
 }
 
@@ -94,6 +95,10 @@ int App::run () {
 
 void App::quit (int code) {
     PostQuitMessage(code);
+}
+
+void App::async (std::function<void()>&& f) {
+    nursery.async(std::move(f));
 }
 
 void App::Observer_after_commit (const model::Update& update) {

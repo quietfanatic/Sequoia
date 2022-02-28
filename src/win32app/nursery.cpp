@@ -51,6 +51,18 @@ static LRESULT CALLBACK nursery_WndProc (
                 default: return 1;
             }
         }
+        case WM_USER: {
+            auto self = (Nursery*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            AA(self);
+             // this ordering prevents reentrancy problems
+            auto iter = self->async_queue.begin();
+            if (iter != self->async_queue.end()) {
+                auto f = std::move(*iter);
+                self->async_queue.erase(iter);
+                f();
+            }
+            return 0;
+        }
     }
     return DefWindowProc(hwnd, message, w, l);
 }
@@ -176,10 +188,13 @@ void Nursery::new_webview (
     }
     else if (next_controller) {
         LOG("Nursery: using queued webview"sv);
-        auto controller = std::move(next_controller);
-        auto webview = std::move(next_webview);
-        then(controller.get(), webview.get(), next_hwnd);
-        queue(*this);
+         // Async to avoid requiring reentrancy safety
+        async([this, then]{
+            auto controller = std::move(next_controller);
+            auto webview = std::move(next_webview);
+            then(controller.get(), webview.get(), next_hwnd);
+            queue(*this);
+        });
     }
     else {
         LOG("Nursery: skipping queue"sv);
@@ -188,6 +203,11 @@ void Nursery::new_webview (
          // queue.
         create(*this, then);
     }
+}
+
+void Nursery::async (std::function<void()>&& f) {
+    async_queue.emplace_back(std::move(f));
+    PostMessage(hwnd, WM_USER, 0, 0);
 }
 
 } // namespace win32app

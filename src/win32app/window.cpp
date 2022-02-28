@@ -91,6 +91,12 @@ void Window::reflow () {
             AH(activity->controller->put_ParentWindow(hwnd));
             AH(activity->controller->put_Bounds(bounds));
             AH(activity->controller->put_IsVisible(TRUE));
+            // Make sure activity is in front of shell
+            SetWindowPos(
+                activity->webview_hwnd, HWND_TOP,
+                0, 0, 0, 0,
+                SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
+            );
         }
     }
 }

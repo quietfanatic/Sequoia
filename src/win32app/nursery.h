@@ -39,6 +39,10 @@ struct Nursery {
     wil::com_ptr<ICoreWebView2Controller> next_controller;
     wil::com_ptr<ICoreWebView2> next_webview;
     HWND next_hwnd = nullptr;
+
+    void async (std::function<void()>&& f);
+
+    std::vector<std::function<void()>> async_queue;
 };
 
 } // namespace win32app

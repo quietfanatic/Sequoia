@@ -47,6 +47,9 @@ struct App : model::Observer {
     int run ();
     void quit (int code = 0);
 
+     // Queues a message in the message loop to run an arbitrary function.
+    void async (std::function<void()>&&);
+
     void Observer_after_commit (const model::Update&) override;
 };
 

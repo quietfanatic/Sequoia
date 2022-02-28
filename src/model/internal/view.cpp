@@ -125,6 +125,7 @@ void open_view_for_urls (WriteRef model, const std::vector<String>& urls) {
     auto view = create_view(model);
     auto data = model/view;
     for (auto& url : urls) {
+         // TODO: go through navigation upgrade or address validation?
         auto node = ensure_node_with_url(model, url);
         make_last_child(model, data->root_node, node);
     }

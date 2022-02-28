@@ -4,6 +4,7 @@
 #include "../../model/view.h"
 #include "../../model/write.h"
 #include "../../tap/tap.h"
+#include "../activity.h"
 #include "../profile.h"
 #include "profile_test_environment.h"
 
@@ -32,7 +33,20 @@ static void app_tests () {
         open_view_for_urls(write(app->model), {"http://example.com/"s});
     }, "open_view_for_urls");
     is(app->app_views.size(), 2, "Window was created for one url");
-    is(get_open_views(app->model).size(), 2, "A new view was created");
+    auto open_views = get_open_views(app->model);
+    is(open_views.size(), 2, "A new view was created");
+
+    auto view = open_views[1];
+    auto top_tabs = get_top_tabs(app->model, view);
+    is(top_tabs.size(), 1);
+    auto edge = top_tabs[0];
+     // Focus tab and make sure an activity was created
+    focus_tab(write(app->model), view, edge);
+     // Should be created in the destructor of write()
+    Activity* activity = app->activity_for_view(view);
+    ok(activity);
+    activity->wait_for_ready();
+    is(activity->current_url, "http://example.com/"s);
 
     doesnt_throw([&]{
          // Doing this in this order should make run quit immediately.
