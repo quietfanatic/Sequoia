@@ -56,9 +56,8 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
             if (source.get() != L"about:blank"sv) {
                 wil::unique_cotaskmem_string title;
                 self->webview->get_DocumentTitle(&title);
-                auto node = (self->app.model/self->id)->node;
-                set_title(write(self->app.model),
-                    node, from_utf16(title.get())
+                title_changed(write(self->app.model),
+                    self->id, from_utf16(title.get())
                 );
             }
             return S_OK;
@@ -76,12 +75,9 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
             self->webview->get_Source(&source);
             if (source.get() != L""sv && source.get() != L"about:blank"sv) {
                 self->current_url = from_utf16(source.get());
-                auto node = (self->app.model/self->id)->node;
-                if ((self->app.model/node)->url != self->current_url) {
-                    url_changed(write(self->app.model),
-                        self->id, self->current_url
-                    );
-                }
+                url_changed(write(self->app.model),
+                    self->id, self->current_url
+                );
             }
 
             return S_OK;
@@ -107,11 +103,9 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
             wil::unique_cotaskmem_string url;
             args->get_Uri(&url);
 
-             // TODO: autoload
-            auto w = write(self->app.model);
-            auto child = ensure_node_with_url(w, from_utf16(url.get()));
-            auto activity_data = self->app.model/self->id;
-            make_last_child(w, activity_data->node, child);
+            open_last_child(write(self->app.model),
+                self->id, from_utf16(url.get())
+            );
 
             args->put_Handled(TRUE);
             return S_OK;
@@ -198,11 +192,13 @@ void Activity::message_from_webview (const json::Value& message) {
 
     switch (x31_hash(command)) {
         case x31_hash("favicon"): {
-            auto node = (app.model/id)->node;
-            set_favicon_url(write(app.model), node, message[1]);
+            favicon_url_changed(write(app.model), id, message[1]);
             break;
         }
         case x31_hash("click_edge"): {
+             // TODO: separate clicking from navigating (gather intents from
+             // clicks, then let the website open links, then map those links
+             // to intents).
             std::string url = message[1];
             std::string title = message[2];
             int button = message[3];
@@ -216,14 +212,21 @@ void Activity::message_from_webview (const json::Value& message) {
                 }
                 else {
                     auto w = write(app.model);
-                    auto node = (app.model/id)->node;
-                    auto child = ensure_node_with_url(w, url);
-                     // TODO: alt to make sibling
-                    if (shift) {
-                        make_first_child(w, node, child, title);
+                    if (alt) {
+                        if (shift) {
+                            open_prev_sibling(w, id, url, title);
+                        }
+                        else {
+                            open_next_sibling(w, id, url, title);
+                        }
                     }
                     else {
-                        make_last_child(w, node, child, title);
+                        if (shift) {
+                            open_first_child(w, id, url, title);
+                        }
+                        else {
+                            open_last_child(w, id, url, title);
+                        }
                     }
                 }
             }

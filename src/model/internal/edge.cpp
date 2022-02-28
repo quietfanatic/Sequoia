@@ -44,7 +44,6 @@ ORDER BY _position ASC
 )"sv;
 
 vector<EdgeID> get_edges_from_node (ReadRef model, NodeID from_node) {
-    LOG("get_edges_from_node"sv, from_node);
     AA(from_node);
     UseStatement st (model->edges.st_from_node);
     st.params(from_node);
@@ -57,7 +56,6 @@ ORDER BY _id ASC
 )"sv;
 
 vector<EdgeID> get_edges_to_node (ReadRef model, NodeID to_node) {
-    LOG("get_edges_to_node"sv, to_node);
     AA(to_node);
     UseStatement st (model->edges.st_to_node);
     st.params(to_node);
@@ -70,7 +68,6 @@ ORDER BY _trashed_at DESC LIMIT 1
 )"sv;
 
 EdgeID get_last_trashed_edge (ReadRef model) {
-    LOG("get_last_trashed_edge"sv);
     UseStatement st (model->edges.st_last_trashed);
     st.params();
     return st.step() ? EdgeID(st[0]) : EdgeID{};
@@ -140,7 +137,7 @@ static EdgeID save (WriteRef model, EdgeID id, const EdgeData* data) {
     st.run();
     AA(sqlite3_changes(model->db) == 1);
     if (!id) id = EdgeID{sqlite3_last_insert_rowid(model->db)};
-    touch(model, id);
+    model->writes.current_update.edges.insert(id);
     return id;
 }
 
@@ -154,7 +151,6 @@ static EdgeID create_edge (WriteRef model, unique_ptr<EdgeData> data) {
 }
 
 EdgeID make_first_child (WriteRef model, NodeID parent, NodeID to, Str title) {
-    LOG("make_first_child"sv, parent, to, title);
     AA(parent);
     auto data = make_unique<EdgeData>();
     data->opener_node = parent;
@@ -166,7 +162,6 @@ EdgeID make_first_child (WriteRef model, NodeID parent, NodeID to, Str title) {
 }
 
 EdgeID make_last_child (WriteRef model, NodeID parent, NodeID to, Str title) {
-    LOG("make_last_child"sv, parent, to, title);
     AA(parent);
     auto data = make_unique<EdgeData>();
     data->opener_node = parent;
@@ -178,7 +173,6 @@ EdgeID make_last_child (WriteRef model, NodeID parent, NodeID to, Str title) {
 }
 
 EdgeID make_next_sibling (WriteRef model, EdgeID prev, NodeID to, Str title) {
-    LOG("make_next_sibling"sv, prev, to, title);
     AA(prev);
     auto prev_data = load_mut(model, prev);
     auto data = make_unique<EdgeData>();
@@ -191,7 +185,6 @@ EdgeID make_next_sibling (WriteRef model, EdgeID prev, NodeID to, Str title) {
 }
 
 EdgeID make_prev_sibling (WriteRef model, EdgeID next, NodeID to, Str title) {
-    LOG("make_prev_sibling"sv, next, to, title);
     AA(next);
     auto next_data = load_mut(model, next);
     auto data = make_unique<EdgeData>();
@@ -204,7 +197,6 @@ EdgeID make_prev_sibling (WriteRef model, EdgeID next, NodeID to, Str title) {
 }
 
 void move_first_child (WriteRef model, EdgeID id, NodeID parent) {
-    LOG("move_first_child"sv, id, parent);
     AA(parent);
     auto data = load_mut(model, id);
     data->from_node = parent;
@@ -213,7 +205,6 @@ void move_first_child (WriteRef model, EdgeID id, NodeID parent) {
 }
 
 void move_last_child (WriteRef model, EdgeID id, NodeID parent) {
-    LOG("move_last_child"sv, id, parent);
     AA(parent);
     auto data = load_mut(model, id);
     data->from_node = parent;
@@ -222,7 +213,6 @@ void move_last_child (WriteRef model, EdgeID id, NodeID parent) {
 }
 
 void move_after (WriteRef model, EdgeID id, EdgeID prev) {
-    LOG("move_after"sv, id, prev);
     AA(prev);
     auto data = load_mut(model, id);
     auto prev_data = load_mut(model, prev);
@@ -232,7 +222,6 @@ void move_after (WriteRef model, EdgeID id, EdgeID prev) {
 }
 
 void move_before (WriteRef model, EdgeID id, EdgeID next) {
-    LOG("move_before"sv, id, next);
     AA(next);
     auto data = load_mut(model, id);
     auto next_data = load_mut(model, next);
@@ -242,7 +231,6 @@ void move_before (WriteRef model, EdgeID id, EdgeID next) {
 }
 
 void new_to_node (WriteRef model, EdgeID id, NodeID node) {
-    LOG("new_to_node"sv, id, node);
     auto data = load_mut(model, id);
     AA(!data->to_node);
     data->to_node = node;
@@ -250,21 +238,15 @@ void new_to_node (WriteRef model, EdgeID id, NodeID node) {
 }
 
 void trash (WriteRef model, EdgeID id) {
-    LOG("trash Edge"sv, id);
     auto data = load_mut(model, id);
     data->trashed_at = now();
     save(model, id, data);
 }
 
 void untrash (WriteRef model, EdgeID id) {
-    LOG("untrash Edge"sv, id);
     auto data = load_mut(model, id);
     data->trashed_at = 0;
     save(model, id, data);
-}
-
-void touch (WriteRef model, EdgeID id) {
-    model->writes.current_update.edges.insert(id);
 }
 
 EdgeModel::EdgeModel (sqlite3* db) :

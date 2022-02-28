@@ -7,13 +7,15 @@
 #include "../../util/json.h"
 #include "../../util/log.h"
 #include "../../util/time.h"
-#include "../edge.h"
-#include "../node.h"
+#include "edge-internal.h"
+#include "node-internal.h"
 #include "model-internal.h"
 
 using namespace std;
 
 namespace model {
+
+///// Internal
 
 static String view_url(ViewID id) {
     return "sequoia:view/" + std::to_string(int64(id));
@@ -47,31 +49,8 @@ ViewData* load_mut (ReadRef model, ViewID id) {
     return &*data;
 }
 
-static constexpr Str sql_get_open = R"(
-SELECT _id FROM _views WHERE _closed_at = 0
-)"sv;
-
-vector<ViewID> get_open_views (ReadRef model) {
-    LOG("get_open_views"sv);
-    UseStatement st (model->views.st_get_open);
-    return st.collect<ViewID>();
-}
-
-static constexpr Str sql_last_closed = R"(
-SELECT _id FROM _views
-WHERE _closed_at > 0 ORDER BY _closed_at DESC LIMIT 1
-)"sv;
-
-ViewID get_last_closed_view (ReadRef model) {
-    LOG("get_last_closed_view"sv);
-    UseStatement st (model->views.st_last_closed);
-    if (st.step()) return st[0];
-    else return ViewID{};
-}
-
-std::vector<EdgeID> get_top_tabs (ReadRef model, ViewID id) {
-    auto data = model/id;
-    return get_edges_from_node(model, data->root_node);
+static void touch (WriteRef model, ViewID id) {
+    model->writes.current_update.views.insert(id);
 }
 
 static constexpr Str sql_save = R"(
@@ -103,7 +82,6 @@ static ViewID save (WriteRef model, ViewID id, const ViewData* data) {
 }
 
 ViewID create_view (WriteRef model) {
-    LOG("create_view"sv);
     auto data = make_unique<ViewData>();
     data->focused_tab = EdgeID{};
     data->created_at = now();
@@ -114,57 +92,156 @@ ViewID create_view (WriteRef model) {
     return id;
 }
 
+///// Accessors
+
+static constexpr Str sql_get_open = R"(
+SELECT _id FROM _views WHERE _closed_at = 0
+)"sv;
+
+vector<ViewID> get_open_views (ReadRef model) {
+    UseStatement st (model->views.st_get_open);
+    return st.collect<ViewID>();
+}
+
+static constexpr Str sql_last_closed = R"(
+SELECT _id FROM _views
+WHERE _closed_at > 0 ORDER BY _closed_at DESC LIMIT 1
+)"sv;
+
+ViewID get_last_closed_view (ReadRef model) {
+    UseStatement st (model->views.st_last_closed);
+    if (st.step()) return st[0];
+    else return ViewID{};
+}
+
+std::vector<EdgeID> get_top_tabs (ReadRef model, ViewID id) {
+    auto data = model/id;
+    return get_edges_from_node(model, data->root_node);
+}
+
+///// Global Mutators
+
+void open_view_for_urls (WriteRef model, const std::vector<String>& urls) {
+    auto view = create_view(model);
+    auto data = model/view;
+    for (auto& url : urls) {
+        auto node = ensure_node_with_url(model, url);
+        make_last_child(model, data->root_node, node);
+    }
+}
+
+void unclose_last_closed_view (WriteRef model) {
+    auto view = get_last_closed_view(model);
+    if (view) unclose(model, view);
+}
+
+void unclose_recently_closed_views (WriteRef model) {
+     // TODO actually unclose multiple views
+    auto view = get_last_closed_view(model);
+    if (view) unclose(model, view);
+}
+
+void create_default_view (WriteRef model) {
+    auto view = create_view(model);
+    auto data = model/view;
+    make_last_child(model, data->root_node, NodeID{});
+}
+
+///// View Mutators
+
 void close (WriteRef model, ViewID id) {
-    LOG("close View"sv, id);
     auto data = load_mut(model, id);
     data->closed_at = now();
     save(model, id, data);
 }
 
 void unclose (WriteRef model, ViewID id) {
-    LOG("unclose View"sv, id);
     auto data = load_mut(model, id);
     data->closed_at = 0;
     save(model, id, data);
 }
 
+void set_fullscreen (WriteRef model, ViewID id, bool fs) {
+    auto data = load_mut(model, id);
+    data->fullscreen = fs;
+    touch(model, id);
+}
+
+///// Tab Mutators
+
 void focus_tab (WriteRef model, ViewID id, EdgeID tab) {
-    LOG("focus_tab"sv, id, tab);
     auto data = load_mut(model, id);
     data->focused_tab = tab;
     save(model, id, data);
+    focus_activity_for_tab(model, id, tab);
 }
 
-void trash_tab (WriteRef model, ViewID id, EdgeID tab) {
-    LOG("trash_tab"sv, id, tab);
-    AA(tab);
-    trash(model, tab);
-     // TODO: close this view if it's the last tab
+void navigate_tab (WriteRef model, ViewID id, EdgeID tab, Str address) {
+    navigate_activity_for_tab(model, id, tab, address);
+}
+
+void reload_tab (WriteRef model, ViewID id, EdgeID tab) {
+    if (auto activity = get_activity_for_edge(model, tab)) {
+        reload(model, activity);
+    }
+}
+
+void stop_tab (WriteRef model, ViewID id, EdgeID tab) {
+    if (auto activity = get_activity_for_edge(model, tab)) {
+        finished_loading(model, activity);
+    }
 }
 
 void expand_tab (WriteRef model, ViewID id, EdgeID tab) {
-    LOG("expand_tab"sv, id, tab);
     auto data = load_mut(model, id);
     data->expanded_tabs.insert(tab);
     save(model, id, data);
 }
 
 void contract_tab (WriteRef model, ViewID id, EdgeID tab) {
-    LOG("contract_tab"sv, id, tab);
     auto data = load_mut(model, id);
     data->expanded_tabs.erase(tab);
     save(model, id, data);
 }
 
-void set_fullscreen (WriteRef model, ViewID id, bool fullscreen) {
-    LOG("set_fullscreen", id, fullscreen);
-    auto data = load_mut(model, id);
-    data->fullscreen = fullscreen;
-    touch(model, id);
+void trash_tab (WriteRef model, ViewID id, EdgeID tab) {
+    AA(tab);
+    trash(model, tab);
+     // TODO: close this view if it's the last tab
 }
 
-void touch (WriteRef model, ViewID id) {
-    model->writes.current_update.views.insert(id);
+void move_tab_before (WriteRef model, ViewID id, EdgeID tab, EdgeID next) {
+    move_before(model, tab, next);
+}
+
+void move_tab_after (WriteRef model, ViewID id, EdgeID tab, EdgeID prev) {
+    move_after(model, tab, prev);
+}
+
+void move_tab_first_child (WriteRef model, ViewID id, EdgeID tab, EdgeID parent) {
+    auto parent_data = model/parent;
+    if (parent_data->to_node) {
+        move_first_child(model, tab, parent_data->to_node);
+    }
+}
+
+void move_tab_last_child (WriteRef model, ViewID id, EdgeID tab, EdgeID parent) {
+    auto parent_data = model/parent;
+    if (parent_data->to_node) {
+        move_last_child(model, tab, parent_data->to_node);
+    }
+}
+
+void new_child_tab (WriteRef model, ViewID id, EdgeID tab) {
+    auto edge_data = model/tab;
+    AA(edge_data);
+    if (edge_data->to_node) {
+        auto child = make_last_child(model, edge_data->to_node, NodeID{});
+        auto data = load_mut(model, id);
+        data->focused_tab = tab;
+        save(model, id, data);
+        focus_activity_for_tab(model, id, child);
+    }
 }
 
 ViewModel::ViewModel (sqlite3* db) :

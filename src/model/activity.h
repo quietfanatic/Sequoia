@@ -25,41 +25,29 @@ struct ActivityData {
     ViewID old_view;
 };
 
+ ///// Accessors
 std::vector<ActivityID> get_activities (ReadRef);
-
 ActivityID get_activity_for_edge (ReadRef, EdgeID);
-
 ActivityID get_activity_for_view (ReadRef, ViewID);
 
- // If activity exists, sets its view and edge.
- // If it doesn't exist, but edge has a to_node, creates activity.
- // If edge doesn't have a to_node, does nothing.
-void focus_activity_for_tab (WriteRef, ViewID, EdgeID);
-
- // Just clears view.
-void unfocus_activity_for_tab (WriteRef, ViewID, EdgeID);
-
- // Creates activity if it doesn't exist and calls navigate
-void navigate_activity_for_tab (WriteRef, ViewID, EdgeID, Str address);
-
- // Can call this with a URL or search term.  Will eventually be resolved to a
- // real URL before a new node is assigned.
-void navigate (WriteRef, ActivityID, Str address);
-
- // Sets reload_requested.
-void reload (WriteRef, ActivityID);
+ ///// Mutators
 
 void started_loading (WriteRef, ActivityID);
- // Clears loading
+ // Clears loading_at
 void finished_loading (WriteRef, ActivityID);
 
  // If this activity doesn't have a node, creates a node.
- // Else If there is a parent or child node with this url, moves to it.
+ // Else if there is a parent or child node with this url, moves to it.
  // Otherwise creates a new last_child node and moves to it.
 void url_changed (WriteRef, ActivityID, Str url);
-
+ // These require there be a node.
+void title_changed (WriteRef, ActivityID, Str title);
+void favicon_url_changed (WriteRef, ActivityID, Str favicon_url);
+void open_last_child (WriteRef, ActivityID, Str url, Str title = ""sv);
+void open_first_child (WriteRef, ActivityID, Str url, Str title = ""sv);
+void open_next_sibling (WriteRef, ActivityID, Str url, Str title = ""sv);
+void open_prev_sibling (WriteRef, ActivityID, Str url, Str title = ""sv);
+ // Deletes this activity
 void delete_activity (WriteRef, ActivityID);
-
-void touch (WriteRef, ActivityID);
 
 } // namespace model

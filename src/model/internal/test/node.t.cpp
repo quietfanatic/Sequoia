@@ -1,5 +1,5 @@
 #ifndef TAP_DISABLE_TESTS
-#include "../../node.h"
+#include "../node-internal.h"
 
 #include "../../../util/time.h"
 #include "../../observer.h"
@@ -82,7 +82,7 @@ void node_tests () {
 
     tr = new Write (model);
     set_favicon_url(*tr, node2, "asdf");
-    touch(*tr, node3);
+    set_favicon_url(*tr, node3, "boof");
     TestObserver to2 {[&](const Update& update){
         is(update.nodes.size(), 2, "Observer got an update with 2 nodes");
         ok(!update.nodes.count(node), "Update doesn't have node 1");

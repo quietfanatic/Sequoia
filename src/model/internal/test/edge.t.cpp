@@ -1,8 +1,8 @@
 #ifndef TAP_DISABLE_TESTS
-#include "../../edge.h"
+#include "../edge-internal.h"
 
-#include "../../node.h"
 #include "../../write.h"
+#include "../node-internal.h"
 #include "model_test_environment.h"
 
 namespace model {

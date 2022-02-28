@@ -42,8 +42,6 @@ struct App : model::Observer {
      // Make windows for open views, open window for urls, and if none
      // of those happens, makes a default window.
     void start (const std::vector<String>& urls);
-     // Opens a new window with these URLs.
-    void open_urls (const std::vector<String>& urls);
 
      // Runs a standard win32 message loop until quit() is called.
     int run ();

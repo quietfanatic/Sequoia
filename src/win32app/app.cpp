@@ -54,17 +54,8 @@ Window* App::window_for_view (model::ViewID view) {
     else return &*iter->second.window;
 }
 
-void App::open_urls (const vector<String>& urls) {
-    AA(!urls.empty());
-    if (urls.size() > 1) ERR("Multiple URL arguments NYI"sv);
-    auto w = write(model);
-    auto view = create_view(w);
-    auto node = ensure_node_with_url(w, urls[0]);
-    make_last_child(w, (w/view)->root_node, node);
-}
-
 void App::start (const vector<String>& urls) {
-     // Start browser
+     // Show already open views
     auto open_views = get_open_views(model);
     for (auto view : open_views) {
         app_views.emplace(view, AppView{
@@ -74,21 +65,15 @@ void App::start (const vector<String>& urls) {
     }
     if (!urls.empty()) {
          // Open new window if requested
-        open_urls(urls);
+        open_view_for_urls(write(model), urls);
     }
     else if (open_views.empty()) {
+        auto w = write(model);
          // If no URLs were given and there aren't any open views, make sure at
          // least one window appears.
-        if (auto closed_view = get_last_closed_view(model)) {
-             // TODO: unclose multiple views if they were closed in
-             // quick succession
-            unclose(write(model), closed_view);
-        }
-        else {
-             // Create default window
-            auto w = write(model);
-            auto view = create_view(w);
-            make_last_child(w, (w/view)->root_node, model::NodeID{});
+        unclose_recently_closed_views(w);
+        if (get_open_views(w).empty()) {
+            create_default_view(w);
         }
     }
 }

@@ -8,55 +8,14 @@ using namespace std;
 
 namespace model {
 
+///// Internal
+
 ActivityData* load_mut (ReadRef model, ActivityID id) {
     AA(id);
     auto& a = model->activities;
     auto iter = a.by_id.find(id);
     AA(iter != a.by_id.end());
     return &*iter->second;
-}
-
-std::vector<ActivityID> get_activities (ReadRef model) {
-    std::vector<ActivityID> r;
-    r.reserve(model->activities.by_id.size());
-    for (auto& [id, data] : model->activities.by_id) {
-        r.push_back(id);
-    }
-    return r;
-}
-
-static ActivityID get_activity_for_node (ReadRef model, NodeID node) {
-    AA(node);
-    auto& a = model->activities;
-    auto iter = a.by_node.find(node);
-    if (iter == a.by_node.end()) return ActivityID{};
-    else return iter->second;
-}
-
-static ActivityID get_activity_for_nodeless_edge (ReadRef model, EdgeID edge) {
-    AA(edge);
-    auto& a = model->activities;
-    auto iter = a.by_nodeless_edge.find(edge);
-    if (iter == a.by_nodeless_edge.end()) return ActivityID{};
-    else return iter->second;
-}
-
-ActivityID get_activity_for_edge (ReadRef model, EdgeID edge) {
-    AA(edge);
-    auto edge_data = *model/edge;
-    AA(edge_data);
-    if (edge_data->to_node) {
-        return get_activity_for_node(model, edge_data->to_node);
-    }
-    else return get_activity_for_nodeless_edge(model, edge);
-}
-
-ActivityID get_activity_for_view (ReadRef model, ViewID view) {
-    AA(view);
-    auto& a = model->activities;
-    auto iter = a.by_view.find(view);
-    if (iter == a.by_view.end()) return ActivityID{};
-    else return iter->second;
 }
 
 static void touch (WriteRef model, ActivityID id) {
@@ -141,6 +100,53 @@ static void save (WriteRef model, ActivityID id, ActivityData* data) {
     touch(model, id);
 }
 
+///// Accessors
+
+std::vector<ActivityID> get_activities (ReadRef model) {
+    std::vector<ActivityID> r;
+    r.reserve(model->activities.by_id.size());
+    for (auto& [id, data] : model->activities.by_id) {
+        r.push_back(id);
+    }
+    return r;
+}
+
+static ActivityID get_activity_for_node (ReadRef model, NodeID node) {
+    AA(node);
+    auto& a = model->activities;
+    auto iter = a.by_node.find(node);
+    if (iter == a.by_node.end()) return ActivityID{};
+    else return iter->second;
+}
+
+static ActivityID get_activity_for_nodeless_edge (ReadRef model, EdgeID edge) {
+    AA(edge);
+    auto& a = model->activities;
+    auto iter = a.by_nodeless_edge.find(edge);
+    if (iter == a.by_nodeless_edge.end()) return ActivityID{};
+    else return iter->second;
+}
+
+ActivityID get_activity_for_edge (ReadRef model, EdgeID edge) {
+    AA(edge);
+    auto edge_data = *model/edge;
+    AA(edge_data);
+    if (edge_data->to_node) {
+        return get_activity_for_node(model, edge_data->to_node);
+    }
+    else return get_activity_for_nodeless_edge(model, edge);
+}
+
+ActivityID get_activity_for_view (ReadRef model, ViewID view) {
+    AA(view);
+    auto& a = model->activities;
+    auto iter = a.by_view.find(view);
+    if (iter == a.by_view.end()) return ActivityID{};
+    else return iter->second;
+}
+
+///// Mutators
+
 void focus_activity_for_tab (WriteRef model, ViewID view, EdgeID edge) {
     AA(view);
     AA(edge);
@@ -187,7 +193,11 @@ void navigate_activity_for_tab (
     auto edge_data = *model/edge;
     AA(edge_data);
     if (auto id = get_activity_for_edge(model, edge)) {
-        navigate(model, id, address);
+        auto data = load_mut(model, id);
+        AA(data);
+        data->loading_address = address;
+        data->loading_at = now();
+        save(model, id, data);
     }
     else {
         auto data = std::make_unique<ActivityData>();
@@ -204,16 +214,6 @@ void navigate_activity_for_tab (
         data->loading_at = now();
         create(model, std::move(data));
     }
-}
-
-void navigate (WriteRef model, ActivityID id, Str address) {
-    AA(id);
-    AA(!address.empty());
-    auto data = load_mut(model, id);
-    AA(data);
-    data->loading_address = address;
-    data->loading_at = now();
-    save(model, id, data);
 }
 
 void reload (WriteRef model, ActivityID id) {
@@ -261,7 +261,6 @@ void url_changed (WriteRef model, ActivityID id, Str url) {
     AA(id);
     AA(!url.empty());
     auto data = load_mut(model, id);
-    AA(data);
     if (!data->node) {
          // Node doesn't exist, create it.
         AA(data->edge);
@@ -314,10 +313,63 @@ void url_changed (WriteRef model, ActivityID id, Str url) {
     move_activity(model, id, new_node, new_edge);
 }
 
+void title_changed (WriteRef model, ActivityID id, Str title) {
+    AA(id);
+    auto data = load_mut(model, id);
+    AA(data->node);
+    set_title(model, data->node, title);
+}
+
+void favicon_url_changed (WriteRef model, ActivityID id, Str url) {
+    AA(id);
+    auto data = load_mut(model, id);
+    AA(data->node);
+    set_favicon_url(model, data->node, url);
+}
+
+void open_last_child (WriteRef model, ActivityID id, Str url, Str title) {
+    AA(id);
+    AA(!url.empty());
+    auto data = load_mut(model, id);
+    AA(data->node);
+     // TODO: check duplicates?
+    auto child_node = ensure_node_with_url(model, url);
+    auto child_edge = make_last_child(model, data->node, child_node, title);
+}
+
+void open_first_child (WriteRef model, ActivityID id, Str url, Str title) {
+    AA(id);
+    AA(!url.empty());
+    auto data = load_mut(model, id);
+    AA(data->node);
+     // TODO: check duplicates?
+    auto child_node = ensure_node_with_url(model, url);
+    auto child_edge = make_last_child(model, data->node, child_node, title);
+}
+
+void open_next_sibling (WriteRef model, ActivityID id, Str url, Str title) {
+    AA(id);
+    AA(!url.empty());
+    auto data = load_mut(model, id);
+    if (data->edge) {
+        auto child_node = ensure_node_with_url(model, url);
+        auto child_edge = make_next_sibling(model, data->edge, child_node, title);
+    }
+}
+
+void open_prev_sibling (WriteRef model, ActivityID id, Str url, Str title) {
+    AA(id);
+    AA(!url.empty());
+    auto data = load_mut(model, id);
+    if (data->edge) {
+        auto child_node = ensure_node_with_url(model, url);
+        auto child_edge = make_prev_sibling(model, data->edge, child_node, title);
+    }
+}
+
 void delete_activity (WriteRef model, ActivityID id) {
     AA(id);
     auto data = load_mut(model, id);
-    AA(data);
     auto& a = model->activities;
     if (data->old_node) {
         a.by_node.erase(data->old_node);

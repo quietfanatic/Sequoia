@@ -1,9 +1,9 @@
 #ifndef TAP_DISABLE_TESTS
-#include "../../view.h"
+#include "../view-internal.h"
 
-#include "../../edge.h"
-#include "../../node.h"
 #include "../../write.h"
+#include "../edge-internal.h"
+#include "../node-internal.h"
 #include "model_test_environment.h"
 
 namespace model {

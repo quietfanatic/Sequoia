@@ -2,6 +2,7 @@
 #include "../app.h"
 
 #include "../../model/view.h"
+#include "../../model/write.h"
 #include "../../tap/tap.h"
 #include "../profile.h"
 #include "profile_test_environment.h"
@@ -26,9 +27,10 @@ static void app_tests () {
     is(app->app_views.size(), 1, "Default window was created");
     is(get_open_views(app->model).size(), 1, "A model view was created");
 
+     // TODO: move this test to view.t.cpp?
     doesnt_throw([&]{
-        app->open_urls({"http://example.com/"s});
-    }, "open_urls");
+        open_view_for_urls(write(app->model), {"http://example.com/"s});
+    }, "open_view_for_urls");
     is(app->app_views.size(), 2, "Window was created for one url");
     is(get_open_views(app->model).size(), 2, "A new view was created");
 

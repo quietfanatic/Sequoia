@@ -40,7 +40,6 @@ ORDER BY _id
 )"sv;
 
 NodeID get_node_with_url (ReadRef model, Str url) {
-    LOG("get_node_with_url", url);
     UseStatement st (model->nodes.st_with_url);
     st.params(x31_hash(url), url);
     auto res = st.collect<NodeID>();
@@ -64,7 +63,7 @@ static NodeID save (WriteRef model, NodeID id, const NodeData* data) {
     st.run();
     AA(sqlite3_changes(model->db) == 1);
     if (!id) id = NodeID(sqlite3_last_insert_rowid(model->db));
-    touch(model, id);
+    model->writes.current_update.nodes.insert(id);
     return id;
 }
 
@@ -72,7 +71,6 @@ NodeID ensure_node_with_url (WriteRef model, Str url) {
     AA(url != ""sv);
     NodeID id = get_node_with_url(model, url);
     if (id) return id;
-    LOG("creating node"sv, url);
     auto data = make_unique<NodeData>();
     data->url = url;
     id = save(model, NodeID{}, &*data);
@@ -81,27 +79,25 @@ NodeID ensure_node_with_url (WriteRef model, Str url) {
     return id;
 }
 
+void set_url (WriteRef model, NodeID id, Str url) {
+    auto data = load_mut(model, id);
+    data->url = url;
+    save(model, id, data);
+}
 void set_title (WriteRef model, NodeID id, Str title) {
-    LOG("set_title Node"sv, id, title);
     auto data = load_mut(model, id);
     data->title = title;
     save(model, id, data);
 }
 void set_favicon_url (WriteRef model, NodeID id, Str url) {
-    LOG("set_favicon_url Node"sv, id, url);
     auto data = load_mut(model, id);
     data->favicon_url = url;
     save(model, id, data);
 }
 void set_visited (WriteRef model, NodeID id) {
-    LOG("set_visited Node"sv, id);
     auto data = load_mut(model, id);
     data->visited_at = now();
     save(model, id, data);
-}
-
-void touch (WriteRef model, NodeID id) {
-    model->writes.current_update.nodes.insert(id);
 }
 
 NodeModel::NodeModel (sqlite3* db) :

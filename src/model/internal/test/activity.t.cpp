@@ -1,8 +1,9 @@
 #ifndef TAP_DISABLE_TESTS
-#include "../../activity.h"
+#include "../activity-internal.h"
 
-#include "../../view.h"
 #include "../../write.h"
+#include "../edge-internal.h"
+#include "../view-internal.h"
 #include "model_test_environment.h"
 
 namespace model {
@@ -55,20 +56,6 @@ void activity_tests () {
         finished_loading(write(model), activity);
     }, "finished_loading");
     is(data->loading_address, ""s);
-    ok(!data->loading_at);
-
-    doesnt_throw([&]{
-        navigate(write(model), activity, "test address 2"sv);
-    }, "navigate");
-    is(data->node, edge_data->to_node);
-    is(data->edge, tab);
-    is(data->view, view);
-    is(data->loading_address, "test address 2"s);
-    is(data->reloading, false);
-    ok(data->loading_at);
-    finished_loading(write(model), activity);
-    is(data->loading_address, ""s);
-    is(data->reloading, false);
     ok(!data->loading_at);
 
     doesnt_throw([&]{

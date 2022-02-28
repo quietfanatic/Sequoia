@@ -22,10 +22,6 @@ struct ViewData {
     bool fullscreen = false;
 };
 
-std::vector<ViewID> get_open_views (ReadRef);
- // Returns 0 if none
-ViewID get_last_closed_view (ReadRef);
-
 static inline NodeID focused_node (ReadRef model, ViewID view) {
     auto data = model/view;
     return data->focused_tab
@@ -33,27 +29,49 @@ static inline NodeID focused_node (ReadRef model, ViewID view) {
         : NodeID{};
 }
 
+///// ACCESSORS
+
+std::vector<ViewID> get_open_views (ReadRef);
+ // Returns 0 if none
+ViewID get_last_closed_view (ReadRef);
+
 std::vector<EdgeID> get_top_tabs (ReadRef, ViewID);
 
-ViewID create_view (WriteRef);
+///// GLOBAL MUTATORS
+
+void open_view_for_urls (WriteRef, const std::vector<String>& urls);
+
+void unclose_last_closed_view (WriteRef);
+
+void unclose_recently_closed_views (WriteRef);
+
+ // Creates a view with one empty child edge.
+void create_default_view (WriteRef);
+
+///// VIEW MUTATORS
 
 void close (WriteRef, ViewID);
 void unclose (WriteRef, ViewID);
 
- // Sets the focused tab, but does not affect activities.
- // See focus_activity_for_tab.
-void focus_tab (WriteRef, ViewID, EdgeID);
-
-void navigate_tab (WriteRef, ViewID, EdgeID);
-
-void trash_tab (WriteRef, ViewID, EdgeID);
-
-void expand_tab (WriteRef, ViewID, EdgeID);
-void contract_tab (WriteRef, ViewID, EdgeID);
-
 void set_fullscreen (WriteRef, ViewID, bool);
 
- // Send this item to observers without actually changing it
-void touch (WriteRef, ViewID);
+///// TAB MUTATORS
+
+ // Sets the focused tab, and may cause an activity to be generated for it.
+void focus_tab (WriteRef, ViewID, EdgeID);
+ // May cause an activity to be generated.
+void navigate_tab (WriteRef, ViewID, EdgeID, Str address);
+void reload_tab (WriteRef, ViewID, EdgeID);
+void stop_tab (WriteRef, ViewID, EdgeID);
+void expand_tab (WriteRef, ViewID, EdgeID);
+void contract_tab (WriteRef, ViewID, EdgeID);
+void trash_tab (WriteRef, ViewID, EdgeID);
+
+void move_tab_before (WriteRef, ViewID, EdgeID tab, EdgeID next);
+void move_tab_after (WriteRef, ViewID, EdgeID tab, EdgeID prev);
+void move_tab_first_child (WriteRef, ViewID, EdgeID tab, EdgeID parent);
+void move_tab_last_child (WriteRef, ViewID, EdgeID tab, EdgeID parent);
+
+void new_child_tab (WriteRef, ViewID, EdgeID);
 
 } // namespace model

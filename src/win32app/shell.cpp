@@ -3,8 +3,6 @@
 #include <windows.h>
 #include <wrl.h>
 
-#include "../model/edge.h"
-#include "../model/node.h"
 #include "../model/view.h"
 #include "../model/write.h"
 #include "../util/error.h"
@@ -136,11 +134,9 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("navigate"): {
-            auto view_data = app.model/view;
-            navigate_activity_for_tab(
-                write(app.model), view, view_data->focused_tab,
-                message[1]
-            );
+             // TODO: send tab from shell
+            auto data = app.model/view;
+            navigate_tab(write(app.model), view, data->focused_tab, message[1]);
             break;
         }
          // Toolbar buttons
@@ -162,17 +158,15 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("reload"): {
-            auto activity_id = get_activity_for_view(app.model, view);
-            if (activity_id) {
-                reload(write(app.model), activity_id);
-            }
+             // TODO: send tab from shell
+            auto data = app.model/view;
+            reload_tab(write(app.model), view, data->focused_tab);
             break;
         }
         case x31_hash("stop"): {
-            auto activity_id = get_activity_for_view(app.model, view);
-            if (activity_id) {
-                finished_loading(write(app.model), activity_id);
-            }
+             // TODO: send tab from shell
+            auto data = app.model/view;
+            stop_tab(write(app.model), view, data->focused_tab);
             break;
         }
         case x31_hash("investigate_error"): {
@@ -181,16 +175,13 @@ void Shell::message_from_webview (const json::Value& message) {
         }
          // Tab actions
         case x31_hash("focus_tab"): {
-            auto tab = model::EdgeID{message[1]};
-            auto w = write(app.model);
-            focus_tab(w, view, tab);
-            focus_activity_for_tab(w, view, tab);
+            focus_tab(write(app.model), view, model::EdgeID{message[1]});
             break;
         }
         case x31_hash("new_child"): {
-            auto w = write(app.model);
-            auto edge = make_last_child(w, focused_node(w, view), model::NodeID{});
-            focus_tab(w, view, edge);
+             // TODO: send tab from shell
+            auto data = app.model/view;
+            new_child_tab(write(app.model), view, data->focused_tab);
             break;
         }
         case x31_hash("trash_tab"): {
@@ -201,7 +192,7 @@ void Shell::message_from_webview (const json::Value& message) {
             model::EdgeID edge {message[1]};
             model::EdgeID target {message[2]};
             if (edge && target) {
-                move_before(write(app.model), edge, target);
+                move_tab_before(write(app.model), view, edge, target);
             }
             break;
         }
@@ -209,23 +200,23 @@ void Shell::message_from_webview (const json::Value& message) {
             model::EdgeID edge {message[1]};
             model::EdgeID target {message[2]};
             if (edge && target) {
-                move_after(write(app.model), edge, target);
+                move_tab_after(write(app.model), view, edge, target);
             }
             break;
         }
         case x31_hash("move_tab_first_child"): {
             model::EdgeID edge {message[1]};
-            model::NodeID parent {message[2]};
+            model::EdgeID parent {message[2]};
             if (edge) {
-                move_first_child(write(app.model), edge, parent);
+                move_tab_first_child(write(app.model), view, edge, parent);
             }
             break;
         }
         case x31_hash("move_tab_last_child"): {
             model::EdgeID edge {message[1]};
-            model::NodeID parent {message[2]};
+            model::EdgeID parent {message[2]};
             if (edge) {
-                move_last_child(write(app.model), edge, parent);
+                move_tab_last_child(write(app.model), view, edge, parent);
             }
             break;
         }

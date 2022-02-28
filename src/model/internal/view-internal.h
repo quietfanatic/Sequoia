@@ -9,6 +9,8 @@ namespace model {
 
 ViewData* load_mut (ReadRef model, ViewID id);
 
+ViewID create_view (WriteRef model);
+
 struct ViewModel {
     mutable std::unordered_map<ViewID, std::unique_ptr<ViewData>> cache;
     Statement st_load;
