@@ -11,6 +11,9 @@ ViewData* load_mut (ReadRef model, ViewID id);
 
 ViewID create_view (WriteRef model);
 
+ // Like focus_tab, but doesn't call focus_activity_for_tab
+void set_focused_tab (WriteRef model, ViewID, EdgeID);
+
 struct ViewModel {
     mutable std::unordered_map<ViewID, std::unique_ptr<ViewData>> cache;
     Statement st_load;

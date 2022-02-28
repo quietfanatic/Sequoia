@@ -254,6 +254,9 @@ static void move_activity (WriteRef model, ActivityID id, NodeID node, EdgeID ed
     auto data = load_mut(model, id);
     data->node = node;
     data->edge = edge;
+    if (data->view) {
+        set_focused_tab(model, data->view, edge);
+    }
     save(model, id, data);
 }
 

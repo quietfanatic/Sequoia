@@ -92,6 +92,12 @@ ViewID create_view (WriteRef model) {
     return id;
 }
 
+void set_focused_tab (WriteRef model, ViewID id, EdgeID tab) {
+    auto data = load_mut(model, id);
+    data->focused_tab = tab;
+    save(model, id, data);
+}
+
 ///// Accessors
 
 static constexpr Str sql_get_open = R"(
@@ -171,9 +177,7 @@ void set_fullscreen (WriteRef model, ViewID id, bool fs) {
 ///// Tab Mutators
 
 void focus_tab (WriteRef model, ViewID id, EdgeID tab) {
-    auto data = load_mut(model, id);
-    data->focused_tab = tab;
-    save(model, id, data);
+    set_focused_tab(model, id, tab);
     focus_activity_for_tab(model, id, tab);
 }
 

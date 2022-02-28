@@ -77,6 +77,9 @@ void activity_tests () {
     ok(data->loading_at);
     finished_loading(write(model), activity);
 
+    auto view_data = model/view;
+    is(view_data->focused_tab, tab, "View's focused tab not changed before url_changed");
+
     doesnt_throw([&]{
         url_changed(write(model), activity, "http://example.com/#2");
     }, "url_changed to non-existent node");
@@ -90,6 +93,8 @@ void activity_tests () {
     is(data->loading_address, ""s);
     is(data->reloading, false);
     ok(!data->loading_at);
+    view_data = model/view;
+    is(view_data->focused_tab, data->edge, "View's focused tab was automatically changed");
 
     doesnt_throw([&]{
         url_changed(write(model), activity, "http://example.com/");

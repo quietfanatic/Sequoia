@@ -68,7 +68,6 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
                 ICoreWebView2* sender,
                 ICoreWebView2SourceChangedEventArgs* args) -> HRESULT
         {
-             // TODO: Make new node instead of changing this one!
              // WebView2 tends to have spurious navigations to about:blank,
              // so don't save the url in that case.
             wil::unique_cotaskmem_string source;
