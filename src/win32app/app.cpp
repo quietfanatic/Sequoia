@@ -115,7 +115,7 @@ void App::Observer_after_commit (const model::Update& update) {
      // Update existing shells and windows that aren't going away
     for (auto& [view_id, app_view] : app_views) {
         auto view_data = model/view_id;
-        if (view_data) {
+        if (view_data && !view_data->closed_at) {
              // Send update to all shells and windows, let them decide what they
              // care about.
             app_view.shell->update(update);
@@ -125,7 +125,7 @@ void App::Observer_after_commit (const model::Update& update) {
      // Create and destroy app views
     for (auto view_id : update.views) {
         auto view_data = model/view_id;
-        if (view_data) {
+        if (view_data && !view_data->closed_at) {
             auto& app_view = app_views[view_id];
             AA(!!app_view.shell == !!app_view.window);
             if (!app_view.shell) {
