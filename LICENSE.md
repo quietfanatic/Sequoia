@@ -1,4 +1,4 @@
-This MIT License applies to everything in this repo except for the SQLite source, which is under Public Domain
+This MIT License applies to everything in this repo except for the SQLite source, which is under Public Domain.
 
 -----
 
