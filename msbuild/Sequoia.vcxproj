@@ -181,6 +181,7 @@
     <ClCompile Include="../src/model/internal/observer.cpp" />
     <ClCompile Include="../src/model/internal/view.cpp" />
     <ClCompile Include="../src/model/internal/write.cpp" />
+    <ClCompile Include="../src/shell/tabs.cpp" />
     <ClCompile Include="../src/sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="../src/tap/tap.cpp" />
     <ClCompile Include="../src/util/bifractor.cpp" />
@@ -200,7 +201,6 @@
     <ClCompile Include="../src/win32app/nursery.cpp" />
     <ClCompile Include="../src/win32app/profile.cpp" />
     <ClCompile Include="../src/win32app/shell.cpp" />
-    <ClCompile Include="../src/win32app/tabs.cpp" />
     <ClCompile Include="../src/win32app/window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -219,6 +219,7 @@
     <ClInclude Include="../src/model/observer.h" />
     <ClInclude Include="../src/model/view.h" />
     <ClInclude Include="../src/model/write.h" />
+    <ClInclude Include="../src/shell/tabs.h" />
     <ClInclude Include="../src/sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="../src/tap/tap.h" />
     <ClInclude Include="../src/util/bifractor.h" />
@@ -236,26 +237,25 @@
     <ClInclude Include="../src/win32app/nursery.h" />
     <ClInclude Include="../src/win32app/profile.h" />
     <ClInclude Include="../src/win32app/shell.h" />
-    <ClInclude Include="../src/win32app/tabs.h" />
     <ClInclude Include="../src/win32app/window.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="../src/model/internal/schema.sql">
       <DestinationFolders>$(OutDir)/res/model</DestinationFolders>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/shell/domifier.js">
+      <DestinationFolders>$(OutDir)/res/shell</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/shell/shell.css">
+      <DestinationFolders>$(OutDir)/res/shell</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/shell/shell.html">
+      <DestinationFolders>$(OutDir)/res/shell</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/shell/shell.js">
+      <DestinationFolders>$(OutDir)/res/shell</DestinationFolders>
+    </CopyFileToFolders>
     <CopyFileToFolders Include="../src/win32app/activity.js">
-      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/win32app/domifier.js">
-      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/win32app/shell.css">
-      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/win32app/shell.html">
-      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/win32app/shell.js">
       <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>

@@ -4,27 +4,26 @@
 #include "../model/edge.h"
 #include "../model/node.h"
 #include "../model/view.h"
-#include "app.h"
 
-namespace win32app {
+namespace shell {
 
 using namespace std;
 
 static void gen_tabs (
-    App& app, TabTree& tabs, const model::ViewData& view,
+    model::ReadRef model, TabTree& tabs, const model::ViewData& view,
     model::EdgeID edge, model::EdgeID parent
 ) {
     AA(edge);
-    auto activity_id = get_activity_for_edge(app.model, edge);
-    auto edge_data = app.model/edge;
+    auto activity_id = get_activity_for_edge(model, edge);
+    auto edge_data = model/edge;
     if (auto node = edge_data->to_node) {
-        auto node_data = app.model/node;
-        auto children = get_edges_from_node(app.model, node);
+        auto node_data = model/node;
+        auto children = get_edges_from_node(model, node);
 
         int flags = 0;
         if (view.focused_tab == edge) flags |= Tab::FOCUSED;
         if (activity_id) {
-            auto activity_data = app.model/activity_id;
+            auto activity_data = model/activity_id;
             if (activity_data->loading_at) flags |= Tab::LOADING;
             else flags |= Tab::LOADED;
         }
@@ -36,7 +35,7 @@ static void gen_tabs (
         tabs.emplace(edge, Tab(node, parent, Tab::Flags(flags)));
         if (view.expanded_tabs.count(edge)) {
             for (model::EdgeID child : children) {
-                gen_tabs(app, tabs, view, child, edge);
+                gen_tabs(model, tabs, view, child, edge);
             }
         }
     }
@@ -53,12 +52,12 @@ static void gen_tabs (
     }
 }
 
-TabTree create_tab_tree (App& app, model::ViewID view) {
+TabTree create_tab_tree (model::ReadRef model, model::ViewID view) {
     TabTree r;
-    auto view_data = app.model/view;
-    auto top_edges = get_edges_from_node(app.model, view_data->root_node);
+    auto view_data = model/view;
+    auto top_edges = get_edges_from_node(model, view_data->root_node);
     for (auto edge : top_edges) {
-        gen_tabs(app, r, *view_data, edge, model::EdgeID{});
+        gen_tabs(model, r, *view_data, edge, model::EdgeID{});
     }
     return r;
 }
@@ -127,4 +126,4 @@ json::Array make_tab_json (
     }
 }
 
-} // namespace model
+} // namespace shell

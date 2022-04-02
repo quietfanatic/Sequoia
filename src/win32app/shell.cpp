@@ -79,7 +79,7 @@ Shell::Shell (App& a, model::ViewID v) : app(a), view(v) {
         }).Get(), nullptr));
 
         webview->Navigate(to_utf16(
-            exe_relative("res/win32app/shell.html"sv)
+            exe_relative("res/shell/shell.html"sv)
         ).c_str());
 
         if (Window* window = app.window_for_view(view)) {
@@ -112,11 +112,11 @@ void Shell::message_from_webview (const json::Value& message) {
                     std::pair{"theme"sv, app.settings.theme}
                 )
             ));
-            current_tabs = create_tab_tree(app, view);
+            current_tabs = shell::create_tab_tree(app.model, view);
             json::Array tab_updates;
             tab_updates.reserve(current_tabs.size());
             for (auto& [id, tab] : current_tabs) {
-                tab_updates.emplace_back(make_tab_json(app.model, id, &tab));
+                tab_updates.emplace_back(shell::make_tab_json(app.model, id, &tab));
             }
             message_to_webview(json::array("view"sv, tab_updates));
             ready = true;
@@ -266,15 +266,15 @@ void Shell::message_from_webview (const json::Value& message) {
 void Shell::update (const model::Update& update) {
     if (ready) {
          // Generate new tab collection
-        TabTree old_tabs = move(current_tabs);
-        current_tabs = create_tab_tree(app, view);
+        auto old_tabs = move(current_tabs);
+        current_tabs = shell::create_tab_tree(app.model, view);
          // Send changed tabs to shell
          // TODO: do less when tree structure hasn't changed?
-        TabChanges changes = get_changed_tabs(update, old_tabs, current_tabs);
+        auto changes = get_changed_tabs(update, old_tabs, current_tabs);
         json::Array tab_updates;
         tab_updates.reserve(changes.size());
         for (auto& [id, tab] : changes) {
-            tab_updates.emplace_back(make_tab_json(
+            tab_updates.emplace_back(shell::make_tab_json(
                 app.model, id, tab ? &*tab : nullptr
             ));
         }

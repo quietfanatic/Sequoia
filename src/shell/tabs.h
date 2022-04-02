@@ -8,11 +8,10 @@
 #include "../model/observer.h"
 #include "../util/json.h"
 
-namespace win32app {
-struct App;
+namespace shell {
 
  // Mirrors the structure of the tree view in the shell.
- // I hate to resort to using a shadow dom to manage updates because of the
+ // I hate to resort to using a shadow document to manage updates because of the
  // overhead, but it really is the easiest algorithm to work with.
  //
  // ...and let's be real, this is ants compared to the js dom.
@@ -38,7 +37,7 @@ struct Tab {
 
 using TabTree = std::unordered_map<model::EdgeID, Tab>;
 
-TabTree create_tab_tree (App& app, model::ViewID view);
+TabTree create_tab_tree (model::ReadRef model, model::ViewID view);
 
 using TabChanges = std::vector<std::pair<model::EdgeID, std::optional<Tab>>>;
 
@@ -52,4 +51,4 @@ json::Array make_tab_json (
     model::EdgeID edge, const Tab* tab
 );
 
-} // namespace win32app
+} // namespace shell

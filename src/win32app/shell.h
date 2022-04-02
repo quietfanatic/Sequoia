@@ -4,7 +4,7 @@
 #include <WebView2.h>
 
 #include "../model/model.h"
-#include "tabs.h"
+#include "../shell/tabs.h"
 
 namespace json { struct Value; }
 
@@ -30,7 +30,7 @@ struct Shell {
     void message_from_webview (const json::Value& message);
 
      ///// Updating
-    TabTree current_tabs;
+    shell::TabTree current_tabs;
     void update (const model::Update&);
 
      // Mainly for testing
