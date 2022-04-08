@@ -4,7 +4,7 @@
 #include "../../model/tree.h"
 #include "../../model/write.h"
 #include "../../tap/tap.h"
-#include "../activity.h"
+#include "../activity_view.h"
 #include "../profile.h"
 #include "profile_test_environment.h"
 
@@ -43,7 +43,7 @@ static void app_tests () {
      // Focus tab and make sure an activity was created
     focus_tab(write(app->model), tree, edge);
      // Should be created in the destructor of write()
-    Activity* activity = app->activity_for_tree(tree);
+    ActivityView* activity = app->activity_for_tree(tree);
     ok(activity);
     activity->wait_for_ready();
     is(activity->current_url, "http://example.com/"s);

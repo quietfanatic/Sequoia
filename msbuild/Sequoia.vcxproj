@@ -195,7 +195,7 @@
     <ClCompile Include="../src/win32app/test/bark_view.t.cpp" />
     <ClCompile Include="../src/win32app/test/profile.t.cpp" />
     <ClCompile Include="../src/win32app/test/profile_test_environment.cpp" />
-    <ClCompile Include="../src/win32app/activity.cpp" />
+    <ClCompile Include="../src/win32app/activity_view.cpp" />
     <ClCompile Include="../src/win32app/app.cpp" />
     <ClCompile Include="../src/win32app/main.cpp" />
     <ClCompile Include="../src/win32app/nursery.cpp" />
@@ -232,7 +232,7 @@
     <ClInclude Include="../src/util/text.h" />
     <ClInclude Include="../src/util/weak.h" />
     <ClInclude Include="../src/win32app/test/profile_test_environment.h" />
-    <ClInclude Include="../src/win32app/activity.h" />
+    <ClInclude Include="../src/win32app/activity_view.h" />
     <ClInclude Include="../src/win32app/app.h" />
     <ClInclude Include="../src/win32app/nursery.h" />
     <ClInclude Include="../src/win32app/profile.h" />
@@ -255,7 +255,7 @@
     <CopyFileToFolders Include="../src/model/internal/schema.sql">
       <DestinationFolders>$(OutDir)/res/model</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/win32app/activity.js">
+    <CopyFileToFolders Include="../src/win32app/activity_view.js">
       <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>

@@ -19,7 +19,7 @@
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
-#include "activity.h"
+#include "activity_view.h"
 #include "app.h"
 #include "nursery.h"
 #include "bark_view.h"
@@ -86,7 +86,7 @@ void Window::reflow () {
             ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
     }
-    if (Activity* activity = app.activity_for_tree(tree)) {
+    if (ActivityView* activity = app.activity_for_tree(tree)) {
         if (activity->controller) {
             AH(activity->controller->put_ParentWindow(hwnd));
             AH(activity->controller->put_Bounds(bounds));
@@ -115,7 +115,7 @@ static LRESULT CALLBACK window_WndProc (
                     if (bark && bark->controller) {
                         bark->controller->put_IsVisible(FALSE);
                     }
-                    if (Activity* activity = self->app.activity_for_tree(self->tree)) {
+                    if (ActivityView* activity = self->app.activity_for_tree(self->tree)) {
                         if (activity->controller) {
                             AH(activity->controller->put_IsVisible(FALSE));
                         }
@@ -267,7 +267,7 @@ void Window::update (const model::Update& update) {
                 | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
         );
         reflow();
-        if (Activity* activity = app.activity_for_tree(tree)) {
+        if (ActivityView* activity = app.activity_for_tree(tree)) {
             activity->leave_fullscreen();
         }
         fullscreen = nullopt;

@@ -7,7 +7,7 @@
 #include "../model/tree.h"
 #include "../model/write.h"
 #include "../util/error.h"
-#include "activity.h"
+#include "activity_view.h"
 #include "bark_view.h"
 #include "window.h"
 
@@ -29,7 +29,7 @@ App::~App () {
     model::delete_model(&model);
 }
 
-Activity* App::activity_for_id (model::ActivityID id) {
+ActivityView* App::activity_for_id (model::ActivityID id) {
     AA(id);
     auto iter = activities.find(id);
     AA(iter != activities.end());
@@ -37,7 +37,7 @@ Activity* App::activity_for_id (model::ActivityID id) {
     return &*iter->second;
 }
 
-Activity* App::activity_for_tree (model::TreeID tree) {
+ActivityView* App::activity_for_tree (model::TreeID tree) {
     auto id = get_activity_for_tree(model, tree);
     if (!id) return nullptr;
     else return activity_for_id(id);
@@ -108,7 +108,7 @@ void App::Observer_after_commit (const model::Update& update) {
         if (activity_data) {
             auto& activity = activities[activity_id];
             if (activity) activity->update();
-            else activity = std::make_unique<Activity>(*this, activity_id);
+            else activity = std::make_unique<ActivityView>(*this, activity_id);
         }
         else activities.erase(activity_id);
     }

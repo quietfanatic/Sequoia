@@ -1,4 +1,4 @@
-#include "activity.h"
+#include "activity_view.h"
 
 #include <stdexcept>
 #include <webview2.h>
@@ -23,19 +23,19 @@ using namespace std;
 
 namespace win32app {
 
-Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
-    LOG("new Activity"sv, this, id);
+ActivityView::ActivityView (App& a, model::ActivityID i) : app(a), id(i) {
+    LOG("new ActivityView"sv, this, id);
     AA(id);
 
-    // Theoretically this activity could be destroyed before the webview
+    // Theoretically this ActivityView could be destroyed before the webview
     // creation finished, so use a weak pointer to keep track of it.
-    // The event handlers are fine because the activity closes the webview
+    // The event handlers are fine because the ActivityView closes the webview
     // in its destructor, so no events will fire after that.
-    WeakPtr<Activity> weak_self = this;
+    WeakPtr<ActivityView> weak_self = this;
     app.nursery.new_webview([weak_self](
         ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd
     ) {
-        Activity* self = weak_self;
+        ActivityView* self = weak_self;
         if (!self) {
             wvc->Close();
             return;
@@ -111,7 +111,7 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
         }).Get(), nullptr));
 
         static std::wstring injection = to_utf16(
-            slurp(exe_relative("res/win32app/activity.js"sv))
+            slurp(exe_relative("res/win32app/activity_view.js"sv))
         );
         AH(self->webview->AddScriptToExecuteOnDocumentCreated(
             injection.c_str(), nullptr
@@ -127,7 +127,7 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
             wil::unique_cotaskmem_string raw16;
             args->get_WebMessageAsJson(&raw16);
             string raw = from_utf16(raw16.get());
-            LOG("Activity::message_from_webview"sv, raw);
+            LOG("ActivityView::message_from_webview"sv, raw);
             json::Value message = json::parse(raw);
             self->message_from_webview(message);
             return S_OK;
@@ -186,14 +186,14 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
     });
 }
 
-void Activity::message_to_webview (const json::Value& message) {
+void ActivityView::message_to_webview (const json::Value& message) {
     if (!webview) return;
     auto s = json::stringify(message);
     LOG("message_to_webview"sv, s);
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
-void Activity::message_from_webview (const json::Value& message) {
+void ActivityView::message_from_webview (const json::Value& message) {
     Str command = message[0];
 
     switch (x31_hash(command)) {
@@ -256,7 +256,7 @@ void Activity::message_from_webview (const json::Value& message) {
     }
 }
 
-static bool navigate_url (Activity& self, Str url) {
+static bool navigate_url (ActivityView& self, Str url) {
     LOG("navigate_url"sv, self.id, url);
     auto hr = self.webview->Navigate(to_utf16(url).c_str());
     if (SUCCEEDED(hr)) {
@@ -267,7 +267,7 @@ static bool navigate_url (Activity& self, Str url) {
     return false;
 }
 
-static void navigate_search (Activity& self, Str search) {
+static void navigate_search (ActivityView& self, Str search) {
     LOG("navigate_search"sv, self.id, search);
      // Escape URL characters
     String url = "https://duckduckgo.com/?q="sv + escape_url(search);
@@ -275,7 +275,7 @@ static void navigate_search (Activity& self, Str search) {
     AA(navigate_url(self, url));
 }
 
-static void navigate (Activity& self, Str address) {
+static void navigate (ActivityView& self, Str address) {
     AA(self.webview);
     if (navigate_url(self, address)) return;
     if (address.find(' ') != string::npos
@@ -290,7 +290,7 @@ static void navigate (Activity& self, Str address) {
     }
 }
 
-void Activity::update () {
+void ActivityView::update () {
     if (!webview) {
          // We'll come back here when the webview is ready.
         return;
@@ -322,13 +322,13 @@ void Activity::update () {
     }
 }
 
-bool Activity::is_fullscreen () {
+bool ActivityView::is_fullscreen () {
     if (!webview) return false;
     BOOL fs; AH(webview->get_ContainsFullScreenElement(&fs));
     return fs;
 }
 
-void Activity::leave_fullscreen () {
+void ActivityView::leave_fullscreen () {
     if (!is_fullscreen()) return;
     webview->ExecuteScript(
         to_utf16("document.exitFullscreen()"sv).c_str(),
@@ -336,14 +336,14 @@ void Activity::leave_fullscreen () {
     );
 }
 
-void Activity::wait_for_ready () {
+void ActivityView::wait_for_ready () {
     if (webview) return;
     waiting_for_ready = true;
     app.run();
 }
 
-Activity::~Activity () {
-    LOG("delete Activity"sv, this);
+ActivityView::~ActivityView () {
+    LOG("delete ActivityView"sv, this);
     if (controller) controller->Close();
 }
 

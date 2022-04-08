@@ -13,7 +13,7 @@ namespace json { struct Value; }
 namespace win32app {
 struct App;
 
-struct Activity : WeakPointable {
+struct ActivityView : WeakPointable {
     App& app;
     model::ActivityID id;
 
@@ -28,7 +28,7 @@ struct Activity : WeakPointable {
      // If activity's loading_at is newer, start a new load
     double current_loading_at;
 
-    Activity (App&, model::ActivityID);
+    ActivityView (App&, model::ActivityID);
     void update ();
 
      // TODO: make these internal
@@ -42,7 +42,7 @@ struct Activity : WeakPointable {
     void wait_for_ready ();
     bool waiting_for_ready = false;
 
-    ~Activity();
+    ~ActivityView();
 };
 
 } // namespace win32app

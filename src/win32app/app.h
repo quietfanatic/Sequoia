@@ -11,7 +11,7 @@
 #include "nursery.h"
 
 namespace win32app {
-struct Activity;
+struct ActivityView;
 struct BarkView;
 struct Window;
 
@@ -25,7 +25,7 @@ struct App : model::Observer {
     Settings settings;
     Nursery nursery;
     model::Model& model;
-    std::unordered_map<model::ActivityID, std::unique_ptr<Activity>> activities;
+    std::unordered_map<model::ActivityID, std::unique_ptr<ActivityView>> activities;
     std::unordered_map<model::TreeID, TreeView> tree_views;
 
      // Makes all windows hidden; mainly for testing.
@@ -34,8 +34,8 @@ struct App : model::Observer {
     App (Profile&& profile);
     ~App();
 
-    Activity* activity_for_id (model::ActivityID);
-    Activity* activity_for_tree (model::TreeID);
+    ActivityView* activity_for_id (model::ActivityID);
+    ActivityView* activity_for_tree (model::TreeID);
     BarkView* bark_for_tree (model::TreeID);
     Window* window_for_tree (model::TreeID);
 

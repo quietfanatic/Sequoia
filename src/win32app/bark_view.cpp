@@ -11,7 +11,7 @@
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
-#include "activity.h"
+#include "activity_view.h"
 #include "app.h"
 #include "nursery.h"
 #include "profile.h"
@@ -141,7 +141,7 @@ void BarkView::message_from_webview (const json::Value& message) {
         }
          // Toolbar buttons
         case x31_hash("back"): {
-             // Connecting directly to win32app::Activity, because
+             // Connecting directly to win32app::ActivityView, because
              // model::ActivityData doesn't have concept of history
              // TODO: add enum LoadingType to model::ActiviyData
             auto activity = app.activity_for_tree(tree);
@@ -240,7 +240,7 @@ void BarkView::message_from_webview (const json::Value& message) {
         }
         case x31_hash("open_selected_links"): {
             // TODO
-//            if (Activity* activity = app.activity_for_node(
+//            if (ActivityView* activity = app.activity_for_node(
 //                focused_node(app.model, tree)
 //            )) {
 //                activity->message_to_webview(
