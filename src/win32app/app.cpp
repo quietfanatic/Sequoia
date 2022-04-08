@@ -8,7 +8,7 @@
 #include "../model/write.h"
 #include "../util/error.h"
 #include "activity_view.h"
-#include "bark_view.h"
+#include "bark.h"
 #include "window.h"
 
 using namespace std;
@@ -43,7 +43,7 @@ ActivityView* App::activity_for_tree (model::TreeID tree) {
     else return activity_for_id(id);
 }
 
-BarkView* App::bark_for_tree (model::TreeID tree) {
+Bark* App::bark_for_tree (model::TreeID tree) {
     auto iter = tree_views.find(tree);
     if (iter == tree_views.end()) return nullptr;
     else return &*iter->second.bark;
@@ -60,7 +60,7 @@ void App::start (const vector<String>& urls) {
     auto open_trees = get_open_trees(model);
     for (auto tree : open_trees) {
         tree_views.emplace(tree, TreeView{
-            std::make_unique<BarkView>(*this, tree),
+            std::make_unique<Bark>(*this, tree),
             std::make_unique<Window>(*this, tree)
         });
     }
@@ -129,7 +129,7 @@ void App::Observer_after_commit (const model::Update& update) {
             auto& tree_view = tree_views[tree_id];
             AA(!!tree_view.bark == !!tree_view.window);
             if (!tree_view.bark) {
-                tree_view.bark = std::make_unique<BarkView>(*this, tree_id);
+                tree_view.bark = std::make_unique<Bark>(*this, tree_id);
             }
             if (!tree_view.window) {
                 tree_view.window = std::make_unique<Window>(*this, tree_id);

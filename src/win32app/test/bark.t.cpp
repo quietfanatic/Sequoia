@@ -1,5 +1,5 @@
 #ifndef TAP_DISABLE_TESTS
-#include "../bark_view.h"
+#include "../bark.h"
 
 #include "../../model/tree.h"
 #include "../../tap/tap.h"
@@ -9,7 +9,7 @@
 
 namespace win32app {
 
-static void bark_view_tests () {
+static void bark_tests () {
     using namespace tap;
     ProfileTestEnvironment env;
 
@@ -20,10 +20,10 @@ static void bark_view_tests () {
     AA(open_trees.size() == 1);
     doesnt_throw([&]{
         app.bark_for_tree(open_trees[0])->wait_for_ready();
-    }, "BarkView is ready");
+    }, "Bark is ready");
     done_testing();
 }
-static tap::TestSet tests ("win32app/bark_view", bark_view_tests);
+static tap::TestSet tests ("win32app/bark", bark_tests);
 
 } // namespace win32app
 

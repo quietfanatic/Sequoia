@@ -1,4 +1,4 @@
-#include "bark_view.h"
+#include "bark.h"
 
 #include <windows.h>
 #include <wrl.h>
@@ -22,7 +22,7 @@ using namespace std;
 
 namespace win32app {
 
-BarkView::BarkView (App& a, model::TreeID v) : app(a), tree(v) {
+Bark::Bark (App& a, model::TreeID v) : app(a), tree(v) {
      // TODO: Fix possible use-after-free of this
     app.nursery.new_webview([this](
         ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd
@@ -41,7 +41,7 @@ BarkView::BarkView (App& a, model::TreeID v) : app(a), tree(v) {
             wil::unique_cotaskmem_string raw16;
             args->get_WebMessageAsJson(&raw16);
             string raw = from_utf16(raw16.get());
-            LOG("BarkView::message_from_webview"sv, raw);
+            LOG("Bark::message_from_webview"sv, raw);
             message_from_webview(json::parse(raw));
             return S_OK;
         }).Get(), nullptr);
@@ -79,7 +79,7 @@ BarkView::BarkView (App& a, model::TreeID v) : app(a), tree(v) {
         }).Get(), nullptr));
 
         webview->Navigate(to_utf16(
-            exe_relative("res/bark/bark.html"sv)
+            exe_relative("res/win32app/bark.html"sv)
         ).c_str());
 
         if (Window* window = app.window_for_tree(tree)) {
@@ -88,19 +88,19 @@ BarkView::BarkView (App& a, model::TreeID v) : app(a), tree(v) {
     });
 };
 
-BarkView::~BarkView () {
+Bark::~Bark () {
     if (controller) {
         AH(controller->Close());
     }
 }
 
-void BarkView::select_location () {
+void Bark::select_location () {
     if (!ready) return;
     message_to_webview(json::array("select_location"sv));
     AH(controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
 }
 
-void BarkView::message_from_webview (const json::Value& message) {
+void Bark::message_from_webview (const json::Value& message) {
     try {
 
     const string& command = message[0];
@@ -112,11 +112,11 @@ void BarkView::message_from_webview (const json::Value& message) {
                     std::pair{"theme"sv, app.settings.theme}
                 )
             ));
-            current_tabs = bark::create_tab_tree(app.model, tree);
+            current_tabs = create_tab_tree(app.model, tree);
             json::Array tab_updates;
             tab_updates.reserve(current_tabs.size());
             for (auto& [id, tab] : current_tabs) {
-                tab_updates.emplace_back(bark::make_tab_json(app.model, id, &tab));
+                tab_updates.emplace_back(make_tab_json(app.model, id, &tab));
             }
             message_to_webview(json::array("tree"sv, tab_updates));
             ready = true;
@@ -263,18 +263,18 @@ void BarkView::message_from_webview (const json::Value& message) {
     }
 }
 
-void BarkView::update (const model::Update& update) {
+void Bark::update (const model::Update& update) {
     if (ready) {
          // Generate new tab collection
         auto old_tabs = move(current_tabs);
-        current_tabs = bark::create_tab_tree(app.model, tree);
+        current_tabs = create_tab_tree(app.model, tree);
          // Send changed tabs to bark
          // TODO: do less when tree structure hasn't changed?
         auto changes = get_changed_tabs(update, old_tabs, current_tabs);
         json::Array tab_updates;
         tab_updates.reserve(changes.size());
         for (auto& [id, tab] : changes) {
-            tab_updates.emplace_back(bark::make_tab_json(
+            tab_updates.emplace_back(make_tab_json(
                 app.model, id, tab ? &*tab : nullptr
             ));
         }
@@ -284,14 +284,14 @@ void BarkView::update (const model::Update& update) {
     }
 }
 
-void BarkView::message_to_webview (const json::Value& message) {
+void Bark::message_to_webview (const json::Value& message) {
     if (!webview) return;
     auto s = json::stringify(message);
     LOG("message_to_webview"sv, s);
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
-void BarkView::wait_for_ready () {
+void Bark::wait_for_ready () {
     if (ready) return;
     waiting_for_ready = true;
     app.run();

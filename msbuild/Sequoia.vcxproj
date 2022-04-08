@@ -168,7 +168,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="../src/bark/tabs.cpp" />
     <ClCompile Include="../src/model/internal/test/activity.t.cpp" />
     <ClCompile Include="../src/model/internal/test/edge.t.cpp" />
     <ClCompile Include="../src/model/internal/test/model.t.cpp" />
@@ -192,19 +191,19 @@
     <ClCompile Include="../src/util/text.cpp" />
     <ClCompile Include="../src/util/weak.cpp" />
     <ClCompile Include="../src/win32app/test/app.t.cpp" />
-    <ClCompile Include="../src/win32app/test/bark_view.t.cpp" />
+    <ClCompile Include="../src/win32app/test/bark.t.cpp" />
     <ClCompile Include="../src/win32app/test/profile.t.cpp" />
     <ClCompile Include="../src/win32app/test/profile_test_environment.cpp" />
     <ClCompile Include="../src/win32app/activity_view.cpp" />
     <ClCompile Include="../src/win32app/app.cpp" />
+    <ClCompile Include="../src/win32app/bark.cpp" />
     <ClCompile Include="../src/win32app/main.cpp" />
     <ClCompile Include="../src/win32app/nursery.cpp" />
     <ClCompile Include="../src/win32app/profile.cpp" />
-    <ClCompile Include="../src/win32app/bark_view.cpp" />
+    <ClCompile Include="../src/win32app/tabs.cpp" />
     <ClCompile Include="../src/win32app/window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../src/bark/tabs.h" />
     <ClInclude Include="../src/model/internal/test/model_test_environment.h" />
     <ClInclude Include="../src/model/internal/activity-internal.h" />
     <ClInclude Include="../src/model/internal/edge-internal.h" />
@@ -234,28 +233,29 @@
     <ClInclude Include="../src/win32app/test/profile_test_environment.h" />
     <ClInclude Include="../src/win32app/activity_view.h" />
     <ClInclude Include="../src/win32app/app.h" />
+    <ClInclude Include="../src/win32app/bark.h" />
     <ClInclude Include="../src/win32app/nursery.h" />
     <ClInclude Include="../src/win32app/profile.h" />
-    <ClInclude Include="../src/win32app/bark_view.h" />
+    <ClInclude Include="../src/win32app/tabs.h" />
     <ClInclude Include="../src/win32app/window.h" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="../src/bark/domifier.js">
-      <DestinationFolders>$(OutDir)/res/bark</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/bark/bark.css">
-      <DestinationFolders>$(OutDir)/res/bark</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/bark/bark.html">
-      <DestinationFolders>$(OutDir)/res/bark</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/bark/bark.js">
-      <DestinationFolders>$(OutDir)/res/bark</DestinationFolders>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="../src/model/internal/schema.sql">
       <DestinationFolders>$(OutDir)/res/model</DestinationFolders>
     </CopyFileToFolders>
     <CopyFileToFolders Include="../src/win32app/activity_view.js">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/domifier.js">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/bark.css">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/bark.html">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/win32app/bark.js">
       <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>

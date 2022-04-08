@@ -4,20 +4,20 @@
 #include <WebView2.h>
 
 #include "../model/model.h"
-#include "../bark/tabs.h"
+#include "tabs.h"
 
 namespace json { struct Value; }
 
 namespace win32app {
 struct App;
 
-struct BarkView {
+struct Bark {
     App& app;
     model::TreeID tree;
-    BarkView (App&, model::TreeID);
-    ~BarkView ();
+    Bark (App&, model::TreeID);
+    ~Bark ();
 
-     ///// BarkView methods
+     ///// Bark methods
     void select_location ();
 
      ///// Interaction with webview
@@ -25,12 +25,12 @@ struct BarkView {
     wil::com_ptr<ICoreWebView2> webview;
     HWND webview_hwnd = nullptr;
     bool ready = false;
-     // TODO: make these internal
+     // TODO: make these private
     void message_to_webview (const json::Value& message);
     void message_from_webview (const json::Value& message);
 
      ///// Updating
-    bark::TabTree current_tabs;
+    TabTree current_tabs;
     void update (const model::Update&);
 
      // Mainly for testing

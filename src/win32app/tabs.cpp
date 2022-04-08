@@ -5,7 +5,7 @@
 #include "../model/node.h"
 #include "../model/tree.h"
 
-namespace bark {
+namespace win32app {
 
 using namespace std;
 
@@ -126,4 +126,4 @@ json::Array make_tab_json (
     }
 }
 
-} // namespace bark
+} // namespace win32app

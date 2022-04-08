@@ -22,7 +22,7 @@
 #include "activity_view.h"
 #include "app.h"
 #include "nursery.h"
-#include "bark_view.h"
+#include "bark.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -71,7 +71,7 @@ Window::~Window () {
 void Window::reflow () {
     RECT bounds;
     GetClientRect(hwnd, &bounds);
-    BarkView* bark = app.bark_for_tree(tree);
+    Bark* bark = app.bark_for_tree(tree);
     if (bark && bark->controller) {
         AH(bark->controller->put_ParentWindow(hwnd));
         AH(bark->controller->put_Bounds(bounds));
@@ -111,7 +111,7 @@ static LRESULT CALLBACK window_WndProc (
             switch (w) {
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
-                    BarkView* bark = self->app.bark_for_tree(self->tree);
+                    Bark* bark = self->app.bark_for_tree(self->tree);
                     if (bark && bark->controller) {
                         bark->controller->put_IsVisible(FALSE);
                     }
@@ -166,7 +166,7 @@ std::function<void()> Window::get_key_handler (
     case 'L':
         if (!shift && ctrl && !alt) return [this]{
              // Skip model for this
-            if (BarkView* bark = app.bark_for_tree(tree)) {
+            if (Bark* bark = app.bark_for_tree(tree)) {
                 bark->select_location();
             }
         };
