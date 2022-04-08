@@ -11,13 +11,13 @@ namespace json { struct Value; }
 namespace win32app {
 struct App;
 
-struct Shell {
+struct BarkView {
     App& app;
     model::TreeID tree;
-    Shell (App&, model::TreeID);
-    ~Shell ();
+    BarkView (App&, model::TreeID);
+    ~BarkView ();
 
-     ///// Shell methods
+     ///// BarkView methods
     void select_location ();
 
      ///// Interaction with webview

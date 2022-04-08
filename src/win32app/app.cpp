@@ -8,7 +8,7 @@
 #include "../model/write.h"
 #include "../util/error.h"
 #include "activity.h"
-#include "shell.h"
+#include "bark_view.h"
 #include "window.h"
 
 using namespace std;
@@ -43,10 +43,10 @@ Activity* App::activity_for_tree (model::TreeID tree) {
     else return activity_for_id(id);
 }
 
-Shell* App::shell_for_tree (model::TreeID tree) {
+BarkView* App::bark_for_tree (model::TreeID tree) {
     auto iter = tree_views.find(tree);
     if (iter == tree_views.end()) return nullptr;
-    else return &*iter->second.shell;
+    else return &*iter->second.bark;
 }
 
 Window* App::window_for_tree (model::TreeID tree) {
@@ -60,7 +60,7 @@ void App::start (const vector<String>& urls) {
     auto open_trees = get_open_trees(model);
     for (auto tree : open_trees) {
         tree_views.emplace(tree, TreeView{
-            std::make_unique<Shell>(*this, tree),
+            std::make_unique<BarkView>(*this, tree),
             std::make_unique<Window>(*this, tree)
         });
     }
@@ -112,13 +112,13 @@ void App::Observer_after_commit (const model::Update& update) {
         }
         else activities.erase(activity_id);
     }
-     // Update existing shells and windows that aren't going away
+     // Update existing barks and windows that aren't going away
     for (auto& [tree_id, tree_view] : tree_views) {
         auto tree_data = model/tree_id;
         if (tree_data && !tree_data->closed_at) {
-             // Send update to all shells and windows, let them decide what they
+             // Send update to all barks and windows, let them decide what they
              // care about.
-            tree_view.shell->update(update);
+            tree_view.bark->update(update);
             tree_view.window->update(update);
         }
     }
@@ -127,9 +127,9 @@ void App::Observer_after_commit (const model::Update& update) {
         auto tree_data = model/tree_id;
         if (tree_data && !tree_data->closed_at) {
             auto& tree_view = tree_views[tree_id];
-            AA(!!tree_view.shell == !!tree_view.window);
-            if (!tree_view.shell) {
-                tree_view.shell = std::make_unique<Shell>(*this, tree_id);
+            AA(!!tree_view.bark == !!tree_view.window);
+            if (!tree_view.bark) {
+                tree_view.bark = std::make_unique<BarkView>(*this, tree_id);
             }
             if (!tree_view.window) {
                 tree_view.window = std::make_unique<Window>(*this, tree_id);

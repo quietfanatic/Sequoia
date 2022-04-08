@@ -1,4 +1,4 @@
-#include "shell.h"
+#include "bark_view.h"
 
 #include <windows.h>
 #include <wrl.h>
@@ -22,7 +22,7 @@ using namespace std;
 
 namespace win32app {
 
-Shell::Shell (App& a, model::TreeID v) : app(a), tree(v) {
+BarkView::BarkView (App& a, model::TreeID v) : app(a), tree(v) {
      // TODO: Fix possible use-after-free of this
     app.nursery.new_webview([this](
         ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd
@@ -41,7 +41,7 @@ Shell::Shell (App& a, model::TreeID v) : app(a), tree(v) {
             wil::unique_cotaskmem_string raw16;
             args->get_WebMessageAsJson(&raw16);
             string raw = from_utf16(raw16.get());
-            LOG("Shell::message_from_webview"sv, raw);
+            LOG("BarkView::message_from_webview"sv, raw);
             message_from_webview(json::parse(raw));
             return S_OK;
         }).Get(), nullptr);
@@ -88,19 +88,19 @@ Shell::Shell (App& a, model::TreeID v) : app(a), tree(v) {
     });
 };
 
-Shell::~Shell () {
+BarkView::~BarkView () {
     if (controller) {
         AH(controller->Close());
     }
 }
 
-void Shell::select_location () {
+void BarkView::select_location () {
     if (!ready) return;
     message_to_webview(json::array("select_location"sv));
     AH(controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
 }
 
-void Shell::message_from_webview (const json::Value& message) {
+void BarkView::message_from_webview (const json::Value& message) {
     try {
 
     const string& command = message[0];
@@ -134,7 +134,7 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("navigate"): {
-             // TODO: send tab from shell
+             // TODO: send tab from bark
             auto data = app.model/tree;
             navigate_tab(write(app.model), tree, data->focused_tab, message[1]);
             break;
@@ -158,13 +158,13 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("reload"): {
-             // TODO: send tab from shell
+             // TODO: send tab from bark
             auto data = app.model/tree;
             reload_tab(write(app.model), tree, data->focused_tab);
             break;
         }
         case x31_hash("stop"): {
-             // TODO: send tab from shell
+             // TODO: send tab from bark
             auto data = app.model/tree;
             stop_tab(write(app.model), tree, data->focused_tab);
             break;
@@ -179,7 +179,7 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         case x31_hash("new_child"): {
-             // TODO: send tab from shell
+             // TODO: send tab from bark
             auto data = app.model/tree;
             new_child_tab(write(app.model), tree, data->focused_tab);
             break;
@@ -254,7 +254,7 @@ void Shell::message_from_webview (const json::Value& message) {
             break;
         }
         default: {
-            ERR("Unknown message from shell: "sv + command);
+            ERR("Unknown message from bark: "sv + command);
         }
     }
 
@@ -263,12 +263,12 @@ void Shell::message_from_webview (const json::Value& message) {
     }
 }
 
-void Shell::update (const model::Update& update) {
+void BarkView::update (const model::Update& update) {
     if (ready) {
          // Generate new tab collection
         auto old_tabs = move(current_tabs);
         current_tabs = bark::create_tab_tree(app.model, tree);
-         // Send changed tabs to shell
+         // Send changed tabs to bark
          // TODO: do less when tree structure hasn't changed?
         auto changes = get_changed_tabs(update, old_tabs, current_tabs);
         json::Array tab_updates;
@@ -284,14 +284,14 @@ void Shell::update (const model::Update& update) {
     }
 }
 
-void Shell::message_to_webview (const json::Value& message) {
+void BarkView::message_to_webview (const json::Value& message) {
     if (!webview) return;
     auto s = json::stringify(message);
     LOG("message_to_webview"sv, s);
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
-void Shell::wait_for_ready () {
+void BarkView::wait_for_ready () {
     if (ready) return;
     waiting_for_ready = true;
     app.run();

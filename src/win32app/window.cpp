@@ -22,7 +22,7 @@
 #include "activity.h"
 #include "app.h"
 #include "nursery.h"
-#include "shell.h"
+#include "bark_view.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -71,11 +71,11 @@ Window::~Window () {
 void Window::reflow () {
     RECT bounds;
     GetClientRect(hwnd, &bounds);
-    Shell* shell = app.shell_for_tree(tree);
-    if (shell && shell->controller) {
-        AH(shell->controller->put_ParentWindow(hwnd));
-        AH(shell->controller->put_Bounds(bounds));
-        AH(shell->controller->put_IsVisible(!fullscreen));
+    BarkView* bark = app.bark_for_tree(tree);
+    if (bark && bark->controller) {
+        AH(bark->controller->put_ParentWindow(hwnd));
+        AH(bark->controller->put_Bounds(bounds));
+        AH(bark->controller->put_IsVisible(!fullscreen));
     }
     auto dpi = GetDpiForWindow(hwnd);
     AW(dpi);
@@ -91,7 +91,7 @@ void Window::reflow () {
             AH(activity->controller->put_ParentWindow(hwnd));
             AH(activity->controller->put_Bounds(bounds));
             AH(activity->controller->put_IsVisible(TRUE));
-            // Make sure activity is in front of shell
+            // Make sure activity is in front of bark
             SetWindowPos(
                 activity->webview_hwnd, HWND_TOP,
                 0, 0, 0, 0,
@@ -111,9 +111,9 @@ static LRESULT CALLBACK window_WndProc (
             switch (w) {
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
-                    Shell* shell = self->app.shell_for_tree(self->tree);
-                    if (shell && shell->controller) {
-                        shell->controller->put_IsVisible(FALSE);
+                    BarkView* bark = self->app.bark_for_tree(self->tree);
+                    if (bark && bark->controller) {
+                        bark->controller->put_IsVisible(FALSE);
                     }
                     if (Activity* activity = self->app.activity_for_tree(self->tree)) {
                         if (activity->controller) {
@@ -166,8 +166,8 @@ std::function<void()> Window::get_key_handler (
     case 'L':
         if (!shift && ctrl && !alt) return [this]{
              // Skip model for this
-            if (Shell* shell = app.shell_for_tree(tree)) {
-                shell->select_location();
+            if (BarkView* bark = app.bark_for_tree(tree)) {
+                bark->select_location();
             }
         };
         break;

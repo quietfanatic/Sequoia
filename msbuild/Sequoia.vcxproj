@@ -192,15 +192,15 @@
     <ClCompile Include="../src/util/text.cpp" />
     <ClCompile Include="../src/util/weak.cpp" />
     <ClCompile Include="../src/win32app/test/app.t.cpp" />
+    <ClCompile Include="../src/win32app/test/bark_view.t.cpp" />
     <ClCompile Include="../src/win32app/test/profile.t.cpp" />
     <ClCompile Include="../src/win32app/test/profile_test_environment.cpp" />
-    <ClCompile Include="../src/win32app/test/shell.t.cpp" />
     <ClCompile Include="../src/win32app/activity.cpp" />
     <ClCompile Include="../src/win32app/app.cpp" />
     <ClCompile Include="../src/win32app/main.cpp" />
     <ClCompile Include="../src/win32app/nursery.cpp" />
     <ClCompile Include="../src/win32app/profile.cpp" />
-    <ClCompile Include="../src/win32app/shell.cpp" />
+    <ClCompile Include="../src/win32app/bark_view.cpp" />
     <ClCompile Include="../src/win32app/window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -236,7 +236,7 @@
     <ClInclude Include="../src/win32app/app.h" />
     <ClInclude Include="../src/win32app/nursery.h" />
     <ClInclude Include="../src/win32app/profile.h" />
-    <ClInclude Include="../src/win32app/shell.h" />
+    <ClInclude Include="../src/win32app/bark_view.h" />
     <ClInclude Include="../src/win32app/window.h" />
   </ItemGroup>
   <ItemGroup>

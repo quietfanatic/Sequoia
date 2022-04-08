@@ -12,11 +12,11 @@
 
 namespace win32app {
 struct Activity;
-struct Shell;
+struct BarkView;
 struct Window;
 
 struct TreeView {
-    std::unique_ptr<Shell> shell;
+    std::unique_ptr<BarkView> bark;
     std::unique_ptr<Window> window;
 };
 
@@ -36,7 +36,7 @@ struct App : model::Observer {
 
     Activity* activity_for_id (model::ActivityID);
     Activity* activity_for_tree (model::TreeID);
-    Shell* shell_for_tree (model::TreeID);
+    BarkView* bark_for_tree (model::TreeID);
     Window* window_for_tree (model::TreeID);
 
      // Make windows for open trees, open window for urls, and if none
