@@ -8,7 +8,7 @@
 #include "../model/observer.h"
 #include "../util/json.h"
 
-namespace shell {
+namespace bark {
 
  // Mirrors the structure of the tree view in the shell.
  // I hate to resort to using a shadow document to manage updates because of the
@@ -51,4 +51,4 @@ json::Array make_tab_json (
     model::EdgeID edge, const Tab* tab
 );
 
-} // namespace shell
+} // namespace bark

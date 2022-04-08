@@ -5,7 +5,7 @@
 #include "../model/node.h"
 #include "../model/view.h"
 
-namespace shell {
+namespace bark {
 
 using namespace std;
 
@@ -126,4 +126,4 @@ json::Array make_tab_json (
     }
 }
 
-} // namespace shell
+} // namespace bark
