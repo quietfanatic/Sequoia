@@ -4,7 +4,7 @@
 #include <windows.h>
 
 #include "../model/node.h"
-#include "../model/view.h"
+#include "../model/tree.h"
 #include "../model/write.h"
 #include "../util/error.h"
 #include "activity.h"
@@ -37,51 +37,51 @@ Activity* App::activity_for_id (model::ActivityID id) {
     return &*iter->second;
 }
 
-Activity* App::activity_for_view (model::ViewID view) {
-    auto id = get_activity_for_view(model, view);
+Activity* App::activity_for_tree (model::TreeID tree) {
+    auto id = get_activity_for_tree(model, tree);
     if (!id) return nullptr;
     else return activity_for_id(id);
 }
 
-Shell* App::shell_for_view (model::ViewID view) {
-    auto iter = app_views.find(view);
-    if (iter == app_views.end()) return nullptr;
+Shell* App::shell_for_tree (model::TreeID tree) {
+    auto iter = tree_views.find(tree);
+    if (iter == tree_views.end()) return nullptr;
     else return &*iter->second.shell;
 }
 
-Window* App::window_for_view (model::ViewID view) {
-    auto iter = app_views.find(view);
-    if (iter == app_views.end()) return nullptr;
+Window* App::window_for_tree (model::TreeID tree) {
+    auto iter = tree_views.find(tree);
+    if (iter == tree_views.end()) return nullptr;
     else return &*iter->second.window;
 }
 
 void App::start (const vector<String>& urls) {
-     // Show already open views
-    auto open_views = get_open_views(model);
-    for (auto view : open_views) {
-        app_views.emplace(view, AppView{
-            std::make_unique<Shell>(*this, view),
-            std::make_unique<Window>(*this, view)
+     // Show already open trees
+    auto open_trees = get_open_trees(model);
+    for (auto tree : open_trees) {
+        tree_views.emplace(tree, TreeView{
+            std::make_unique<Shell>(*this, tree),
+            std::make_unique<Window>(*this, tree)
         });
     }
     if (!urls.empty()) {
          // Open new window if requested
-        open_view_for_urls(write(model), urls);
+        open_tree_for_urls(write(model), urls);
     }
-    else if (open_views.empty()) {
+    else if (open_trees.empty()) {
         auto w = write(model);
-         // If no URLs were given and there aren't any open views, make sure at
+         // If no URLs were given and there aren't any open trees, make sure at
          // least one window appears.
-        unclose_recently_closed_views(w);
-        if (get_open_views(w).empty()) {
-            create_default_view(w);
+        unclose_recently_closed_trees(w);
+        if (get_open_trees(w).empty()) {
+            create_default_tree(w);
         }
     }
 }
 
 int App::run () {
 #ifndef NDEBUG
-    AA(get_open_views(model).size() > 0);
+    AA(get_open_trees(model).size() > 0);
 #endif
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {
@@ -113,32 +113,32 @@ void App::Observer_after_commit (const model::Update& update) {
         else activities.erase(activity_id);
     }
      // Update existing shells and windows that aren't going away
-    for (auto& [view_id, app_view] : app_views) {
-        auto view_data = model/view_id;
-        if (view_data && !view_data->closed_at) {
+    for (auto& [tree_id, tree_view] : tree_views) {
+        auto tree_data = model/tree_id;
+        if (tree_data && !tree_data->closed_at) {
              // Send update to all shells and windows, let them decide what they
              // care about.
-            app_view.shell->update(update);
-            app_view.window->update(update);
+            tree_view.shell->update(update);
+            tree_view.window->update(update);
         }
     }
-     // Create and destroy app views
-    for (auto view_id : update.views) {
-        auto view_data = model/view_id;
-        if (view_data && !view_data->closed_at) {
-            auto& app_view = app_views[view_id];
-            AA(!!app_view.shell == !!app_view.window);
-            if (!app_view.shell) {
-                app_view.shell = std::make_unique<Shell>(*this, view_id);
+     // Create and destroy app trees
+    for (auto tree_id : update.trees) {
+        auto tree_data = model/tree_id;
+        if (tree_data && !tree_data->closed_at) {
+            auto& tree_view = tree_views[tree_id];
+            AA(!!tree_view.shell == !!tree_view.window);
+            if (!tree_view.shell) {
+                tree_view.shell = std::make_unique<Shell>(*this, tree_id);
             }
-            if (!app_view.window) {
-                app_view.window = std::make_unique<Window>(*this, view_id);
+            if (!tree_view.window) {
+                tree_view.window = std::make_unique<Window>(*this, tree_id);
             }
         }
-        else app_views.erase(view_id);
+        else tree_views.erase(tree_id);
     }
      // Quit if there are no more windows.
-    if (app_views.size() == 0) {
+    if (tree_views.size() == 0) {
         quit();
     }
 };

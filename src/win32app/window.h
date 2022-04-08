@@ -12,8 +12,8 @@ struct App;
 
 struct Window {
     App& app;
-    model::ViewID view;
-    Window (App&, model::ViewID);
+    model::TreeID tree;
+    Window (App&, model::TreeID);
     ~Window();
 
      ///// Window methods

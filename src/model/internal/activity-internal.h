@@ -9,14 +9,14 @@ namespace model {
 
 ActivityData* load_mut (ReadRef, ActivityID);
 
- // If activity exists, sets its view and edge.
+ // If activity exists, sets its tree and edge.
  // If it doesn't exist, but edge has a to_node, creates activity.
  // If edge doesn't have a to_node, does nothing.
-void focus_activity_for_tab (WriteRef, ViewID, EdgeID);
- // Just clears view.
-void unfocus_activity_for_tab (WriteRef, ViewID, EdgeID);
+void focus_activity_for_tab (WriteRef, TreeID, EdgeID);
+ // Just clears tree.
+void unfocus_activity_for_tab (WriteRef, TreeID, EdgeID);
  // Creates activity if it doesn't exist and calls navigate
-void navigate_activity_for_tab (WriteRef, ViewID, EdgeID, Str address);
+void navigate_activity_for_tab (WriteRef, TreeID, EdgeID, Str address);
  // Can call this with a URL or search term.  Will eventually be resolved to a
  // real URL before a new node is assigned.
 
@@ -35,8 +35,8 @@ struct ActivityModel {
      // If an activity is in this, it has no node and the edge has no to_node.
      // Unique index, fails on conflict
     std::unordered_map<EdgeID, ActivityID> by_nodeless_edge;
-     // Unique index, on conflict kicks out old activity, clearing its view
-    std::unordered_map<ViewID, ActivityID> by_view;
+     // Unique index, on conflict kicks out old activity, clearing its tree
+    std::unordered_map<TreeID, ActivityID> by_tree;
 };
 
 } // namespace model

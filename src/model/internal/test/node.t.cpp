@@ -73,7 +73,7 @@ void node_tests () {
         ok(update.nodes.count(node2), "Update has node 2");
         ok(update.nodes.count(node3), "Update has node 3");
         is(update.edges.size(), 0, "Update has 0 edges");
-        is(update.views.size(), 0, "Update had 0 views");
+        is(update.trees.size(), 0, "Update had 0 trees");
     }};
     doesnt_throw([&]{ observe(model, &to1); }, "observe");
     doesnt_throw([&]{ delete tr; }, "Commit transaction");
@@ -89,7 +89,7 @@ void node_tests () {
         ok(update.nodes.count(node2), "Update has node 2");
         ok(update.nodes.count(node3), "Update has node 3");
         is(update.edges.size(), 0, "Update has 0 edges");
-        is(update.views.size(), 0, "Update had 0 views");
+        is(update.trees.size(), 0, "Update had 0 trees");
     }};
     observe(model, &to2);
     delete tr;

@@ -7,12 +7,12 @@ namespace model {
 
 struct ActivityData {
      // Can be empty, in which case requested_url must be non-empty.
-     // This can change if the webview navigates or changes its url.
+     // This can change if the webtree navigates or changes its url.
     NodeID node;
      // If both node and edge are defined, node = edge->to_node.
     EdgeID edge;
-     // View that currently owns this activity, empty otherwise.
-    ViewID view;
+     // Tree that currently owns this activity, empty otherwise.
+    TreeID tree;
      // If this is not 0, the activity is considered loading.
     double loading_at = 0;
      // Set by navigate().  Clear this when responding to it.
@@ -22,13 +22,13 @@ struct ActivityData {
      // Internal use for indexing
     NodeID old_node;
     EdgeID old_nodeless_edge; // empty if old_node is not empty
-    ViewID old_view;
+    TreeID old_tree;
 };
 
  ///// Accessors
 std::vector<ActivityID> get_activities (ReadRef);
 ActivityID get_activity_for_edge (ReadRef, EdgeID);
-ActivityID get_activity_for_view (ReadRef, ViewID);
+ActivityID get_activity_for_tree (ReadRef, TreeID);
 
  ///// Mutators
 

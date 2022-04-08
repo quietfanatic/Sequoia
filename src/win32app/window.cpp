@@ -11,7 +11,7 @@
 
 #include "../model/edge.h"
 #include "../model/node.h"
-#include "../model/view.h"
+#include "../model/tree.h"
 #include "../model/write.h"
 #include "../util/error.h"
 #include "../util/files.h"
@@ -31,7 +31,7 @@ namespace win32app {
 
 static LRESULT CALLBACK window_WndProc (HWND, UINT, WPARAM, LPARAM);
 
-Window::Window (App& a, model::ViewID v) : app(a), view(v) {
+Window::Window (App& a, model::TreeID v) : app(a), tree(v) {
     static auto class_name = L"Sequoia";
     static bool init = []{
         WNDCLASSEXW c {};
@@ -71,7 +71,7 @@ Window::~Window () {
 void Window::reflow () {
     RECT bounds;
     GetClientRect(hwnd, &bounds);
-    Shell* shell = app.shell_for_view(view);
+    Shell* shell = app.shell_for_tree(tree);
     if (shell && shell->controller) {
         AH(shell->controller->put_ParentWindow(hwnd));
         AH(shell->controller->put_Bounds(bounds));
@@ -86,7 +86,7 @@ void Window::reflow () {
             ? sidebar_width : main_menu_width;
         bounds.right -= uint(side_width * scale);
     }
-    if (Activity* activity = app.activity_for_view(view)) {
+    if (Activity* activity = app.activity_for_tree(tree)) {
         if (activity->controller) {
             AH(activity->controller->put_ParentWindow(hwnd));
             AH(activity->controller->put_Bounds(bounds));
@@ -111,11 +111,11 @@ static LRESULT CALLBACK window_WndProc (
             switch (w) {
                 case SIZE_MINIMIZED: {
                     LOG("Window minimized"sv);
-                    Shell* shell = self->app.shell_for_view(self->view);
+                    Shell* shell = self->app.shell_for_tree(self->tree);
                     if (shell && shell->controller) {
                         shell->controller->put_IsVisible(FALSE);
                     }
-                    if (Activity* activity = self->app.activity_for_view(self->view)) {
+                    if (Activity* activity = self->app.activity_for_tree(self->tree)) {
                         if (activity->controller) {
                             AH(activity->controller->put_IsVisible(FALSE));
                         }
@@ -148,7 +148,7 @@ static LRESULT CALLBACK window_WndProc (
         }
         case WM_CLOSE:
              // TODO: respond to session manager messages
-            close(write(self->app.model), self->view);
+            close(write(self->app.model), self->tree);
             return 0;
     }
     return DefWindowProc(hwnd, message, w, l);
@@ -160,13 +160,13 @@ std::function<void()> Window::get_key_handler (
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
-            set_fullscreen(write(app.model), view, !fullscreen);
+            set_fullscreen(write(app.model), tree, !fullscreen);
         };
         break;
     case 'L':
         if (!shift && ctrl && !alt) return [this]{
              // Skip model for this
-            if (Shell* shell = app.shell_for_view(view)) {
+            if (Shell* shell = app.shell_for_tree(tree)) {
                 shell->select_location();
             }
         };
@@ -214,7 +214,7 @@ std::function<void()> Window::get_key_handler (
     case VK_ESCAPE:
         if (!shift && !ctrl && !alt) {
             if (fullscreen) return [this]{
-                set_fullscreen(write(app.model), view, false);
+                set_fullscreen(write(app.model), tree, false);
             };
         }
         break;
@@ -237,10 +237,10 @@ std::function<void()> Window::get_key_handler (
 }
 
 void Window::update (const model::Update& update) {
-    auto view_data = app.model/view;
-    AA(view_data);
+    auto tree_data = app.model/tree;
+    AA(tree_data);
 
-    if (view_data->fullscreen && !fullscreen) {
+    if (tree_data->fullscreen && !fullscreen) {
         fullscreen = Fullscreen{};
         MONITORINFO monitor = {sizeof(MONITORINFO)};
         AW(GetWindowPlacement(hwnd, &fullscreen->old_placement));
@@ -257,7 +257,7 @@ void Window::update (const model::Update& update) {
         );
         reflow();
     }
-    else if (!view_data->fullscreen && fullscreen) {
+    else if (!tree_data->fullscreen && fullscreen) {
         DWORD style = GetWindowLong(hwnd, GWL_STYLE);
         SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
         SetWindowPlacement(hwnd, &fullscreen->old_placement);
@@ -267,14 +267,14 @@ void Window::update (const model::Update& update) {
                 | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
         );
         reflow();
-        if (Activity* activity = app.activity_for_view(view)) {
+        if (Activity* activity = app.activity_for_tree(tree)) {
             activity->leave_fullscreen();
         }
         fullscreen = nullopt;
     }
 
     bool update_title = false;
-    if (auto activity_id = get_activity_for_view(app.model, view)) {
+    if (auto activity_id = get_activity_for_tree(app.model, tree)) {
         auto activity_data = app.model/activity_id;
         if (activity_data->node != current_node) {
             current_node = activity_data->node;

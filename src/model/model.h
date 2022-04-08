@@ -52,8 +52,8 @@ struct NodeData;
 using NodeID = ModelID<NodeData>;
 struct EdgeData;
 using EdgeID = ModelID<EdgeData>;
-struct ViewData;
-using ViewID = ModelID<ViewData>;
+struct TreeData;
+using TreeID = ModelID<TreeData>;
 struct ActivityData;
 using ActivityID = ModelID<ActivityData>;
 
@@ -69,7 +69,7 @@ using ActivityID = ModelID<ActivityData>;
  // particularly good reason I can see.
 const NodeData* operator / (ReadRef, NodeID);
 const EdgeData* operator / (ReadRef, EdgeID);
-const ViewData* operator / (ReadRef, ViewID);
+const TreeData* operator / (ReadRef, TreeID);
 const ActivityData* operator / (ReadRef, ActivityID);
 
 } // namespace model

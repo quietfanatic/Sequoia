@@ -5,7 +5,7 @@
 #include "activity-internal.h"
 #include "edge-internal.h"
 #include "node-internal.h"
-#include "view-internal.h"
+#include "tree-internal.h"
 #include "write-internal.h"
 
 namespace model {
@@ -23,7 +23,7 @@ struct Model {
 
     NodeModel nodes;
     EdgeModel edges;
-    ViewModel views;
+    TreeModel trees;
     ActivityModel activities;
     WriteModel writes;
 

@@ -3,14 +3,14 @@
 #include "../model/activity.h"
 #include "../model/edge.h"
 #include "../model/node.h"
-#include "../model/view.h"
+#include "../model/tree.h"
 
 namespace bark {
 
 using namespace std;
 
 static void gen_tabs (
-    model::ReadRef model, TabTree& tabs, const model::ViewData& view,
+    model::ReadRef model, TabTree& tabs, const model::TreeData& tree,
     model::EdgeID edge, model::EdgeID parent
 ) {
     AA(edge);
@@ -21,7 +21,7 @@ static void gen_tabs (
         auto children = get_edges_from_node(model, node);
 
         int flags = 0;
-        if (view.focused_tab == edge) flags |= Tab::FOCUSED;
+        if (tree.focused_tab == edge) flags |= Tab::FOCUSED;
         if (activity_id) {
             auto activity_data = model/activity_id;
             if (activity_data->loading_at) flags |= Tab::LOADING;
@@ -29,35 +29,35 @@ static void gen_tabs (
         }
         if (node_data->visited_at) flags |= Tab::VISITED;
         if (children.size()) flags |= Tab::EXPANDABLE;
-        if (view.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
+        if (tree.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
         if (edge_data->trashed_at) flags |= Tab::TRASHED;
 
         tabs.emplace(edge, Tab(node, parent, Tab::Flags(flags)));
-        if (view.expanded_tabs.count(edge)) {
+        if (tree.expanded_tabs.count(edge)) {
             for (model::EdgeID child : children) {
-                gen_tabs(model, tabs, view, child, edge);
+                gen_tabs(model, tabs, tree, child, edge);
             }
         }
     }
     else {
         int flags = 0;
-        if (view.focused_tab == edge) flags |= Tab::FOCUSED;
+        if (tree.focused_tab == edge) flags |= Tab::FOCUSED;
          // If activity isn't currently loading, there should be a node.
         if (activity_id) flags |= Tab::LOADING;
          // This probably should never happen
-        if (view.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
+        if (tree.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
         if (edge_data->trashed_at) flags |= Tab::TRASHED;
 
         tabs.emplace(edge, Tab({}, parent, Tab::Flags(flags)));
     }
 }
 
-TabTree create_tab_tree (model::ReadRef model, model::ViewID view) {
+TabTree create_tab_tree (model::ReadRef model, model::TreeID tree) {
     TabTree r;
-    auto view_data = model/view;
-    auto top_edges = get_edges_from_node(model, view_data->root_node);
+    auto tree_data = model/tree;
+    auto top_edges = get_edges_from_node(model, tree_data->root_node);
     for (auto edge : top_edges) {
-        gen_tabs(model, r, *view_data, edge, model::EdgeID{});
+        gen_tabs(model, r, *tree_data, edge, model::EdgeID{});
     }
     return r;
 }

@@ -15,7 +15,7 @@ struct Activity;
 struct Shell;
 struct Window;
 
-struct AppView {
+struct TreeView {
     std::unique_ptr<Shell> shell;
     std::unique_ptr<Window> window;
 };
@@ -26,7 +26,7 @@ struct App : model::Observer {
     Nursery nursery;
     model::Model& model;
     std::unordered_map<model::ActivityID, std::unique_ptr<Activity>> activities;
-    std::unordered_map<model::ViewID, AppView> app_views;
+    std::unordered_map<model::TreeID, TreeView> tree_views;
 
      // Makes all windows hidden; mainly for testing.
     bool headless = false;
@@ -35,11 +35,11 @@ struct App : model::Observer {
     ~App();
 
     Activity* activity_for_id (model::ActivityID);
-    Activity* activity_for_view (model::ViewID);
-    Shell* shell_for_view (model::ViewID);
-    Window* window_for_view (model::ViewID);
+    Activity* activity_for_tree (model::TreeID);
+    Shell* shell_for_tree (model::TreeID);
+    Window* window_for_tree (model::TreeID);
 
-     // Make windows for open views, open window for urls, and if none
+     // Make windows for open trees, open window for urls, and if none
      // of those happens, makes a default window.
     void start (const std::vector<String>& urls);
 

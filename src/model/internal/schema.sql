@@ -123,29 +123,29 @@ CREATE INDEX _trashed_edges_by_trashed_at ON _edges (
 
  -- NYI
 
------ VIEWS
+----- TREE
 
- -- A view represents a tree-like view of the graph.
+ -- A tree represents a tree-like view of the graph.
  --
  -- To preserve the path to the focused tab, a tab corresponds to an edge, not
  -- a node or a group, because an edge knows its parent.  As a consequence, only
  -- one tab corresponding to a given node or group can be expanded at a time.
  --
  -- In terms of data, a "tab" and an "edge" are equivalent, but a tab is always
- -- within the context of a particular view.  Model functions with "tab" in
- -- their name will take both a ViewID and an EdgeID, and functions with "edge"
+ -- within the context of a particular tree.  Model functions with "tab" in
+ -- their name will take both a TreeID and an EdgeID, and functions with "edge"
  -- in their name only take an EdgeID.
  --
- -- Top-level tabs of this view are edges with a _from_node with a _url of
- -- sequoia:view/<_view_nodes._id>.
+ -- Top-level tabs of this tree are edges with a _from_node with a _url of
+ -- sequoia:tree/<_tree_nodes._id>.
  --
  -- _focused_tab may be 0, in which case there is no focused tab.
  --
- -- If _closed_at is not 0, there is an open window tracking this view.
+ -- If _closed_at is not 0, there is an open window tracking this tree.
  --
  -- _expanded_tabs is a JSON array of edge IDs.  The order of expanded tabs is
  -- not meaningful, but for consistency we'll store them sorted by ID.
-CREATE TABLE _views (
+CREATE TABLE _trees (
     _id INTEGER PRIMARY KEY,
     _focused_tab INTEGER NOT NULL,
     _created_at REAL NOT NULL,
@@ -160,11 +160,11 @@ CREATE TABLE _views (
 
  -- These aren't really necessary for efficiency, but they semantically make
  -- sense.
-CREATE INDEX _open_views_by_created_at ON _views (
+CREATE INDEX _open_trees_by_created_at ON _trees (
     _created_at
 ) WHERE _closed_at = 0;
 
-CREATE INDEX _closed_views_by_closed_at ON _views (
+CREATE INDEX _closed_trees_by_closed_at ON _trees (
     _closed_at
 ) WHERE _closed_at > 0;
 

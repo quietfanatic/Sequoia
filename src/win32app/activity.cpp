@@ -6,7 +6,7 @@
 
 #include "../model/edge.h"
 #include "../model/node.h"
-#include "../model/view.h"
+#include "../model/tree.h"
 #include "../model/write.h"
 #include "../util/error.h"
 #include "../util/files.h"
@@ -140,7 +140,7 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            // TODO: keep track of viewing view
+            // TODO: keep track of treeing tree
             Window* window = nullptr;
             if (!window) return S_OK;
             COREWEBVIEW2_KEY_EVENT_KIND kind;
@@ -170,13 +170,13 @@ Activity::Activity (App& a, model::ActivityID i) : app(a), id(i) {
             Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
                 [self](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-            // TODO: Keep track of viewing view and set fullscreen
+            // TODO: Keep track of treeing tree and set fullscreen
             return S_OK;
         }).Get(), nullptr));
 
         auto data = self->app.model/self->id;
-        if (data->view) {
-            self->app.window_for_view(data->view)->reflow();
+        if (data->tree) {
+            self->app.window_for_tree(data->tree)->reflow();
         }
         self->update();
         if (self->waiting_for_ready) {

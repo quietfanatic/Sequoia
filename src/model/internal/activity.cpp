@@ -38,17 +38,17 @@ static ActivityID create (WriteRef model, std::unique_ptr<ActivityData> data) {
         AA(emplaced);
         data->old_nodeless_edge = data->edge;
     }
-    if (data->view) {
-         // Kick out activity that already has this view
-        auto& existing_id = a.by_view[data->view];
+    if (data->tree) {
+         // Kick out activity that already has this tree
+        auto& existing_id = a.by_tree[data->tree];
         if (existing_id) {
             auto iter = a.by_id.find(existing_id);
             AA(iter != a.by_id.end());
-            iter->second->old_view = ViewID{};
-            iter->second->view = ViewID{};
+            iter->second->old_tree = TreeID{};
+            iter->second->tree = TreeID{};
         }
         existing_id = id;
-        data->old_view = data->view;
+        data->old_tree = data->tree;
     }
      // Insert
     auto [iter, emplaced] = a.by_id.emplace(id, std::move(data));
@@ -87,15 +87,15 @@ static void save (WriteRef model, ActivityID id, ActivityData* data) {
         }
         data->old_nodeless_edge = nodeless_edge;
     }
-     // Update by-view index
-    if (data->view != data->old_view) {
-        if (data->old_view) {
-            a.by_view.erase(data->old_view);
+     // Update by-tree index
+    if (data->tree != data->old_tree) {
+        if (data->old_tree) {
+            a.by_tree.erase(data->old_tree);
         }
-        if (data->view) {
-            auto [iter, emplaced] = a.by_view.emplace(data->view, id);
+        if (data->tree) {
+            auto [iter, emplaced] = a.by_tree.emplace(data->tree, id);
         }
-        data->old_view = data->view;
+        data->old_tree = data->tree;
     }
     touch(model, id);
 }
@@ -137,25 +137,25 @@ ActivityID get_activity_for_edge (ReadRef model, EdgeID edge) {
     else return get_activity_for_nodeless_edge(model, edge);
 }
 
-ActivityID get_activity_for_view (ReadRef model, ViewID view) {
-    AA(view);
+ActivityID get_activity_for_tree (ReadRef model, TreeID tree) {
+    AA(tree);
     auto& a = model->activities;
-    auto iter = a.by_view.find(view);
-    if (iter == a.by_view.end()) return ActivityID{};
+    auto iter = a.by_tree.find(tree);
+    if (iter == a.by_tree.end()) return ActivityID{};
     else return iter->second;
 }
 
 ///// Mutators
 
-void focus_activity_for_tab (WriteRef model, ViewID view, EdgeID edge) {
-    AA(view);
+void focus_activity_for_tab (WriteRef model, TreeID tree, EdgeID edge) {
+    AA(tree);
     AA(edge);
     if (auto node = (*model/edge)->to_node) {
         if (auto id = get_activity_for_node(model, node)) {
              // Activity already exists, so claim it.
             auto data = load_mut(model, id);
             data->edge = edge;
-            data->view = view;
+            data->tree = tree;
             save(model, id, data);
         }
         else {
@@ -163,7 +163,7 @@ void focus_activity_for_tab (WriteRef model, ViewID view, EdgeID edge) {
             auto data = std::make_unique<ActivityData>();
             data->node = node;
             data->edge = edge;
-            data->view = view;
+            data->tree = tree;
              // Should start loading the node's url.
             data->loading_at = now();
             create(model, std::move(data));
@@ -174,20 +174,20 @@ void focus_activity_for_tab (WriteRef model, ViewID view, EdgeID edge) {
     }
 }
 
-void unfocus_activity_for_tab (WriteRef model, ViewID view, EdgeID edge) {
-    AA(view);
+void unfocus_activity_for_tab (WriteRef model, TreeID tree, EdgeID edge) {
+    AA(tree);
     AA(edge);
     if (ActivityID id = get_activity_for_edge(model, edge)) {
         auto data = load_mut(model, id);
-        data->view = ViewID{};
+        data->tree = TreeID{};
         save(model, id, data);
     }
 }
 
 void navigate_activity_for_tab (
-    WriteRef model, ViewID view, EdgeID edge, Str address
+    WriteRef model, TreeID tree, EdgeID edge, Str address
 ) {
-    AA(view);
+    AA(tree);
     AA(edge);
     AA(!address.empty());
     auto edge_data = *model/edge;
@@ -204,11 +204,11 @@ void navigate_activity_for_tab (
          // This may be 0, which is fine.
         data->node = edge_data->to_node;
         data->edge = edge;
-         // Only set view if it's still focusing this tab
-        auto view_data = *model/view;
-        AA(view_data);
-        if (view_data->focused_tab == edge) {
-            data->view = view;
+         // Only set tree if it's still focusing this tab
+        auto tree_data = *model/tree;
+        AA(tree_data);
+        if (tree_data->focused_tab == edge) {
+            data->tree = tree;
         }
         data->loading_address = address;
         data->loading_at = now();
@@ -254,8 +254,8 @@ static void move_activity (WriteRef model, ActivityID id, NodeID node, EdgeID ed
     auto data = load_mut(model, id);
     data->node = node;
     data->edge = edge;
-    if (data->view) {
-        set_focused_tab(model, data->view, edge);
+    if (data->tree) {
+        set_focused_tab(model, data->tree, edge);
     }
     save(model, id, data);
 }
@@ -288,7 +288,7 @@ void url_changed (WriteRef model, ActivityID id, Str url) {
         auto parent_data = *model/edge_data->from_node;
         AA(parent_data);
         if (parent_data->url == url) {
-             // TODO: also change edge.  This will require looking at views.
+             // TODO: also change edge.  This will require looking at trees.
             move_activity(model, id, edge_data->from_node, EdgeID{});
             return;
         }
@@ -380,8 +380,8 @@ void delete_activity (WriteRef model, ActivityID id) {
     if (data->old_nodeless_edge) {
         a.by_nodeless_edge.erase(data->old_nodeless_edge);
     }
-    if (data->old_view) {
-        a.by_view.erase(data->old_view);
+    if (data->old_tree) {
+        a.by_tree.erase(data->old_tree);
     }
     a.by_id.erase(id);
     touch(model, id);

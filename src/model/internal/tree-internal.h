@@ -1,5 +1,5 @@
 #pragma once
-#include "../view.h"
+#include "../tree.h"
 
 #include <memory>
 #include <unordered_map>
@@ -7,20 +7,20 @@
 
 namespace model {
 
-ViewData* load_mut (ReadRef model, ViewID id);
+TreeData* load_mut (ReadRef model, TreeID id);
 
-ViewID create_view (WriteRef model);
+TreeID create_tree (WriteRef model);
 
  // Like focus_tab, but doesn't call focus_activity_for_tab
-void set_focused_tab (WriteRef model, ViewID, EdgeID);
+void set_focused_tab (WriteRef model, TreeID, EdgeID);
 
-struct ViewModel {
-    mutable std::unordered_map<ViewID, std::unique_ptr<ViewData>> cache;
+struct TreeModel {
+    mutable std::unordered_map<TreeID, std::unique_ptr<TreeData>> cache;
     Statement st_load;
     Statement st_get_open;
     Statement st_last_closed;
     Statement st_save;
-    ViewModel (sqlite3*);
+    TreeModel (sqlite3*);
 };
 
 } // namespace model

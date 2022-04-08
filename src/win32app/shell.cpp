@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <wrl.h>
 
-#include "../model/view.h"
+#include "../model/tree.h"
 #include "../model/write.h"
 #include "../util/error.h"
 #include "../util/files.h"
@@ -22,7 +22,7 @@ using namespace std;
 
 namespace win32app {
 
-Shell::Shell (App& a, model::ViewID v) : app(a), view(v) {
+Shell::Shell (App& a, model::TreeID v) : app(a), tree(v) {
      // TODO: Fix possible use-after-free of this
     app.nursery.new_webview([this](
         ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd
@@ -53,7 +53,7 @@ Shell::Shell (App& a, model::ViewID v) : app(a), view(v) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            Window* window = app.window_for_view(view);
+            Window* window = app.window_for_tree(tree);
             if (!window) return S_OK;
             COREWEBVIEW2_KEY_EVENT_KIND kind;
             AH(args->get_KeyEventKind(&kind));
@@ -82,7 +82,7 @@ Shell::Shell (App& a, model::ViewID v) : app(a), view(v) {
             exe_relative("res/bark/bark.html"sv)
         ).c_str());
 
-        if (Window* window = app.window_for_view(view)) {
+        if (Window* window = app.window_for_tree(tree)) {
             window->reflow();
         }
     });
@@ -112,13 +112,13 @@ void Shell::message_from_webview (const json::Value& message) {
                     std::pair{"theme"sv, app.settings.theme}
                 )
             ));
-            current_tabs = bark::create_tab_tree(app.model, view);
+            current_tabs = bark::create_tab_tree(app.model, tree);
             json::Array tab_updates;
             tab_updates.reserve(current_tabs.size());
             for (auto& [id, tab] : current_tabs) {
                 tab_updates.emplace_back(bark::make_tab_json(app.model, id, &tab));
             }
-            message_to_webview(json::array("view"sv, tab_updates));
+            message_to_webview(json::array("tree"sv, tab_updates));
             ready = true;
             if (waiting_for_ready) {
                 waiting_for_ready = false;
@@ -128,15 +128,15 @@ void Shell::message_from_webview (const json::Value& message) {
         }
         case x31_hash("resize"): {
              // TODO: set sidebar width or something
-            if (Window* window = app.window_for_view(view)) {
+            if (Window* window = app.window_for_tree(tree)) {
                 window->reflow();
             }
             break;
         }
         case x31_hash("navigate"): {
              // TODO: send tab from shell
-            auto data = app.model/view;
-            navigate_tab(write(app.model), view, data->focused_tab, message[1]);
+            auto data = app.model/tree;
+            navigate_tab(write(app.model), tree, data->focused_tab, message[1]);
             break;
         }
          // Toolbar buttons
@@ -144,14 +144,14 @@ void Shell::message_from_webview (const json::Value& message) {
              // Connecting directly to win32app::Activity, because
              // model::ActivityData doesn't have concept of history
              // TODO: add enum LoadingType to model::ActiviyData
-            auto activity = app.activity_for_view(view);
+            auto activity = app.activity_for_tree(tree);
             if (activity && activity->webview) {
                 activity->webview->GoBack();
             }
             break;
         }
         case x31_hash("forward"): {
-            auto activity = app.activity_for_view(view);
+            auto activity = app.activity_for_tree(tree);
             if (activity && activity->webview) {
                 activity->webview->GoForward();
             }
@@ -159,14 +159,14 @@ void Shell::message_from_webview (const json::Value& message) {
         }
         case x31_hash("reload"): {
              // TODO: send tab from shell
-            auto data = app.model/view;
-            reload_tab(write(app.model), view, data->focused_tab);
+            auto data = app.model/tree;
+            reload_tab(write(app.model), tree, data->focused_tab);
             break;
         }
         case x31_hash("stop"): {
              // TODO: send tab from shell
-            auto data = app.model/view;
-            stop_tab(write(app.model), view, data->focused_tab);
+            auto data = app.model/tree;
+            stop_tab(write(app.model), tree, data->focused_tab);
             break;
         }
         case x31_hash("investigate_error"): {
@@ -175,24 +175,24 @@ void Shell::message_from_webview (const json::Value& message) {
         }
          // Tab actions
         case x31_hash("focus_tab"): {
-            focus_tab(write(app.model), view, model::EdgeID{message[1]});
+            focus_tab(write(app.model), tree, model::EdgeID{message[1]});
             break;
         }
         case x31_hash("new_child"): {
              // TODO: send tab from shell
-            auto data = app.model/view;
-            new_child_tab(write(app.model), view, data->focused_tab);
+            auto data = app.model/tree;
+            new_child_tab(write(app.model), tree, data->focused_tab);
             break;
         }
         case x31_hash("trash_tab"): {
-            trash_tab(write(app.model), view, model::EdgeID{message[1]});
+            trash_tab(write(app.model), tree, model::EdgeID{message[1]});
             break;
         }
         case x31_hash("move_tab_before"): {
             model::EdgeID edge {message[1]};
             model::EdgeID target {message[2]};
             if (edge && target) {
-                move_tab_before(write(app.model), view, edge, target);
+                move_tab_before(write(app.model), tree, edge, target);
             }
             break;
         }
@@ -200,7 +200,7 @@ void Shell::message_from_webview (const json::Value& message) {
             model::EdgeID edge {message[1]};
             model::EdgeID target {message[2]};
             if (edge && target) {
-                move_tab_after(write(app.model), view, edge, target);
+                move_tab_after(write(app.model), tree, edge, target);
             }
             break;
         }
@@ -208,7 +208,7 @@ void Shell::message_from_webview (const json::Value& message) {
             model::EdgeID edge {message[1]};
             model::EdgeID parent {message[2]};
             if (edge) {
-                move_tab_first_child(write(app.model), view, edge, parent);
+                move_tab_first_child(write(app.model), tree, edge, parent);
             }
             break;
         }
@@ -216,22 +216,22 @@ void Shell::message_from_webview (const json::Value& message) {
             model::EdgeID edge {message[1]};
             model::EdgeID parent {message[2]};
             if (edge) {
-                move_tab_last_child(write(app.model), view, edge, parent);
+                move_tab_last_child(write(app.model), tree, edge, parent);
             }
             break;
         }
         case x31_hash("expand_tab"): {
-            expand_tab(write(app.model), view, model::EdgeID{message[1]});
+            expand_tab(write(app.model), tree, model::EdgeID{message[1]});
             break;
         }
         case x31_hash("contract_tab"): {
-            contract_tab(write(app.model), view, model::EdgeID{message[1]});
+            contract_tab(write(app.model), tree, model::EdgeID{message[1]});
             break;
         }
          // Main menu
         case x31_hash("fullscreen"): {
-            bool currently_fullscreen = (app.model/view)->fullscreen;
-            set_fullscreen(write(app.model), view, !currently_fullscreen);
+            bool currently_fullscreen = (app.model/tree)->fullscreen;
+            set_fullscreen(write(app.model), tree, !currently_fullscreen);
             break;
         }
         case x31_hash("register_as_browser"): {
@@ -241,7 +241,7 @@ void Shell::message_from_webview (const json::Value& message) {
         case x31_hash("open_selected_links"): {
             // TODO
 //            if (Activity* activity = app.activity_for_node(
-//                focused_node(app.model, view)
+//                focused_node(app.model, tree)
 //            )) {
 //                activity->message_to_webview(
 //                    json::array("open_selected_links"sv)
@@ -267,7 +267,7 @@ void Shell::update (const model::Update& update) {
     if (ready) {
          // Generate new tab collection
         auto old_tabs = move(current_tabs);
-        current_tabs = bark::create_tab_tree(app.model, view);
+        current_tabs = bark::create_tab_tree(app.model, tree);
          // Send changed tabs to shell
          // TODO: do less when tree structure hasn't changed?
         auto changes = get_changed_tabs(update, old_tabs, current_tabs);

@@ -12,7 +12,7 @@ const TRASHED = 16;
 const EXPANDABLE = 32;
 const EXPANDED = 64;
 
-///// View model (model of view, not viewmodel)
+///// Tree model
 
  // Although the data model at the bottom is a graph of pages and links, it's
  // presented to the user as a tree of tabs, which looks in the DOM like
@@ -501,7 +501,7 @@ let commands = {
             $html.classList.add("theme-" + settings.theme);
         }
     },
-    view (items) {
+    tree (items) {
         $($toplist, []);
         items_by_id = {};
         for (let item of items) {

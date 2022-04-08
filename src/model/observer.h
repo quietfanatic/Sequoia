@@ -9,7 +9,7 @@ namespace model {
 struct Update {
     std::unordered_set<NodeID> nodes;
     std::unordered_set<EdgeID> edges;
-    std::unordered_set<ViewID> views;
+    std::unordered_set<TreeID> trees;
     std::unordered_set<ActivityID> activities;
 };
 

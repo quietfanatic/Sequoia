@@ -59,7 +59,7 @@ Model::Model (Str db_path) :
     db(db_path),
     nodes(db),
     edges(db),
-    views(db),
+    trees(db),
     writes(db)
 { }
 
@@ -82,7 +82,7 @@ const NodeData* operator/ (ReadRef model, NodeID id) {
 const EdgeData* operator/ (ReadRef model, EdgeID id) {
     return load_mut(model, id);
 }
-const ViewData* operator/ (ReadRef model, ViewID id) {
+const TreeData* operator/ (ReadRef model, TreeID id) {
     return load_mut(model, id);
 }
 const ActivityData* operator/ (ReadRef model, ActivityID id) {

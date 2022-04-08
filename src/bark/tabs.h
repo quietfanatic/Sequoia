@@ -10,7 +10,7 @@
 
 namespace bark {
 
- // Mirrors the structure of the tree view in the shell.
+ // Mirrors the structure of the tree tree in the shell.
  // I hate to resort to using a shadow document to manage updates because of the
  // overhead, but it really is the easiest algorithm to work with.
  //
@@ -37,7 +37,7 @@ struct Tab {
 
 using TabTree = std::unordered_map<model::EdgeID, Tab>;
 
-TabTree create_tab_tree (model::ReadRef model, model::ViewID view);
+TabTree create_tab_tree (model::ReadRef model, model::TreeID tree);
 
 using TabChanges = std::vector<std::pair<model::EdgeID, std::optional<Tab>>>;
 

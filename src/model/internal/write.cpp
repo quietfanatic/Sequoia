@@ -28,9 +28,9 @@ Write::~Write () {
         for (EdgeID edge : update.edges) {
             model.edges.cache.erase(edge);
         }
-        for (ViewID view : update.views) {
+        for (TreeID tree : update.trees) {
              // TODO: how to reset fullscreen
-            model.views.cache.erase(view);
+            model.trees.cache.erase(tree);
         }
         for (ActivityID activity : update.activities) {
              // TODO: not sure what to do here.

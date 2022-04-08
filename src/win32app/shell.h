@@ -13,8 +13,8 @@ struct App;
 
 struct Shell {
     App& app;
-    model::ViewID view;
-    Shell (App&, model::ViewID);
+    model::TreeID tree;
+    Shell (App&, model::TreeID);
     ~Shell ();
 
      ///// Shell methods

@@ -6,7 +6,7 @@
 #include <wil/com.h>
 #include <wrl.h>
 
-#include "../model/view.h"
+#include "../model/tree.h"
 #include "../model/write.h"
 #include "../util/error.h"
 #include "../util/hash.h"
@@ -45,7 +45,7 @@ static LRESULT CALLBACK nursery_WndProc (
             switch (x31_hash(command)) {
                 case x31_hash("new_window"): {
                     ReplyMessage(0);
-                    open_view_for_urls(write(self->app.model), {message[1]});
+                    open_tree_for_urls(write(self->app.model), {message[1]});
                     return 0;
                 }
                 default: return 1;
