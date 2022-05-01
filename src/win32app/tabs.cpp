@@ -28,9 +28,10 @@ static void gen_tabs (
             else flags |= Tab::LOADED;
         }
         if (node_data->visited_at) flags |= Tab::VISITED;
+        if (edge_data->trashed_at) flags |= Tab::TRASHED;
+        if (node_data->starred_at) flags |= Tab::STARRED;
         if (children.size()) flags |= Tab::EXPANDABLE;
         if (tree.expanded_tabs.count(edge)) flags |= Tab::EXPANDED;
-        if (edge_data->trashed_at) flags |= Tab::TRASHED;
 
         tabs.emplace(edge, Tab(node, parent, Tab::Flags(flags)));
         if (tree.expanded_tabs.count(edge)) {

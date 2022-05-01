@@ -66,6 +66,8 @@ void stop_tab (WriteRef, TreeID, EdgeID);
 void expand_tab (WriteRef, TreeID, EdgeID);
 void contract_tab (WriteRef, TreeID, EdgeID);
 void trash_tab (WriteRef, TreeID, EdgeID);
+void star_tab (WriteRef, TreeID, EdgeID);
+void unstar_tab (WriteRef, TreeID, EdgeID);
 
 void move_tab_before (WriteRef, TreeID, EdgeID tab, EdgeID next);
 void move_tab_after (WriteRef, TreeID, EdgeID tab, EdgeID prev);

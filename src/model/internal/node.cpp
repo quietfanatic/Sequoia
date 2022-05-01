@@ -12,7 +12,7 @@ using namespace std;
 namespace model {
 
 static constexpr Str sql_load = R"(
-SELECT _url, _favicon_url, _title, _visited_at, _group FROM _nodes WHERE _id = ?
+SELECT _url, _favicon_url, _title, _visited_at, _starred_at, _group FROM _nodes WHERE _id = ?
 )"sv;
 
 NodeData* load_mut (ReadRef model, NodeID id) {
@@ -29,7 +29,8 @@ NodeData* load_mut (ReadRef model, NodeID id) {
         data->favicon_url = Str(st[1]);
         data->title = Str(st[2]);
         data->visited_at = st[3];
-        data->group = st[4];
+        data->starred_at = st[4];
+        data->group = st[5];
     }
     return &*data;
 }
@@ -49,8 +50,8 @@ NodeID get_node_with_url (ReadRef model, Str url) {
 
 static constexpr Str sql_save = R"(
 INSERT OR REPLACE INTO _nodes
-(_id, _url_hash, _url, _favicon_url, _title, _visited_at, _group)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+(_id, _url_hash, _url, _favicon_url, _title, _visited_at, _starred_at, _group)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 )"sv;
 
 static NodeID save (WriteRef model, NodeID id, const NodeData* data) {
@@ -58,7 +59,7 @@ static NodeID save (WriteRef model, NodeID id, const NodeData* data) {
     UseStatement st (model->nodes.st_save);
     st.params(
         null_default(id), x31_hash(data->url), data->url, data->favicon_url,
-        data->title, data->visited_at, data->group
+        data->title, data->visited_at, data->starred_at, data->group
     );
     st.run();
     AA(sqlite3_changes(model->db) == 1);
@@ -97,6 +98,11 @@ void set_favicon_url (WriteRef model, NodeID id, Str url) {
 void set_visited (WriteRef model, NodeID id) {
     auto data = load_mut(model, id);
     data->visited_at = now();
+    save(model, id, data);
+}
+void set_starred_at (WriteRef model, NodeID id, double at) {
+    auto data = load_mut(model, id);
+    data->starred_at = at;
     save(model, id, data);
 }
 

@@ -215,6 +215,20 @@ void trash_tab (WriteRef model, TreeID id, EdgeID tab) {
      // TODO: close this tree if it's the last tab
 }
 
+void star_tab (WriteRef model, TreeID id, EdgeID tab) {
+    AA(tab);
+    if (auto to_node = (model/tab)->to_node) {
+        set_starred_at(model, to_node, now());
+    }
+}
+
+void unstar_tab (WriteRef model, TreeID id, EdgeID tab) {
+    AA(tab);
+    if (auto to_node = (model/tab)->to_node) {
+        set_starred_at(model, to_node, 0);
+    }
+}
+
 void move_tab_before (WriteRef model, TreeID id, EdgeID tab, EdgeID next) {
     move_before(model, tab, next);
 }

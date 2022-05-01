@@ -188,6 +188,14 @@ void Bark::message_from_webview (const json::Value& message) {
             trash_tab(write(app.model), tree, model::EdgeID{message[1]});
             break;
         }
+        case x31_hash("star_tab"): {
+            star_tab(write(app.model), tree, model::EdgeID{message[1]});
+            break;
+        }
+        case x31_hash("unstar_tab"): {
+            unstar_tab(write(app.model), tree, model::EdgeID{message[1]});
+            break;
+        }
         case x31_hash("move_tab_before"): {
             model::EdgeID edge {message[1]};
             model::EdgeID target {message[2]};

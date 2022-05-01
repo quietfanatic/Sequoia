@@ -11,10 +11,11 @@ void model_tests () {
     using namespace tap;
     ModelTestEnvironment env;
 
-    Model* model;
+    Model* model = nullptr;
     doesnt_throw([&]{
         model = new_model(env.db_path);
     }, "new_model can create new DB file");
+    if (!model) BAIL_OUT();
     doesnt_throw([&]{
         delete_model(model);
     }, "delete_model");

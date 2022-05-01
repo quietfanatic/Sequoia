@@ -12,6 +12,7 @@ struct NodeData {
     String favicon_url;
     String title;
     double visited_at = 0;
+    double starred_at = 0;
      // Extrinsic
     int64 group = 0; // NYI
 };

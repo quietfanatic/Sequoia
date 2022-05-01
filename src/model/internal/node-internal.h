@@ -17,6 +17,7 @@ NodeID ensure_node_with_url (WriteRef, Str url);
 void set_title (WriteRef, NodeID, Str);
 void set_favicon_url (WriteRef, NodeID, Str);
 void set_visited (WriteRef, NodeID);
+void set_starred_at (WriteRef, NodeID, double);
 
 struct NodeModel {
     mutable std::unordered_map<NodeID, std::unique_ptr<NodeData>> cache;

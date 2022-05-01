@@ -9,8 +9,9 @@ const VISITED = 2;
 const LOADING = 4;
 const LOADED = 8;
 const TRASHED = 16;
-const EXPANDABLE = 32;
-const EXPANDED = 64;
+const STARRED = 32;
+const EXPANDABLE = 64;
+const EXPANDED = 128;
 
 ///// Tree model
 
@@ -298,6 +299,10 @@ function create_item ([id, parent, position, url, favicon_url, title, flags]) {
                 class: "new-child",
                 click: on_new_child_clicked,
             }),
+            $("div", {
+                class: "star",
+                click: on_star_clicked,
+            }),
         ),
         $list = $("div", {class:"list"}),
     );
@@ -324,9 +329,9 @@ function update_item (data) {
         item.$item.classList.toggle("loading", flags & LOADING);
         item.$item.classList.toggle("loaded", flags & LOADED);
         item.$item.classList.toggle("trashed", flags & TRASHED);
+        item.$item.classList.toggle("starred", flags & STARRED);
         item.$item.classList.toggle("expandable", flags & EXPANDABLE);
         item.$item.classList.toggle("expanded", flags & EXPANDED);
-        if (flags & FOCUSED) update_toolbar(url, flags & LOADING);
 
         item.$title.innerText = title;
         item.$tab.title = title + "\n" + url;
@@ -387,18 +392,6 @@ function on_tab_clicked (event) {
     handled(event);
 }
 
-function on_new_child_clicked (event) {
-    let $item = event.target.closest('.item');
-    host.postMessage(["new_child", +$item.id]);
-    handled(event);
-}
-
-function on_close_clicked (event) {
-    let $item = event.target.closest('.item');
-    close_or_delete_tab($item);
-    handled(event);
-}
-
 function on_expand_clicked (event) {
     let $item = event.target.closest('.item');
     if ($item.classList.contains("expanded")) {
@@ -408,6 +401,28 @@ function on_expand_clicked (event) {
         host.postMessage(["expand_tab", +$item.id]);
     }
     handled(event);
+}
+
+function on_close_clicked (event) {
+    let $item = event.target.closest('.item');
+    close_or_delete_tab($item);
+    handled(event);
+}
+
+function on_new_child_clicked (event) {
+    let $item = event.target.closest('.item');
+    host.postMessage(["new_child", +$item.id]);
+    handled(event);
+}
+
+function on_star_clicked (event) {
+    let $item = event.target.closest('.item');
+    if ($item.classList.contains('starred')) {
+        host.postMessage(["unstar", +$item.id]);
+    }
+    else {
+        host.postMessage(["star", +$item.id]);
+    }
 }
 
 ///// Tab dragging and moving

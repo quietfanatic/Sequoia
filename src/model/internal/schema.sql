@@ -44,6 +44,8 @@ PRAGMA user_version = 6;
  -- _title is the actual title from the HTML node.  It will be "" if this
  -- node has not been loaded yet.
  --
+ -- _starred_at may eventually be replaced with a proper tagging system.
+ --
  -- _group doesn't semantically belong in this table, but since it's a
  -- one-to-many relationship, this is where it's easiest to put it.
 CREATE TABLE _nodes (
@@ -53,10 +55,12 @@ CREATE TABLE _nodes (
     _favicon_url TEXT NOT NULL,
     _title TEXT NOT NULL,
     _visited_at REAL NOT NULL,
+    _starred_at REAL NOT NULL,
     _group INTEGER NOT NULL,
     CHECK(_id > 0),
     CHECK(_url <> ''),
     CHECK(_visited_at >= 0),
+    CHECK(_starred_at >= 0),
     CHECK(_group >= 0)
 );
 CREATE INDEX _nodes_by_url_hash ON _nodes (

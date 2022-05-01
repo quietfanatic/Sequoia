@@ -171,10 +171,10 @@ html:not(.show-closed) #show-closed::before {
 }
 
  /* TABS */
-.item.closed > .tab {
+.item.trashed > .tab {
     opacity:0.5;
 }
-html:not(.show-closed) .item.closed {
+html:not(.show-closed) .item.trashed {
     display:none;
 }
 
@@ -212,13 +212,13 @@ html:not(.show-closed) .item.closed {
     cursor:default;
     font-family:sans-serif;
 }
-.tab:not(.loaded) > .title {
+.item:not(.loaded) > .tab > .title {
     opacity:0.7;
 }
-.tab:not(.visited) > .title {
+.item:not(.visited) > .tab > .title {
     font-style:italic;
 }
-.expand, .new-child, .close {
+.expand, .new-child, .star, .close {
     display:none;
     flex-shrink:0;
     width:16px;
@@ -231,6 +231,15 @@ html:not(.show-closed) .item.closed {
     background:none;
     font-size:var(--tab-button-font-size);
     font-family:sans-serif;
+}
+.item.focused > .tab > .close,
+.tab:hover > .close
+.item.focused > .tab > .new-child,
+.tab:hover > .new-child,
+.item.focused > .tab > .star,
+.tab:hover > .star,
+.item.starred > .tab > .star {
+    display:block;
 }
 .expand::before {
     display:block;
@@ -246,19 +255,18 @@ html:not(.show-closed) .item.closed {
 .item.expandable > .tab > .expand {
     display:block;
 }
-.new-child::before {
-    content:"🞢";
-}
-.tab.focused > .new-child,
-.tab:hover > .new-child {
-    display:block;
-}
 .close::before {
     content:"✕";
 }
-.tab.focused > .close,
-.tab:hover > .close {
-    display:none;
+.new-child::before {
+    content:"🞢";
+}
+.star::before {
+    font-size:120%;
+    content:"✩";
+}
+.tab.starred > .star::before {
+    content:"🟊";
 }
 .item > .list {
     padding-left:var(--tab-indent);

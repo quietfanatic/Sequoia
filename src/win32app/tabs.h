@@ -27,8 +27,9 @@ struct Tab {
         LOADING = 4,
         LOADED = 8,
         TRASHED = 16,
-        EXPANDABLE = 32,
-        EXPANDED = 64,
+        STARRED = 32,
+        EXPANDABLE = 64,
+        EXPANDED = 128,
     };
     model::NodeID node;
     model::EdgeID parent;
