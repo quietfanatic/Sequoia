@@ -16,9 +16,7 @@ const String16 exe_path16 = []{
 const String exe_path = from_utf16(exe_path16);
 
 const String exe_folder = []{
-    String r = exe_path;
-    size_t i = r.find_last_of('\\');
-    return r.substr(0, i);
+    return exe_path.substr(0, exe_path.find_last_of('\\'));
 }();
 
 String exe_relative (Str filename) {
@@ -31,7 +29,7 @@ String slurp (Str filename) {
     if (!file.is_open()) {
         ERR("Failure opening a file, but I don't know why because C++ IO is terrible."sv);
     }
-    size_t len = file.tellg();
+    auto len = size_t(file.tellg());
     file.seekg(0, ios::beg);
     String r (len, 0);
     file.read(const_cast<char*>(r.data()), len);
