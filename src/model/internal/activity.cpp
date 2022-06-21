@@ -14,8 +14,9 @@ ActivityData* load_mut (ReadRef model, ActivityID id) {
     AA(id);
     auto& a = model->activities;
     auto iter = a.by_id.find(id);
-    AA(iter != a.by_id.end());
-    return &*iter->second;
+    return iter != a.by_id.end()
+        ? &*iter->second
+        : nullptr;
 }
 
 static void touch (WriteRef model, ActivityID id) {

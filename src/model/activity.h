@@ -7,7 +7,7 @@ namespace model {
 
 struct ActivityData {
      // Can be empty, in which case requested_url must be non-empty.
-     // This can change if the webtree navigates or changes its url.
+     // This can change if the webview navigates or changes its url.
     NodeID node;
      // If both node and edge are defined, node = edge->to_node.
     EdgeID edge;
