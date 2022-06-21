@@ -230,9 +230,8 @@ void move_before (WriteRef model, EdgeID id, EdgeID next) {
     save(model, id, data);
 }
 
-void new_to_node (WriteRef model, EdgeID id, NodeID node) {
+void set_to_node (WriteRef model, EdgeID id, NodeID node) {
     auto data = load_mut(model, id);
-    AA(!data->to_node);
     data->to_node = node;
     save(model, id, data);
 }

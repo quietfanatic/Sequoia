@@ -39,10 +39,10 @@ void activity_tests () {
     ok(data->loading_at);
 
     doesnt_throw([&]{
-        url_changed(write(model), activity, "http://example.com/");
-    }, "url_changed");
+        replace_node(write(model), activity, "http://example.com/");
+    }, "replace_node");
     auto edge_data = model/tab;
-    ok(edge_data->to_node, "url_changed created a node");
+    ok(edge_data->to_node, "replace_node created a node");
     is(data->node, edge_data->to_node);
     is(data->edge, tab);
     is(data->tree, tree);
@@ -78,11 +78,11 @@ void activity_tests () {
     finished_loading(write(model), activity);
 
     auto tree_data = model/tree;
-    is(tree_data->focused_tab, tab, "Tree's focused tab not changed before url_changed");
+    is(tree_data->focused_tab, tab, "Tree's focused tab not changed");
 
     doesnt_throw([&]{
-        url_changed(write(model), activity, "http://example.com/#2");
-    }, "url_changed to non-existent node");
+        replace_node(write(model), activity, "http://example.com/#2");
+    }, "replace_node to non-existent node");
     auto child_edges = get_edges_from_node(model, edge_data->to_node);
     is(child_edges.size(), 1, "url_changed made new child");
     auto child_edge_data = model/child_edges[0];
@@ -93,24 +93,6 @@ void activity_tests () {
     is(data->loading_address, ""s);
     is(data->reloading, false);
     ok(!data->loading_at);
-    tree_data = model/tree;
-    is(tree_data->focused_tab, data->edge, "Tree's focused tab was automatically changed");
-
-    doesnt_throw([&]{
-        url_changed(write(model), activity, "http://example.com/");
-    }, "url_changed to parent");
-    is(data->node, edge_data->to_node);
-    todo(1, "make url_changed to parent find parent edge");
-    is(data->edge, tab);
-    is(data->tree, tree);
-
-    doesnt_throw([&]{
-        url_changed(write(model), activity, "http://example.com/#2");
-    }, "url_changed to existing child");
-    is(data->node, child_edge_data->to_node);
-    is(data->edge, child_edges[0]);
-    is(data->tree, tree);
-    is(get_edges_from_node(model, edge_data->to_node).size(), 1);
 
     doesnt_throw([&]{
         focus_activity_for_tab(write(model), tree, tab);
@@ -128,16 +110,6 @@ void activity_tests () {
     is(data_2->reloading, false);
     ok(data_2->loading_at);
     is(data->tree, TreeID{}, "First activity got kicked out of tree");
-
-    doesnt_throw([&]{
-        url_changed(write(model), activity_2, "http://example.com/#2");
-    }, "url_changed overlapping other activity");
-    is(data_2->node, child_edge_data->to_node);
-    is(data_2->edge, child_edges[0]);
-    is(data_2->tree, tree);
-    auto activities = get_activities(model);
-    is(activities.size(), 1, "Old activity was deleted on overlap");
-    is(activities[0], activity_2);
 
     doesnt_throw([&]{
         delete_activity(write(model), activity_2);

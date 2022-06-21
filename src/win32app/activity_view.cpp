@@ -74,7 +74,7 @@ ActivityView::ActivityView (App& a, model::ActivityID i) : app(a), id(i) {
             self->webview->get_Source(&source);
             if (source.get() != L""sv && source.get() != L"about:blank"sv) {
                 self->current_url = from_utf16(source.get());
-                url_changed(write(self->app.model),
+                replace_node(write(self->app.model),
                     self->id, self->current_url
                 );
             }

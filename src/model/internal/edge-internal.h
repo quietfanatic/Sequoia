@@ -21,8 +21,7 @@ void move_last_child (WriteRef, EdgeID, NodeID parent);
 void move_after (WriteRef, EdgeID, EdgeID prev);
 void move_before (WriteRef, EdgeID, EdgeID next);
 
- // Fails if to_node already exists
-void new_to_node (WriteRef, EdgeID, NodeID);
+void set_to_node (WriteRef, EdgeID, NodeID);
 
 void trash (WriteRef, EdgeID);
 void untrash (WriteRef, EdgeID);

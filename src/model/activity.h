@@ -37,9 +37,10 @@ void started_loading (WriteRef, ActivityID);
 void finished_loading (WriteRef, ActivityID);
 
  // If this activity doesn't have a node, creates a node.
- // Else if there is a parent or child node with this url, moves to it.
- // Otherwise creates a new last_child node and moves to it.
-void url_changed (WriteRef, ActivityID, Str url);
+ // If it already has a node, the current edge's to_node is replaced with the
+ // new node.
+void replace_node (WriteRef, ActivityID, Str url);
+
  // These require there be a node.
 void title_changed (WriteRef, ActivityID, Str title);
 void favicon_url_changed (WriteRef, ActivityID, Str favicon_url);

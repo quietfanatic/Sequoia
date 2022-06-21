@@ -23,7 +23,7 @@ static void touch (WriteRef model, ActivityID id) {
     model->writes.current_update.activities.insert(id);
 }
 
-static ActivityID create (WriteRef model, std::unique_ptr<ActivityData> data) {
+static ActivityID create (WriteRef model, unique_ptr<ActivityData> data) {
      // TODO: Limit maximum number of activities
     AA(data);
     auto& a = model->activities;
@@ -52,7 +52,7 @@ static ActivityID create (WriteRef model, std::unique_ptr<ActivityData> data) {
         data->old_tree = data->tree;
     }
      // Insert
-    auto [iter, emplaced] = a.by_id.emplace(id, std::move(data));
+    auto [iter, emplaced] = a.by_id.emplace(id, move(data));
     AA(emplaced);
     touch(model, id);
     return id;
@@ -103,8 +103,8 @@ static void save (WriteRef model, ActivityID id, ActivityData* data) {
 
 ///// Accessors
 
-std::vector<ActivityID> get_activities (ReadRef model) {
-    std::vector<ActivityID> r;
+vector<ActivityID> get_activities (ReadRef model) {
+    vector<ActivityID> r;
     r.reserve(model->activities.by_id.size());
     for (auto& [id, data] : model->activities.by_id) {
         r.push_back(id);
@@ -161,13 +161,13 @@ void focus_activity_for_tab (WriteRef model, TreeID tree, EdgeID edge) {
         }
         else {
              // Activity doesn't exist for this node, so make one.
-            auto data = std::make_unique<ActivityData>();
+            auto data = make_unique<ActivityData>();
             data->node = node;
             data->edge = edge;
             data->tree = tree;
              // Should start loading the node's url.
             data->loading_at = now();
-            create(model, std::move(data));
+            create(model, move(data));
         }
     }
     else {
@@ -201,7 +201,7 @@ void navigate_activity_for_tab (
         save(model, id, data);
     }
     else {
-        auto data = std::make_unique<ActivityData>();
+        auto data = make_unique<ActivityData>();
          // This may be 0, which is fine.
         data->node = edge_data->to_node;
         data->edge = edge;
@@ -213,7 +213,7 @@ void navigate_activity_for_tab (
         }
         data->loading_address = address;
         data->loading_at = now();
-        create(model, std::move(data));
+        create(model, move(data));
     }
 }
 
@@ -246,75 +246,17 @@ void finished_loading (WriteRef model, ActivityID id) {
     save(model, id, data);
 }
 
-static void move_activity (WriteRef model, ActivityID id, NodeID node, EdgeID edge) {
-    AA(id);
-    AA(node);  // edge can be 0 though
-    if (auto existing = get_activity_for_node(model, node)) {
-        delete_activity(model, existing);
-    }
-    auto data = load_mut(model, id);
-    data->node = node;
-    data->edge = edge;
-    if (data->tree) {
-        set_focused_tab(model, data->tree, edge);
-    }
-    save(model, id, data);
-}
-
-void url_changed (WriteRef model, ActivityID id, Str url) {
+void replace_node (WriteRef model, ActivityID id, Str url) {
     AA(id);
     AA(!url.empty());
     auto data = load_mut(model, id);
+     // Don't know what to do if there isn't an edge.
+    AA(data->edge);
     if (!data->node) {
-         // Node doesn't exist, create it.
-        AA(data->edge);
-        auto node = ensure_node_with_url(model, url);
-        new_to_node(model, data->edge, node);
-        data->node = node;
-        save(model, id, data);
-        return;
+        data->node = ensure_node_with_url(model, url);
     }
-    //else...
-    auto node_data = *model/data->node;
-    AA(node_data);
-    if (node_data->url == url) {
-         // Probably shouldn't happen but whatever
-        return;
-    }
-     // Check parent
-    else if (data->edge) {
-        auto edge_data = *model/data->edge;
-        AA(edge_data);
-        AA(edge_data->from_node);
-        auto parent_data = *model/edge_data->from_node;
-        AA(parent_data);
-        if (parent_data->url == url) {
-             // TODO: also change edge.  This will require looking at trees.
-            move_activity(model, id, edge_data->from_node, EdgeID{});
-            return;
-        }
-         // Fall through
-    }
-     // Check children
-    auto child_edges = get_edges_from_node(model, data->node);
-     // These will be ordered by position.  Search them backwards.
-    for (size_t i = child_edges.size(); i != 0; i--) {
-        auto child_edge = child_edges[i-1];
-        auto child_edge_data = *model/child_edge;
-        AA(child_edge_data);
-        if (auto child_node = child_edge_data->to_node) {
-            auto child_node_data = *model/child_node;
-            AA(child_node_data);
-            if (child_node_data->url == url) {
-                move_activity(model, id, child_node, child_edge);
-                return;
-            }
-        }
-    }
-     // No nearby node with this url, make a new one.
-    auto new_node = ensure_node_with_url(model, url);
-    auto new_edge = make_last_child(model, data->node, new_node);
-    move_activity(model, id, new_node, new_edge);
+    set_to_node(model, data->edge, data->node);
+    save(model, id, data);
 }
 
 void title_changed (WriteRef model, ActivityID id, Str title) {
