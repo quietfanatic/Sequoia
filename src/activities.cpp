@@ -8,7 +8,7 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "data.h"
+#include "model/data.h"
 #include "nursery.h"
 #include "util/assert.h"
 #include "util/files.h"

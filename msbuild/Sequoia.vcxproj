@@ -168,13 +168,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="../src/activities.cpp" />
-    <ClCompile Include="../src/data.cpp" />
-    <ClCompile Include="../src/data_init.cpp" />
-    <ClCompile Include="../src/main.cpp" />
-    <ClCompile Include="../src/nursery.cpp" />
-    <ClCompile Include="../src/OSWindow.cpp" />
-    <ClCompile Include="../src/settings.cpp" />
+    <ClCompile Include="../src/model/data.cpp" />
+    <ClCompile Include="../src/model/data_init.cpp" />
     <ClCompile Include="../src/sqlite-amalgamation-3300100/sqlite3.c" />
     <ClCompile Include="../src/util/assert.cpp" />
     <ClCompile Include="../src/util/bifractor.cpp" />
@@ -182,16 +177,16 @@
     <ClCompile Include="../src/util/json.cpp" />
     <ClCompile Include="../src/util/logging.cpp" />
     <ClCompile Include="../src/util/text.cpp" />
+    <ClCompile Include="../src/activities.cpp" />
+    <ClCompile Include="../src/main.cpp" />
+    <ClCompile Include="../src/nursery.cpp" />
+    <ClCompile Include="../src/OSWindow.cpp" />
+    <ClCompile Include="../src/settings.cpp" />
     <ClCompile Include="../src/Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../src/activities.h" />
-    <ClInclude Include="../src/data.h" />
-    <ClInclude Include="../src/data_init.h" />
-    <ClInclude Include="../src/main.h" />
-    <ClInclude Include="../src/nursery.h" />
-    <ClInclude Include="../src/OSWindow.h" />
-    <ClInclude Include="../src/settings.h" />
+    <ClInclude Include="../src/model/data.h" />
+    <ClInclude Include="../src/model/data_init.h" />
     <ClInclude Include="../src/sqlite-amalgamation-3300100/sqlite3.h" />
     <ClInclude Include="../src/util/assert.h" />
     <ClInclude Include="../src/util/bifractor.h" />
@@ -201,37 +196,42 @@
     <ClInclude Include="../src/util/logging.h" />
     <ClInclude Include="../src/util/types.h" />
     <ClInclude Include="../src/util/text.h" />
+    <ClInclude Include="../src/activities.h" />
+    <ClInclude Include="../src/main.h" />
+    <ClInclude Include="../src/nursery.h" />
+    <ClInclude Include="../src/OSWindow.h" />
+    <ClInclude Include="../src/settings.h" />
     <ClInclude Include="../src/Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <CopyFileToFolders Include="../src/model/sql/migrate-0-1-after.sql">
+      <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/model/sql/migrate-0-1-before.sql">
+      <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/model/sql/migrate-1-2.sql">
+      <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/model/sql/migrate-2-3.sql">
+      <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/model/sql/migrate-3-4.sql">
+      <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/model/sql/migrate-4-5.sql">
+      <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/model/sql/schema-1.sql">
+      <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/model/sql/schema-5.sql">
+      <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
+    </CopyFileToFolders>
     <CopyFileToFolders Include="../src/res/domifier.js">
       <DestinationFolders>$(OutDir)/res</DestinationFolders>
     </CopyFileToFolders>
     <CopyFileToFolders Include="../src/res/injection.js">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/migrate-0-1-after.sql">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/migrate-0-1-before.sql">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/migrate-1-2.sql">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/migrate-2-3.sql">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/migrate-3-4.sql">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/migrate-4-5.sql">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/schema-1.sql">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/schema-5.sql">
       <DestinationFolders>$(OutDir)/res</DestinationFolders>
     </CopyFileToFolders>
     <CopyFileToFolders Include="../src/res/shell.css">

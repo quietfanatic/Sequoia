@@ -6,7 +6,7 @@
 #include <wil/com.h>
 #include <windows.h>
 
-#include "data.h"
+#include "model/data.h"
 #include "OSWindow.h"
 #include "util/types.h"
 

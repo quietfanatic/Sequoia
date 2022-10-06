@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "util/bifractor.h"
-#include "util/types.h"
+#include "../util/bifractor.h"
+#include "../util/types.h"
 
 ///// TABS
 

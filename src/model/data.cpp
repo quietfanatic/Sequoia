@@ -4,15 +4,15 @@
 #include <map>
 #include <sqlite3.h>
 
-#include "activities.h"
 #include "data_init.h"
-#include "settings.h"
-#include "util/assert.h"
-#include "util/db_support.h"
-#include "util/hash.h"
-#include "util/logging.h"
-#include "util/text.h"
-#include "Window.h"
+#include "../activities.h"
+#include "../settings.h"
+#include "../util/assert.h"
+#include "../util/db_support.h"
+#include "../util/hash.h"
+#include "../util/logging.h"
+#include "../util/text.h"
+#include "../Window.h"
 
 using namespace std;
 using namespace std::chrono;
