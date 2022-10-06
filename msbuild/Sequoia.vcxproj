@@ -98,7 +98,7 @@
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <ObjectFileName>$(IntDir)cancel_dotdot/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>$(IntDir)CANCEL_DOTDOT/%(RelativeDir)</ObjectFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -116,7 +116,7 @@
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <ObjectFileName>$(IntDir)cancel_dotdot/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>$(IntDir)CANCEL_DOTDOT/%(RelativeDir)</ObjectFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -136,7 +136,7 @@
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;TAP_DISABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <ObjectFileName>$(IntDir)cancel_dotdot/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>$(IntDir)CANCEL_DOTDOT/%(RelativeDir)</ObjectFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -158,7 +158,7 @@
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;TAP_DISABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <ObjectFileName>$(IntDir)cancel_dotdot/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>$(IntDir)CANCEL_DOTDOT/%(RelativeDir)</ObjectFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -177,12 +177,12 @@
     <ClCompile Include="../src/util/json.cpp" />
     <ClCompile Include="../src/util/logging.cpp" />
     <ClCompile Include="../src/util/text.cpp" />
-    <ClCompile Include="../src/activities.cpp" />
-    <ClCompile Include="../src/main.cpp" />
-    <ClCompile Include="../src/nursery.cpp" />
-    <ClCompile Include="../src/OSWindow.cpp" />
-    <ClCompile Include="../src/settings.cpp" />
-    <ClCompile Include="../src/Window.cpp" />
+    <ClCompile Include="../src/win32app/activities.cpp" />
+    <ClCompile Include="../src/win32app/main.cpp" />
+    <ClCompile Include="../src/win32app/nursery.cpp" />
+    <ClCompile Include="../src/win32app/OSWindow.cpp" />
+    <ClCompile Include="../src/win32app/settings.cpp" />
+    <ClCompile Include="../src/win32app/Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../src/model/data.h" />
@@ -196,12 +196,12 @@
     <ClInclude Include="../src/util/logging.h" />
     <ClInclude Include="../src/util/types.h" />
     <ClInclude Include="../src/util/text.h" />
-    <ClInclude Include="../src/activities.h" />
-    <ClInclude Include="../src/main.h" />
-    <ClInclude Include="../src/nursery.h" />
-    <ClInclude Include="../src/OSWindow.h" />
-    <ClInclude Include="../src/settings.h" />
-    <ClInclude Include="../src/Window.h" />
+    <ClInclude Include="../src/win32app/activities.h" />
+    <ClInclude Include="../src/win32app/main.h" />
+    <ClInclude Include="../src/win32app/nursery.h" />
+    <ClInclude Include="../src/win32app/OSWindow.h" />
+    <ClInclude Include="../src/win32app/settings.h" />
+    <ClInclude Include="../src/win32app/Window.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="../src/model/sql/migrate-0-1-after.sql">

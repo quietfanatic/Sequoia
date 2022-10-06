@@ -6,9 +6,9 @@
 #include <wil/com.h>
 #include <windows.h>
 
-#include "model/data.h"
-#include "OSWindow.h"
-#include "util/types.h"
+#include "../model/data.h"
+#include "../util/types.h"
+#include "oswindow.h"
 
 namespace json { struct Value; }
 

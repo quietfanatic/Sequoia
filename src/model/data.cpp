@@ -5,14 +5,14 @@
 #include <sqlite3.h>
 
 #include "data_init.h"
-#include "../activities.h"
-#include "../settings.h"
 #include "../util/assert.h"
 #include "../util/db_support.h"
 #include "../util/hash.h"
 #include "../util/logging.h"
 #include "../util/text.h"
-#include "../Window.h"
+#include "../win32app/activities.h"
+#include "../win32app/settings.h"
+#include "../win32app/window.h"
 
 using namespace std;
 using namespace std::chrono;

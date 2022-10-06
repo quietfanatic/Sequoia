@@ -8,15 +8,15 @@
 #include <WebView2.h>
 #include <wrl.h>
 
-#include "model/data.h"
+#include "../model/data.h"
+#include "../util/assert.h"
+#include "../util/files.h"
+#include "../util/hash.h"
+#include "../util/json.h"
+#include "../util/logging.h"
+#include "../util/text.h"
 #include "nursery.h"
-#include "util/assert.h"
-#include "util/files.h"
-#include "util/hash.h"
-#include "util/json.h"
-#include "util/logging.h"
-#include "util/text.h"
-#include "Window.h"
+#include "window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

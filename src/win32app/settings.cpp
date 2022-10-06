@@ -4,12 +4,12 @@
 #include <string>
 
 #include "main.h"
-#include "util/assert.h"
-#include "util/files.h"
-#include "util/hash.h"
-#include "util/json.h"
-#include "util/logging.h"
-#include "util/text.h"
+#include "../util/assert.h"
+#include "../util/files.h"
+#include "../util/hash.h"
+#include "../util/json.h"
+#include "../util/logging.h"
+#include "../util/text.h"
 
 using namespace std;
 

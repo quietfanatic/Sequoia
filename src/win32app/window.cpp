@@ -5,17 +5,17 @@
 #include <WebView2.h>
 #include <wrl.h>
 
+#include "../model/data.h"
+#include "../util/assert.h"
+#include "../util/files.h"
+#include "../util/hash.h"
+#include "../util/json.h"
+#include "../util/logging.h"
+#include "../util/text.h"
 #include "activities.h"
-#include "model/data.h"
 #include "main.h"
 #include "nursery.h"
 #include "settings.h"
-#include "util/assert.h"
-#include "util/files.h"
-#include "util/hash.h"
-#include "util/json.h"
-#include "util/logging.h"
-#include "util/text.h"
 
 using namespace Microsoft::WRL;
 using namespace std;

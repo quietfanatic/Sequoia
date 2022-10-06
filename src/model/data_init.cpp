@@ -6,10 +6,10 @@
 #include <sqlite3.h>
 
 #include "data.h"
-#include "../settings.h"
 #include "../util/db_support.h"
 #include "../util/files.h"
 #include "../util/logging.h"
+#include "../win32app/settings.h"
 
 using namespace std;
 
