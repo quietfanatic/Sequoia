@@ -1,8 +1,5 @@
-*.log
-.vs
-packages
-x64
-Debug
-Release
-*.user
-*.sqlite
+/msbuild/.vs
+/msbuild/packages
+/msbuild/*.user
+/tmp
+/out

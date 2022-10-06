@@ -93,12 +93,7 @@ void start_browser () {
     }
 }
 
-int WINAPI WinMain (
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nCmdShow
-) {
+int main (int argc, char** argv) {
 //    try {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 

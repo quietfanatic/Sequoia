@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{499577C5-0EAE-43F6-A6A0-655442A89344}</ProjectGuid>
+    <RootNamespace>Sequoia</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <IntDir>../tmp/debug_x86/</IntDir>
+    <OutDir>../out/debug_x86/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <IntDir>../tmp/release_x86/</IntDir>
+    <OutDir>../out/release_x86/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <IntDir>../tmp/debug_x64/</IntDir>
+    <OutDir>../out/debug_x64/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <IntDir>../tmp/release_x64/</IntDir>
+    <OutDir>../out/release_x64/</OutDir>
+  </PropertyGroup>
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>../src/sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <ObjectFileName>$(IntDir)cancel_dotdot/%(RelativeDir)</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>../src/sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <ObjectFileName>$(IntDir)cancel_dotdot/%(RelativeDir)</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>../src/sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;TAP_DISABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <ObjectFileName>$(IntDir)cancel_dotdot/%(RelativeDir)</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>../src/sqlite-amalgamation-3300100</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_MBCS;TAP_DISABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <ObjectFileName>$(IntDir)cancel_dotdot/%(RelativeDir)</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="../src/activities.cpp" />
+    <ClCompile Include="../src/data.cpp" />
+    <ClCompile Include="../src/data_init.cpp" />
+    <ClCompile Include="../src/main.cpp" />
+    <ClCompile Include="../src/nursery.cpp" />
+    <ClCompile Include="../src/OSWindow.cpp" />
+    <ClCompile Include="../src/settings.cpp" />
+    <ClCompile Include="../src/sqlite-amalgamation-3300100/sqlite3.c" />
+    <ClCompile Include="../src/util/assert.cpp" />
+    <ClCompile Include="../src/util/bifractor.cpp" />
+    <ClCompile Include="../src/util/files.cpp" />
+    <ClCompile Include="../src/util/json.cpp" />
+    <ClCompile Include="../src/util/logging.cpp" />
+    <ClCompile Include="../src/util/text.cpp" />
+    <ClCompile Include="../src/Window.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../src/activities.h" />
+    <ClInclude Include="../src/data.h" />
+    <ClInclude Include="../src/data_init.h" />
+    <ClInclude Include="../src/main.h" />
+    <ClInclude Include="../src/nursery.h" />
+    <ClInclude Include="../src/OSWindow.h" />
+    <ClInclude Include="../src/settings.h" />
+    <ClInclude Include="../src/sqlite-amalgamation-3300100/sqlite3.h" />
+    <ClInclude Include="../src/util/assert.h" />
+    <ClInclude Include="../src/util/bifractor.h" />
+    <ClInclude Include="../src/util/db_support.h" />
+    <ClInclude Include="../src/util/files.h" />
+    <ClInclude Include="../src/util/json.h" />
+    <ClInclude Include="../src/util/logging.h" />
+    <ClInclude Include="../src/util/types.h" />
+    <ClInclude Include="../src/util/text.h" />
+    <ClInclude Include="../src/Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="../src/res/domifier.js">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/injection.js">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/migrate-0-1-after.sql">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/migrate-0-1-before.sql">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/migrate-1-2.sql">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/migrate-2-3.sql">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/migrate-3-4.sql">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/migrate-4-5.sql">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/schema-1.sql">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/schema-5.sql">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/shell.css">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/shell.html">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="../src/res/shell.js">
+      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
+    <Import Project="packages\Microsoft.Web.WebView2.1.0.1158-prerelease\build\native\Microsoft.Web.WebView2.targets" Condition="Exists('packages\Microsoft.Web.WebView2.1.0.1158-prerelease\build\native\Microsoft.Web.WebView2.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
+    <Error Condition="!Exists('packages\Microsoft.Web.WebView2.1.0.1158-prerelease\build\native\Microsoft.Web.WebView2.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Web.WebView2.1.0.1158-prerelease\build\native\Microsoft.Web.WebView2.targets'))" />
+  </Target>
+</Project>
