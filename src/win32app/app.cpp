@@ -80,4 +80,7 @@ void App::quit (int code) {
     PostQuitMessage(code);
 }
 
-}
+} // namespace win32app
+
+
+

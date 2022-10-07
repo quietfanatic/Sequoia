@@ -105,7 +105,7 @@ int operator <=> (const Bifractor& a, const Bifractor& b) {
 #ifndef TAP_DISABLE_TESTS
 #include "../tap/tap.h"
 
-static tap::TestSet tests ("util/bifractor", []{
+static void bifractor_tests () {
     using namespace tap;
     plan(24);
     srand(uint(time(0)));
@@ -264,6 +264,7 @@ static tap::TestSet tests ("util/bifractor", []{
         "C0",
         "Brief test of hex()"
     );
-});
+}
+static tap::TestSet tests ("util/bifractor", &bifractor_tests);
 
 #endif

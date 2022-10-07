@@ -12,6 +12,10 @@
 #include "../util/log.h"
 #include "../util/text.h"
 
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+#endif
+
 using namespace std;
 
 namespace win32app {
@@ -114,5 +118,55 @@ void Profile::register_as_browser () {
     );
     set_reg_sz(L"Software\\RegisteredApplications"s, app_class.c_str(), caps_k);
 }
+
+#ifndef TAP_DISABLE_TESTS
+
+ProfileTestEnvironment::ProfileTestEnvironment () {
+    test_folder = exe_relative("test"sv);
+    profile_name = "test-profile"s;
+    profile_folder = test_folder + "/"s + profile_name;
+    filesystem::remove_all(test_folder);
+    filesystem::create_directories(test_folder);
+    profile = Profile(profile_name, profile_folder);
+}
+
+ProfileTestEnvironment::~ProfileTestEnvironment () {
+     // The runtime on Windows is not very helpful when an exception is thrown
+     //  in a destructor.
+    if (uncaught_exceptions()) {
+        try {
+            uninit_log();
+//            filesystem::remove_all(test_folder);
+        }
+        catch (std::exception& e) {
+            tap::diag(e.what());
+        }
+    }
+    else {
+        uninit_log();
+           // TODO: make this work (wait for browser process to close?)
+//        filesystem::remove_all(test_folder);
+    }
+}
+
+void profile_tests () {
+    using namespace tap;
+    ProfileTestEnvironment* env;
+
+    doesnt_throw([&]{
+        env = new ProfileTestEnvironment;
+    }, "constructor");
+    doesnt_throw([&]{
+        env->profile.load_settings();
+    }, "load_settings");
+    doesnt_throw([&]{
+        delete env;
+    }, "destructor");
+
+    done_testing();
+}
+static tap::TestSet tests ("win32app/profile", profile_tests);
+
+#endif
 
 } // namespace win32app

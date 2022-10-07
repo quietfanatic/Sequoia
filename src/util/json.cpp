@@ -5,6 +5,10 @@
 #include <iomanip>
 #include <iostream>
 
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+#endif
+
 using namespace std;
 
 namespace json {
@@ -245,12 +249,9 @@ String stringify (const Value& v) {
     }
 }
 
-} // namespace json;
-
 #ifndef TAP_DISABLE_TESTS
-#include "../tap/tap.h"
 
-static tap::TestSet util_json_tests ("util/json", []{
+static void json_tests () {
     using namespace json;
     using namespace tap;
     auto t = [](const String& s){
@@ -275,6 +276,9 @@ static tap::TestSet util_json_tests ("util/json", []{
     t("{}");
     t("{\"asdf\":\"ghjk\"}");
     t("{\"foo\":[4,5,6],\"agfd\":[[[[4]]],{},{\"gtre\":null}],\"goo\":{}}");
-});
+}
+static tap::TestSet tests ("util/json", &json_tests);
 
 #endif
+
+} // namespace json;
