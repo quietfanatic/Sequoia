@@ -4,8 +4,11 @@
 #include "../util/error.h"
 #include "../util/log.h"
 #include "../util/text.h"
+#include "app.h"
 
 using namespace std;
+ // TEMP
+using namespace win32app;
 
 static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -78,7 +81,9 @@ static HWND create_hwnd () {
         nullptr
     );
     AW(hwnd);
-    ShowWindow(hwnd, SW_SHOWDEFAULT);
+    if (!App::get().headless) {
+        ShowWindow(hwnd, SW_SHOWDEFAULT);
+    }
     return hwnd;
 }
 
