@@ -15,6 +15,7 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "activities.h"
+#include "app.h"
 #include "nursery.h"
 #include "settings.h"
 #include "window.h"
@@ -61,40 +62,10 @@ void parse_args (int argc, char** argv) {
     }
 }
 
-void start_browser () {
-    vector<int64> all_windows = get_all_unclosed_windows();
-    if (!all_windows.empty()) {
-        for (auto id : all_windows) {
-             // Create directly instead of going through WindowObserver,
-             //  so that focused tabs are not loaded
-            new Window(id);
-        }
-    }
-    else if (int64 w = get_last_closed_window()) {
-         // TODO: make this not load the current focused tab?
-        unclose_window(w);
-    }
-    else {
-         // Otherwise create a new window if none exists
-        int64 first_tab = 0;
-        Transaction tr;
-        vector<int64> top_level_tabs = get_all_children(0);
-        for (auto tab : top_level_tabs) {
-            auto data = get_tab_data(tab);
-            if (!data->closed_at) {
-                first_tab = tab;
-                break;
-            }
-        }
-        if (!first_tab) {
-            first_tab = create_tab(0, TabRelation::LAST_CHILD, "https://duckduckgo.com/");
-        }
-        create_window(0, first_tab);
-    }
-}
+#pragma warning(disable:4297)  // Yeah I'm throwing from main, deal with it
 
 int main (int argc, char** argv) {
-//    try {
+    try {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
         parse_args(__argc, __argv);
@@ -117,27 +88,14 @@ int main (int argc, char** argv) {
         init_nursery();
         load_settings();
         init_db();
-        start_browser();
-        if (positional_args.size() >= 1) {
-            Transaction tr;
-            int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, positional_args[0]);
-            int64 new_window = create_window(new_tab, new_tab);
-        }
-
-         // Run message loop
-        MSG msg;
-        while (GetMessage(&msg, nullptr, 0, 0)) {
-            if (!IsDialogMessage(GetAncestor(msg.hwnd, GA_ROOT), &msg)) {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-        }
-        return (int)msg.wParam;
-//    }
-//    catch (exception& e) {
-//        show_string_error(__FILE__, __LINE__, (string("Uncaught exception: ") + e.what()).c_str());
-//        throw;
-//    }
+        win32app::App app;
+        app.start(positional_args);
+        app.run();
+    }
+    catch (exception& e) {
+        show_string_error(__FILE__, __LINE__, (string("Uncaught exception: ") + e.what()).c_str());
+        throw;
+    }
 }
 
 void quit () {
