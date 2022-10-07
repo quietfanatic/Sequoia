@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include "../model/data.h"
+#include "../model/data_init.h"
 #include "../util/error.h"
 #include "window.h"
 
@@ -10,8 +11,21 @@ using namespace std;
 
 namespace win32app {
 
-App::App () { }
-App::~App () { }
+static App* global_app = nullptr;
+
+App::App (Profile&& p) :
+    profile(std::move(p)),
+    settings(profile.load_settings()),
+    nursery(*this)
+{
+    init_db(profile.db_path());
+     // TEMP
+    AA(!global_app);
+    global_app = this;
+}
+App::~App () { global_app = nullptr; }
+
+App& App::get () { return *global_app; }
 
 void App::start (const std::vector<String>& urls) {
     vector<int64> all_windows = get_all_unclosed_windows();

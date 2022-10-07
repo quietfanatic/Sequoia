@@ -9,26 +9,16 @@
 #include "../util/files.h"
 #include "../util/log.h"
 #include "../util/types.h"
-#include "../win32app/settings.h"
 #include "data.h"
 
 using namespace std;
 
 sqlite3* db = nullptr;
 
-void init_db () {
-    if (db) return;
-    String db_file = profile_folder + "/state.sqlite";
+void init_db (const String& db_file) {
+    AA(!db);
     LOG("init_db", db_file);
     bool exists = filesystem::exists(db_file) && filesystem::file_size(db_file) > 0;
-
-    if (!exists) {
-        String old_db = profile_folder + "/Sequoia-state.sqlite";
-        if (filesystem::exists(old_db) && filesystem::file_size(old_db) > 0) {
-            filesystem::rename(old_db, db_file);
-            exists = true;
-        }
-    }
 
     AS(db, sqlite3_open(db_file.c_str(), &db));
 

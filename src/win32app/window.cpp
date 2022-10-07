@@ -13,12 +13,14 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "activities.h"
-#include "main.h"
+#include "app.h"
 #include "nursery.h"
-#include "settings.h"
+#include "profile.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
+ // TEMP
+using namespace win32app;
 
 static std::map<int64, Window*> open_windows;
 
@@ -26,7 +28,7 @@ Window::Window (int64 id) :
     id(id), os_window(this)
 {
     open_windows.emplace(id, this);
-    new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
+    App::get().nursery.new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         shell_controller = wvc;
         shell = wv;
         shell_hwnd = hwnd;
@@ -63,7 +65,7 @@ Window::Window (int64 id) :
 Window::~Window () {
     if (activity) activity->claimed_by_window(nullptr);
     open_windows.erase(id);
-    if (open_windows.empty()) quit();
+    if (open_windows.empty()) App::get().quit();
 }
 
  // An Observer just for creating new windows.
@@ -287,7 +289,7 @@ void Window::message_from_shell (json::Value&& message) {
         message_to_shell(json::array(
             "settings",
             json::Object{
-                std::pair{"theme", settings::theme}
+                std::pair{"theme", App::get().settings.theme}
             }
         ));
         auto data = get_window_data(id);
@@ -445,7 +447,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("register_as_browser"): {
-        register_as_browser();
+        App::get().profile.register_as_browser();
         break;
     }
     case x31_hash("open_selected_links"): {
@@ -455,7 +457,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("quit"): {
-        quit();
+        App::get().quit();
         break;
     }
     default: {
@@ -566,7 +568,9 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
         Str title = get_tab_data(data->focused_tab)->title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
         if (auto activity = activity_for_tab(data->focused_tab)) {
-            activity->controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+            if (activity->controller) {
+                activity->controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+            }
         }
         else {
             shell_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);

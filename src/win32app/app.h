@@ -3,12 +3,17 @@
 #include <vector>
 
 #include "../util/types.h"
-#include "settings.h"
+#include "nursery.h"
+#include "profile.h"
 
 namespace win32app {
 
 struct App {
-    App ();
+    Profile profile;
+    Settings settings;
+    Nursery nursery;
+
+    App (Profile&&);
     ~App ();
 
      // Make windows for open trees, open window for urls, and if none
@@ -18,6 +23,9 @@ struct App {
      // Runs a standard win32 message loop until quit() is called.
     int run ();
     void quit (int code = 0);
+
+     // TEMP
+    static App& get ();
 };
 
 } // namespace win32app

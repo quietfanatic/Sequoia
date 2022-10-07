@@ -51,6 +51,7 @@ struct Value {
     Value (double v) : type(NUMBER), number(double(v)) { }
     Value (const Char* v) : type(STRING), string(new String(v)) { }
     Value (const String& v) : type(STRING), string(new String(v)) { }
+    Value (Str v) : type(STRING), string(new String(v)) { }
     Value (String&& v) : type(STRING), string(new String(std::move(v))) { }
     Value (const Array& v) : type(ARRAY), array(new Array(std::move(v))) { }
     Value (Array&& v) : type(ARRAY), array(new Array(std::move(v))) { }
@@ -106,9 +107,9 @@ struct Value {
     operator const Object& () const& { assert(type == OBJECT); return *object; }
     operator Object&& () && { assert(type == OBJECT); return std::move(*object); }
 
-    template <class T> operator const T& () const {
-        static_assert((T*)nullptr, "Can't cast json::Value to this type.");
-    }
+//    template <class T> operator const T& () const {
+//        static_assert(false, "Can't cast json::Value to this type.");
+//    }
 
     bool has (size_t i) const {
         return(type == ARRAY && array->size() > i);
@@ -125,7 +126,7 @@ struct Value {
         return std::move(const_cast<Value&>(*this)[i]);
     }
 
-    bool has (const String& key) {
+    bool has (Str key) {
         if (type != OBJECT) return false;
         for (auto& p : *object) {
             if (p.first == key) return true;
@@ -133,7 +134,7 @@ struct Value {
         return false;
     }
 
-    Value& operator[] (const String& key) & {
+    Value& operator[] (Str key) & {
         assert(type == OBJECT);
         for (auto& p : *object) {
             if (p.first == key) return p.second;
@@ -142,10 +143,10 @@ struct Value {
         static Value nothing;
         return nothing;
     }
-    const Value& operator[] (const String& key) const& {
+    const Value& operator[] (Str key) const& {
         return const_cast<const Value&>(const_cast<Value&>(*this)[key]);
     }
-    Value&& operator[] (const String& key) && {
+    Value&& operator[] (Str key) && {
         return std::move(const_cast<Value&>(*this)[key]);
     }
 
@@ -173,7 +174,7 @@ Array array (Args&&... args) {
     return r;
 }
 template <class... Args>
-Object object (std::pair<String, Args>&&... args) {
+Object object (std::pair<Str, Args>&&... args) {
     Object r;
     r.reserve(sizeof...(args));
     (r.emplace_back(std::move(args)), ...);
@@ -182,6 +183,8 @@ Object object (std::pair<String, Args>&&... args) {
 
 bool operator== (const Value& a, const Value& b);
 inline bool operator!= (const Value& a, const Value& b) { return !(a == b); }
+ // Theoretically we could implement operator<=>, but I'm not bothering until
+ // there's a reason to.
 
 String stringify (const Value& v);
 

@@ -11,7 +11,6 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "../win32app/activities.h"
-#include "../win32app/settings.h"
 #include "../win32app/window.h"
 
 using namespace std;

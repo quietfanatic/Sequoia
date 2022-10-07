@@ -15,11 +15,14 @@
 #include "../util/json.h"
 #include "../util/log.h"
 #include "../util/text.h"
+#include "app.h"
 #include "nursery.h"
 #include "window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
+ // TEMP
+using namespace win32app;
 
 static map<int64, Activity*> activities_by_tab;
 
@@ -28,7 +31,7 @@ Activity::Activity (int64 t) : tab(t) {
     AA(!activities_by_tab.contains(t));
     activities_by_tab.emplace(t, this);
 
-    new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
+    App::get().nursery.new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
