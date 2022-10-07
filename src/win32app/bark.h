@@ -15,8 +15,10 @@ struct ICoreWebView2AcceleratorKeyPressedEventArgs;
 namespace json { struct Value; }
 
 namespace win32app {
+struct App;
 
-struct Bark : Observer {
+struct Bark {
+    App& app;
     int64 id;
     wil::com_ptr<ICoreWebView2Controller> controller;
     wil::com_ptr<ICoreWebView2> webview;
@@ -54,16 +56,17 @@ struct Bark : Observer {
     void message_from_shell (json::Value&& message);
     void focus_tab (int64 tab);
 
-    void Observer_after_commit (
-        const std::vector<int64>& updated_tabs,
-        const std::vector<int64>& updated_windows
-    );
-
      // View functions
     void send_update (const std::vector<int64>& updated_tabs);
     void message_to_shell (json::Value&& message);
 
-    Bark (int64 id);
+     // Observation
+    void update (
+        const std::vector<int64>& updated_tabs,
+        const std::vector<int64>& updated_windows
+    );
+
+    Bark (App& app, int64 id);
     ~Bark();
 };
 

@@ -22,13 +22,10 @@ using namespace std;
 
 namespace win32app {
 
-static std::map<int64, Bark*> open_windows;
-
-Bark::Bark (int64 id) :
-    id(id), os_window(this)
+Bark::Bark (App& app, int64 id) :
+    app(app), id(id), os_window(this)
 {
-    open_windows.emplace(id, this);
-    App::get().nursery.new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND h){
+    app.nursery.new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND h){
         controller = wvc;
         webview = wv;
         webview_hwnd = h;
@@ -64,28 +61,7 @@ Bark::Bark (int64 id) :
 
 Bark::~Bark () {
     if (activity) activity->claimed_by_bark(nullptr);
-    open_windows.erase(id);
-    if (open_windows.empty()) App::get().quit();
 }
-
- // An Observer just for creating new windows.
- // Barks do most of the Observing, but they can't create themselves.
-struct BarkFactory : Observer {
-    void Observer_after_commit (
-        const vector<int64>& updated_tabs,
-        const vector<int64>& updated_windows
-    ) override {
-        for (int64 id : updated_windows) {
-            auto data = get_window_data(id);
-            if (!data->closed_at && !open_windows.count(id)) {
-                auto w = new Bark (id);
-                 // Automatically load focused tab
-                w->claim_activity(ensure_activity_for_tab(data->focused_tab));
-            }
-        }
-    }
-};
-static BarkFactory bark_factory;
 
 void Bark::claim_activity (Activity* a) {
     if (a == activity) return;
@@ -289,7 +265,7 @@ void Bark::message_from_shell (json::Value&& message) {
         message_to_shell(json::array(
             "settings",
             json::Object{
-                std::pair{"theme", App::get().settings.theme}
+                std::pair{"theme", app.settings.theme}
             }
         ));
         auto data = get_window_data(id);
@@ -447,7 +423,7 @@ void Bark::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("register_as_browser"): {
-        App::get().profile.register_as_browser();
+        app.profile.register_as_browser();
         break;
     }
     case x31_hash("open_selected_links"): {
@@ -457,7 +433,7 @@ void Bark::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("quit"): {
-        App::get().quit();
+        app.quit();
         break;
     }
     default: {
@@ -487,16 +463,10 @@ void Bark::focus_tab (int64 tab) {
     }
 }
 
-void Bark::Observer_after_commit (
+void Bark::update (
     const vector<int64>& updated_tabs,
     const vector<int64>& updated_windows
 ) {
-    if (get_window_data(id)->closed_at) {
-        LOG("Destroying window", id);
-        AW(DestroyWindow(os_window.hwnd));
-        return;
-    }
-
     send_update(updated_tabs);
 }
 

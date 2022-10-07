@@ -92,6 +92,11 @@ OSWindow::OSWindow (Bark* bark) : hwnd(create_hwnd()) {
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)bark);
 }
 
+OSWindow::~OSWindow () {
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)nullptr);
+    AW(DestroyWindow(hwnd));
+}
+
 void OSWindow::set_title (const char* title) {
     AW(SetWindowTextW(hwnd, to_utf16(title).c_str()));
 }

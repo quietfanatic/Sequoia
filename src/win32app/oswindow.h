@@ -12,6 +12,7 @@ struct OSWindow {
     WINDOWPLACEMENT placement_before_fullscreen;
 
     OSWindow(Bark*);
+    ~OSWindow();
 
     void set_title (const char*);
     void enter_fullscreen ();

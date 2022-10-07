@@ -5,6 +5,7 @@
 #include "../model/data.h"
 #include "../model/data_init.h"
 #include "../util/error.h"
+#include "activities.h"
 #include "bark.h"
 
 #ifndef TAP_DISABLE_TESTS
@@ -37,7 +38,7 @@ void App::start (const std::vector<String>& urls) {
         for (auto id : all_windows) {
              // Create directly instead of going through WindowObserver,
              //  so that focused tabs are not loaded
-            new Bark(id);
+            barks.emplace(id, new Bark(*this, id));
         }
     }
     else if (int64 w = get_last_closed_window()) {
@@ -82,6 +83,30 @@ int App::run () {
 
 void App::quit (int code) {
     PostQuitMessage(code);
+}
+
+void App::Observer_after_commit (
+    const vector<int64>& updated_tabs,
+    const vector<int64>& updated_windows
+) {
+    for (int64 id : updated_windows) {
+        auto data = get_window_data(id);
+        auto iter = barks.find(id);
+        if (iter == barks.end()) {
+            if (!data->closed_at) {
+                auto [iter, emplaced] = barks.emplace(id, new Bark(*this, id));
+                 // Automatically load focused tab
+                iter->second->claim_activity(ensure_activity_for_tab(data->focused_tab));
+            }
+        }
+        else if (data->closed_at) {
+            barks.erase(id);
+        }
+    }
+    for (auto& [id, bark] : barks) {
+        bark->update(updated_tabs, updated_windows);
+    }
+    if (barks.empty()) quit();
 }
 
 #ifndef TAP_DISABLE_TESTS
