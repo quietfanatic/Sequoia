@@ -1,7 +1,7 @@
 #include "Window.h"
 
 #include "../model/data.h"
-#include "../util/assert.h"
+#include "../util/error.h"
 #include "../util/log.h"
 #include "../util/text.h"
 

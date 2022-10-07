@@ -6,7 +6,7 @@
 #include <wrl.h>
 
 #include "../model/data.h"
-#include "../util/assert.h"
+#include "../util/error.h"
 #include "../util/hash.h"
 #include "../util/json.h"
 #include "../util/text.h"

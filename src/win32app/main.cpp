@@ -9,7 +9,7 @@
 
 #include "../model/data.h"
 #include "../model/data_init.h"
-#include "../util/assert.h"
+#include "../util/error.h"
 #include "../util/files.h"
 #include "../util/json.h"
 #include "../util/log.h"
@@ -93,8 +93,7 @@ int main (int argc, char** argv) {
         app.run();
     }
     catch (exception& e) {
-        show_string_error(__FILE__, __LINE__, (string("Uncaught exception: ") + e.what()).c_str());
-        throw;
+        ERR("Uncaught exception: "sv + e.what());
     }
 }
 

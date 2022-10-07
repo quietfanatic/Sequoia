@@ -8,8 +8,8 @@
 
 #include <sqlite3.h>
 
-#include "assert.h"
 #include "bifractor.h"
+#include "error.h"
 
  // Kinda cheating but whatever
 extern sqlite3* db;
@@ -21,31 +21,31 @@ struct Statement {
     Statement (sqlite3_stmt* handle) : handle(handle) { }
     Statement (const char* sql, bool transient = false) {
         auto flags = transient ? 0 : SQLITE_PREPARE_PERSISTENT;
-        AS(sqlite3_prepare_v3(db, sql, -1, flags, &handle, nullptr));
+        AS(db, sqlite3_prepare_v3(db, sql, -1, flags, &handle, nullptr));
     }
 
-    void bind_param (int index, char v) { AS(sqlite3_bind_int(handle, index, v)); }
-    void bind_param (int index, signed char v) { AS(sqlite3_bind_int(handle, index, v)); }
-    void bind_param (int index, unsigned char v) { AS(sqlite3_bind_int(handle, index, v)); }
-    void bind_param (int index, short v) { AS(sqlite3_bind_int(handle, index, v)); }
-    void bind_param (int index, unsigned short v) { AS(sqlite3_bind_int(handle, index, v)); }
-    void bind_param (int index, int v) { AS(sqlite3_bind_int(handle, index, v)); }
-    void bind_param (int index, unsigned int v) { AS(sqlite3_bind_int(handle, index, v)); }
-    void bind_param (int index, long v) { AS(sqlite3_bind_int64(handle, index, v)); }
-    void bind_param (int index, unsigned long v) { AS(sqlite3_bind_int64(handle, index, v)); }
-    void bind_param (int index, long long v) { AS(sqlite3_bind_int64(handle, index, v)); }
-    void bind_param (int index, unsigned long long v) { AS(sqlite3_bind_int64(handle, index, v)); }
-    void bind_param (int index, float v) { AS(sqlite3_bind_double(handle, index, v)); }
-    void bind_param (int index, double v) { AS(sqlite3_bind_double(handle, index, v)); }
+    void bind_param (int index, char v) { AS(db, sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, signed char v) { AS(db, sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, unsigned char v) { AS(db, sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, short v) { AS(db, sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, unsigned short v) { AS(db, sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, int v) { AS(db, sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, unsigned int v) { AS(db, sqlite3_bind_int(handle, index, v)); }
+    void bind_param (int index, long v) { AS(db, sqlite3_bind_int64(handle, index, v)); }
+    void bind_param (int index, unsigned long v) { AS(db, sqlite3_bind_int64(handle, index, v)); }
+    void bind_param (int index, long long v) { AS(db, sqlite3_bind_int64(handle, index, v)); }
+    void bind_param (int index, unsigned long long v) { AS(db, sqlite3_bind_int64(handle, index, v)); }
+    void bind_param (int index, float v) { AS(db, sqlite3_bind_double(handle, index, v)); }
+    void bind_param (int index, double v) { AS(db, sqlite3_bind_double(handle, index, v)); }
     void bind_param (int index, const char* v) {
-        AS(sqlite3_bind_text(handle, index, v, -1, SQLITE_TRANSIENT));
+        AS(db, sqlite3_bind_text(handle, index, v, -1, SQLITE_TRANSIENT));
     }
     void bind_param (int index, const std::string& v) {
          // STATIC might be better for most use cases
-        AS(sqlite3_bind_text(handle, index, v.c_str(), int(v.size()), SQLITE_TRANSIENT));
+        AS(db, sqlite3_bind_text(handle, index, v.c_str(), int(v.size()), SQLITE_TRANSIENT));
     }
     void bind_param (int index, const Bifractor& v) {
-        AS(sqlite3_bind_blob(handle, index, v.bytes(), int(v.size), SQLITE_TRANSIENT));
+        AS(db, sqlite3_bind_blob(handle, index, v.bytes(), int(v.size), SQLITE_TRANSIENT));
     }
     template <class T>
     void bind_param (int index, const std::optional<T>& v) {
@@ -53,14 +53,14 @@ struct Statement {
             bind_param(index, *v);
         }
         else {
-            AS(sqlite3_bind_null(handle, index));
+            AS(db, sqlite3_bind_null(handle, index));
         }
     }
 
     void step () {
         AA(result_code != SQLITE_DONE);
         result_code = sqlite3_step(handle);
-        if (result_code != SQLITE_ROW && result_code != SQLITE_DONE) AS(1);
+        if (result_code != SQLITE_ROW && result_code != SQLITE_DONE) AS(db, 1);
     }
 
     // Assume int for all other types
@@ -93,13 +93,13 @@ struct Statement {
     }
 
     void reset () {
-        AS(sqlite3_reset(handle));
-        AS(sqlite3_clear_bindings(handle));
+        AS(db, sqlite3_reset(handle));
+        AS(db, sqlite3_clear_bindings(handle));
         result_code = 0;
     }
 
     ~Statement () {
-        AS(sqlite3_finalize(handle));
+        AS(db, sqlite3_finalize(handle));
     }
 };
 

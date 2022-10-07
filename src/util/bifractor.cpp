@@ -3,7 +3,7 @@
 #include <memory>
 #include <stdexcept>
 
-#include "assert.h"
+#include "error.h"
 #include "text.h"
 
 String Bifractor::hex () const {

@@ -3,7 +3,7 @@
 #include <windows.h>
 
 #include "../model/data.h"
-#include "../util/assert.h"
+#include "../util/error.h"
 #include "window.h"
 
 using namespace std;

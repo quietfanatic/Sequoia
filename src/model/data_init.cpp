@@ -4,12 +4,13 @@
 #include <stdexcept>
 #include <sqlite3.h>
 
-#include "data.h"
 #include "../util/db_support.h"
+#include "../util/error.h"
 #include "../util/files.h"
 #include "../util/log.h"
 #include "../util/types.h"
 #include "../win32app/settings.h"
+#include "data.h"
 
 using namespace std;
 
@@ -29,7 +30,7 @@ void init_db () {
         }
     }
 
-    AS(sqlite3_open(db_file.c_str(), &db));
+    AS(db, sqlite3_open(db_file.c_str(), &db));
 
     String sql_dir = exe_relative("res/model/sql");
 
@@ -48,27 +49,27 @@ void init_db () {
             String sql = slurp(sql_dir + "/migrate-0-1-before.sql")
                        + slurp(sql_dir + "/schema-1.sql")
                        + slurp(sql_dir + "/migrate-0-1-after.sql");
-            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
+            AS(db, sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             [[fallthrough]];
         }
         case 1: {
             String sql = slurp(sql_dir + "/migrate-1-2.sql");
-            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
+            AS(db, sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             [[fallthrough]];
         }
         case 2: {
             String sql = slurp(sql_dir + "/migrate-2-3.sql");
-            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
+            AS(db, sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             [[fallthrough]];
         }
         case 3: {
             String sql = slurp(sql_dir + "/migrate-3-4.sql");
-            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
+            AS(db, sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             [[fallthrough]];
         }
         case 4:
             String sql = slurp(sql_dir + "/migrate-4-5.sql");
-            AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
+            AS(db, sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
         }
         LOG("Migration complete.");
     }
@@ -79,7 +80,7 @@ void init_db () {
             sql_dir + "/schema-" + std::to_string(CURRENT_SCHEMA_VERSION) + ".sql"
         );
         LOG("Creating database...");
-        AS(sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));
+        AS(db, sqlite3_exec(db, schema.c_str(), nullptr, nullptr, nullptr));
         LOG("Creation complete.");
     }
 }

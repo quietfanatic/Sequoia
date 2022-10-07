@@ -5,8 +5,8 @@
 #include <sqlite3.h>
 
 #include "data_init.h"
-#include "../util/assert.h"
 #include "../util/db_support.h"
+#include "../util/error.h"
 #include "../util/hash.h"
 #include "../util/log.h"
 #include "../util/text.h"

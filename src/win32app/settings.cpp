@@ -4,7 +4,7 @@
 #include <string>
 
 #include "main.h"
-#include "../util/assert.h"
+#include "../util/error.h"
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"
@@ -36,7 +36,7 @@ void load_profile () {
         profile_folder = exe_relative("profiles/" + profile_name);
     }
     else if (profile_name.empty()) {
-        show_string_error(__FILE__, __LINE__, "Cannot provide profile-folder argument without also providing profile argument.");
+        ERR("Cannot provide profile-folder argument without also providing profile argument."sv);
     }
     else {
         profile_folder_specified = true;
@@ -59,7 +59,7 @@ void load_settings () {
             break;
         }
         default:
-            show_string_error(__FILE__, __LINE__, ("Unrecognized setting name: " + pair.first).c_str());
+            ERR("Unrecognized setting name: " + pair.first);
         }
     }
 }
