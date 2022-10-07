@@ -180,11 +180,11 @@
     <ClCompile Include="../src/util/text.cpp" />
     <ClCompile Include="../src/win32app/activities.cpp" />
     <ClCompile Include="../src/win32app/app.cpp" />
+    <ClCompile Include="../src/win32app/bark.cpp" />
     <ClCompile Include="../src/win32app/main.cpp" />
     <ClCompile Include="../src/win32app/nursery.cpp" />
     <ClCompile Include="../src/win32app/OSWindow.cpp" />
     <ClCompile Include="../src/win32app/profile.cpp" />
-    <ClCompile Include="../src/win32app/Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../src/model/data.h" />
@@ -201,10 +201,10 @@
     <ClInclude Include="../src/util/text.h" />
     <ClInclude Include="../src/win32app/activities.h" />
     <ClInclude Include="../src/win32app/app.h" />
+    <ClInclude Include="../src/win32app/bark.h" />
     <ClInclude Include="../src/win32app/nursery.h" />
     <ClInclude Include="../src/win32app/OSWindow.h" />
     <ClInclude Include="../src/win32app/profile.h" />
-    <ClInclude Include="../src/win32app/Window.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="../src/model/sql/migrate-0-1-after.sql">
@@ -237,13 +237,13 @@
     <CopyFileToFolders Include="../src/win32app/injection.js">
       <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/win32app/shell.css">
+    <CopyFileToFolders Include="../src/win32app/bark.css">
       <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/win32app/shell.html">
+    <CopyFileToFolders Include="../src/win32app/bark.html">
       <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/win32app/shell.js">
+    <CopyFileToFolders Include="../src/win32app/bark.js">
       <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>

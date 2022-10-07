@@ -16,11 +16,11 @@ namespace json { struct Value; }
 
 namespace win32app {
 
-struct Window : Observer {
+struct Bark : Observer {
     int64 id;
-    wil::com_ptr<ICoreWebView2Controller> shell_controller;
-    wil::com_ptr<ICoreWebView2> shell;
-    HWND shell_hwnd = nullptr;
+    wil::com_ptr<ICoreWebView2Controller> controller;
+    wil::com_ptr<ICoreWebView2> webview;
+    HWND webview_hwnd = nullptr;
 
      // There are three sets of tabs the window is aware of:
      //  - Expanded tabs
@@ -63,8 +63,8 @@ struct Window : Observer {
     void send_update (const std::vector<int64>& updated_tabs);
     void message_to_shell (json::Value&& message);
 
-    Window (int64 id);
-    ~Window();
+    Bark (int64 id);
+    ~Bark();
 };
 
 } // namespace win32app

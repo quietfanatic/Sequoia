@@ -1,17 +1,18 @@
-#include "Window.h"
+#include "OSWindow.h"
 
 #include "../model/data.h"
 #include "../util/error.h"
 #include "../util/log.h"
 #include "../util/text.h"
 #include "app.h"
+#include "bark.h"
 
 using namespace std;
 
 namespace win32app {
 
 static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
-    auto window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    auto window = (Bark*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (!window) return DefWindowProc(hwnd, message, w, l);
     switch (message) {
     case WM_SIZE:
@@ -87,8 +88,8 @@ static HWND create_hwnd () {
     return hwnd;
 }
 
-OSWindow::OSWindow (Window* window) : hwnd(create_hwnd()) {
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)window);
+OSWindow::OSWindow (Bark* bark) : hwnd(create_hwnd()) {
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)bark);
 }
 
 void OSWindow::set_title (const char* title) {

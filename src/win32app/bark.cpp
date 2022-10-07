@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "bark.h"
 
 #include <map>
 #include <stdexcept>
@@ -22,20 +22,20 @@ using namespace std;
 
 namespace win32app {
 
-static std::map<int64, Window*> open_windows;
+static std::map<int64, Bark*> open_windows;
 
-Window::Window (int64 id) :
+Bark::Bark (int64 id) :
     id(id), os_window(this)
 {
     open_windows.emplace(id, this);
-    App::get().nursery.new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
-        shell_controller = wvc;
-        shell = wv;
-        shell_hwnd = hwnd;
-        SetParent(shell_hwnd, os_window.hwnd);
-        shell_controller->put_IsVisible(TRUE);
+    App::get().nursery.new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND h){
+        controller = wvc;
+        webview = wv;
+        webview_hwnd = h;
+        SetParent(webview_hwnd, os_window.hwnd);
+        controller->put_IsVisible(TRUE);
 
-        shell->add_WebMessageReceived(
+        webview->add_WebMessageReceived(
             Callback<ICoreWebView2WebMessageReceivedEventHandler>(
                 [this](
                     ICoreWebView2* sender,
@@ -50,27 +50,27 @@ Window::Window (int64 id) :
             return S_OK;
         }).Get(), nullptr);
 
-        shell_controller->add_AcceleratorKeyPressed(
+        controller->add_AcceleratorKeyPressed(
             Callback<ICoreWebView2AcceleratorKeyPressedEventHandler>(
-                this, &Window::on_AcceleratorKeyPressed
+                this, &Bark::on_AcceleratorKeyPressed
             ).Get(), nullptr
         );
 
-        shell->Navigate(to_utf16(exe_relative("res/win32app/shell.html")).c_str());
+        webview->Navigate(to_utf16(exe_relative("res/win32app/bark.html")).c_str());
 
         resize();
     });
 };
 
-Window::~Window () {
-    if (activity) activity->claimed_by_window(nullptr);
+Bark::~Bark () {
+    if (activity) activity->claimed_by_bark(nullptr);
     open_windows.erase(id);
     if (open_windows.empty()) App::get().quit();
 }
 
  // An Observer just for creating new windows.
- // Windows do most of the Observing, but they can't create themselves.
-struct WindowFactory : Observer {
+ // Barks do most of the Observing, but they can't create themselves.
+struct BarkFactory : Observer {
     void Observer_after_commit (
         const vector<int64>& updated_tabs,
         const vector<int64>& updated_windows
@@ -78,46 +78,46 @@ struct WindowFactory : Observer {
         for (int64 id : updated_windows) {
             auto data = get_window_data(id);
             if (!data->closed_at && !open_windows.count(id)) {
-                auto w = new Window (id);
+                auto w = new Bark (id);
                  // Automatically load focused tab
                 w->claim_activity(ensure_activity_for_tab(data->focused_tab));
             }
         }
     }
 };
-static WindowFactory window_factory;
+static BarkFactory bark_factory;
 
-void Window::claim_activity (Activity* a) {
+void Bark::claim_activity (Activity* a) {
     if (a == activity) return;
 
-    if (activity) activity->claimed_by_window(nullptr);
+    if (activity) activity->claimed_by_bark(nullptr);
     activity = a;
-    if (activity) activity->claimed_by_window(this);
+    if (activity) activity->claimed_by_bark(this);
 
     resize();
 }
 
-void Window::hidden () {
-    LOG("Window::hidden");
+void Bark::hidden () {
+    LOG("Bark::hidden");
     if (activity && activity->controller) {
         activity->controller->put_IsVisible(FALSE);
     }
-    if (shell_controller) shell_controller->put_IsVisible(TRUE);
+    if (controller) controller->put_IsVisible(TRUE);
 }
 
-void Window::resize () {
+void Bark::resize () {
     if (activity && activity->controller) {
         activity->controller->put_IsVisible(TRUE);
     }
-    if (shell_controller) shell_controller->put_IsVisible(TRUE);
+    if (controller) controller->put_IsVisible(TRUE);
 
     RECT bounds;
     GetClientRect(os_window.hwnd, &bounds);
-    if (shell_controller) {
-        shell_controller->put_Bounds(bounds);
-         // Put shell behind the page
+    if (controller) {
+        controller->put_Bounds(bounds);
+         // Put webview behind the page
         SetWindowPos(
-            shell_hwnd, HWND_BOTTOM,
+            webview_hwnd, HWND_BOTTOM,
             0, 0, 0, 0,
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
         );
@@ -135,23 +135,23 @@ void Window::resize () {
     }
 }
 
-void Window::enter_fullscreen () {
+void Bark::enter_fullscreen () {
     if (fullscreen) return;
     if (!activity) return;
     fullscreen = true;
     os_window.enter_fullscreen();
-    shell_controller->put_IsVisible(FALSE);
+    controller->put_IsVisible(FALSE);
 }
 
-void Window::leave_fullscreen () {
+void Bark::leave_fullscreen () {
     if (!fullscreen) return;
     fullscreen = false;
-    shell_controller->put_IsVisible(TRUE);
+    controller->put_IsVisible(TRUE);
     os_window.leave_fullscreen();
     if (activity) activity->leave_fullscreen();
 }
 
-HRESULT Window::on_AcceleratorKeyPressed (
+HRESULT Bark::on_AcceleratorKeyPressed (
     ICoreWebView2Controller* sender,
     ICoreWebView2AcceleratorKeyPressedEventArgs* args
 ) {
@@ -178,7 +178,7 @@ HRESULT Window::on_AcceleratorKeyPressed (
     return S_OK;
 }
 
-std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, bool alt) {
+std::function<void()> Bark::get_key_handler (uint key, bool shift, bool ctrl, bool alt) {
     switch (key) {
     case VK_F11:
         if (!shift && !ctrl && !alt) return [this]{
@@ -187,9 +187,9 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
         break;
     case 'L':
         if (!shift && ctrl && !alt) return [this]{
-            if (!shell) return;
+            if (!webview) return;
             message_to_shell(json::array("select_location"));
-            shell_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+            controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
         };
         break;
     case 'N':
@@ -281,7 +281,7 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
     return nullptr;
 }
 
-void Window::message_from_shell (json::Value&& message) {
+void Bark::message_from_shell (json::Value&& message) {
     Str command = message[0];
 
     switch (x31_hash(command)) {
@@ -347,7 +347,7 @@ void Window::message_from_shell (json::Value&& message) {
         break;
     }
     case x31_hash("investigate_error"): {
-        shell->OpenDevToolsWindow();
+        webview->OpenDevToolsWindow();
         break;
     }
     case x31_hash("show_menu"): {
@@ -466,7 +466,7 @@ void Window::message_from_shell (json::Value&& message) {
     }
 }
 
-void Window::focus_tab (int64 tab) {
+void Bark::focus_tab (int64 tab) {
     Transaction tr;
     unclose_tab(tab);
     set_window_focused_tab(id, tab);
@@ -487,7 +487,7 @@ void Window::focus_tab (int64 tab) {
     }
 }
 
-void Window::Observer_after_commit (
+void Bark::Observer_after_commit (
     const vector<int64>& updated_tabs,
     const vector<int64>& updated_windows
 ) {
@@ -500,7 +500,7 @@ void Window::Observer_after_commit (
     send_update(updated_tabs);
 }
 
-void Window::send_update (const std::vector<int64>& updated_tabs) {
+void Bark::send_update (const std::vector<int64>& updated_tabs) {
     auto data = get_window_data(id);
 
     json::Array updates;
@@ -522,7 +522,7 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
             continue;
         }
 
-         // Sending no tab data tells shell to delete tab
+         // Sending no tab data tells webview to delete tab
         if (t->deleted) {
             updates.emplace_back(json::array(tab));
             continue;
@@ -573,7 +573,7 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
             }
         }
         else {
-            shell_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+            controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
         }
     }
 
@@ -587,11 +587,11 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
     ));
 }
 
-void Window::message_to_shell (json::Value&& message) {
-    if (!shell) return;
+void Bark::message_to_shell (json::Value&& message) {
+    if (!webview) return;
     auto s = json::stringify(message);
     LOG("message_to_shell", s);
-    shell->PostWebMessageAsJson(to_utf16(s).c_str());
+    webview->PostWebMessageAsJson(to_utf16(s).c_str());
 }
 
 } // namespace win32app

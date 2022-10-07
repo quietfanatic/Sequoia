@@ -5,7 +5,7 @@
 #include "../model/data.h"
 #include "../model/data_init.h"
 #include "../util/error.h"
-#include "window.h"
+#include "bark.h"
 
 using namespace std;
 
@@ -33,7 +33,7 @@ void App::start (const std::vector<String>& urls) {
         for (auto id : all_windows) {
              // Create directly instead of going through WindowObserver,
              //  so that focused tabs are not loaded
-            new Window(id);
+            new Bark(id);
         }
     }
     else if (int64 w = get_last_closed_window()) {

@@ -10,11 +10,11 @@
 namespace json { struct Value; }
 
 namespace win32app {
-struct Window;
+struct Bark;
 
 struct Activity {
     int64 tab;
-    Window* window = nullptr;
+    Bark* bark = nullptr;
 
     wil::com_ptr<ICoreWebView2Controller> controller;
     wil::com_ptr<ICoreWebView2> webview;
@@ -34,7 +34,7 @@ struct Activity {
     void navigate_search (Str search);
     void navigate_url_or_search (Str address);
 
-    void claimed_by_window (Window*);
+    void claimed_by_bark (Bark*);
     void message_from_webview (json::Value&& message);
     void message_to_webview (json::Value&& message);
 

@@ -4,14 +4,14 @@
 
 namespace win32app {
 struct Activity;
-struct Window;
+struct Bark;
 
 struct OSWindow {
     HWND hwnd;
 
     WINDOWPLACEMENT placement_before_fullscreen;
 
-    OSWindow(Window* window);
+    OSWindow(Bark*);
 
     void set_title (const char*);
     void enter_fullscreen ();

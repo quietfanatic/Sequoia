@@ -11,7 +11,7 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "../win32app/activities.h"
-#include "../win32app/window.h"
+#include "../win32app/bark.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -342,8 +342,8 @@ void close_tab (int64 id) {
              // Auto load successor if closed tab was loaded
              // TODO: Apply preloading here?
             if (auto activity = win32app::activity_for_tab(id)) {
-                if (activity->window && activity->window->id == w) {
-                    activity->window->claim_activity(win32app::ensure_activity_for_tab(successor));
+                if (activity->bark && activity->bark->id == w) {
+                    activity->bark->claim_activity(win32app::ensure_activity_for_tab(successor));
                 }
             }
             set_window_focused_tab(w, successor);

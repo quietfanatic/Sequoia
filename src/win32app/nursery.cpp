@@ -13,8 +13,8 @@
 #include "../util/json.h"
 #include "../util/text.h"
 #include "app.h"
+#include "bark.h"
 #include "profile.h"
-#include "window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -189,10 +189,13 @@ void Nursery::new_webview (
     else if (next_controller) {
         LOG("Nursery: using queued webview"sv);
          // Async to avoid requiring reentrancy safety
-        async([this, then]{
-            auto controller = std::move(next_controller);
-            auto webview = std::move(next_webview);
-            then(controller.get(), webview.get(), next_hwnd);
+        async([
+            this, then,
+            controller{std::move(next_controller)},
+            webview{std::move(next_webview)},
+            hwnd{next_hwnd}
+        ] {
+            then(controller.get(), webview.get(), hwnd);
             queue(*this);
         });
     }

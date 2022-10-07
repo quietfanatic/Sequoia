@@ -16,8 +16,8 @@
 #include "../util/log.h"
 #include "../util/text.h"
 #include "app.h"
+#include "bark.h"
 #include "nursery.h"
-#include "window.h"
 
 using namespace Microsoft::WRL;
 using namespace std;
@@ -37,9 +37,9 @@ Activity::Activity (int64 t) : tab(t) {
         webview_hwnd = hwnd;
         wil::com_ptr<ICoreWebView2Settings> settings;
 
-        claimed_by_window(window);
-        if (window) {
-            window->resize();
+        claimed_by_bark(bark);
+        if (bark) {
+            bark->resize();
             if (get_tab_data(tab)->url != "about:blank") {
                 AH(controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC));
             }
@@ -156,15 +156,15 @@ Activity::Activity (int64 t) : tab(t) {
                     ICoreWebView2AcceleratorKeyPressedEventArgs* args
                 )
         {
-            if (!window) return S_OK;
-            return window->on_AcceleratorKeyPressed(sender, args);
+            if (!bark) return S_OK;
+            return bark->on_AcceleratorKeyPressed(sender, args);
         }).Get(), nullptr));
 
         AH(webview->add_ContainsFullScreenElementChanged(
             Callback<ICoreWebView2ContainsFullScreenElementChangedEventHandler>(
                 [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT
         {
-            is_fullscreen() ? window->enter_fullscreen() : window->leave_fullscreen();
+            is_fullscreen() ? bark->enter_fullscreen() : bark->leave_fullscreen();
             return S_OK;
         }).Get(), nullptr));
 
@@ -225,8 +225,8 @@ void Activity::message_from_webview(json::Value&& message) {
         bool ctrl = message[7];
         if (button == 1) {
             if (double_click) {
-                if (last_created_new_child && window) {
-                    window->focus_tab(last_created_new_child);
+                if (last_created_new_child && bark) {
+                    bark->focus_tab(last_created_new_child);
                 }
             }
             else if (alt && shift) {
@@ -268,12 +268,12 @@ void Activity::message_to_webview (json::Value&& message) {
     AH(webview->PostWebMessageAsJson(to_utf16(s).c_str()));
 }
 
-void Activity::claimed_by_window (Window* w) {
-    window = w;
+void Activity::claimed_by_bark (Bark* w) {
+    bark = w;
     if (controller) {
-        if (window) {
+        if (bark) {
             AH(controller->put_IsVisible(TRUE));
-            SetParent(webview_hwnd, window->os_window.hwnd);
+            SetParent(webview_hwnd, bark->os_window.hwnd);
         }
         else {
             AH(controller->put_IsVisible(FALSE));
@@ -349,7 +349,7 @@ void Activity::leave_fullscreen () {
 Activity::~Activity () {
     LOG("delete Activity", this);
     activities_by_tab.erase(tab);
-    if (window) window->activity = nullptr;
+    if (bark) bark->activity = nullptr;
     if (controller) controller->Close();
     tab_updated(tab);
 }
