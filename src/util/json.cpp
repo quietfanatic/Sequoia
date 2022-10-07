@@ -247,7 +247,6 @@ String stringify (const Value& v) {
 
 } // namespace json;
 
-#if 0
 #ifndef TAP_DISABLE_TESTS
 #include "../tap/tap.h"
 
@@ -278,5 +277,4 @@ static tap::TestSet tests ("util/json", []{
     t("{\"foo\":[4,5,6],\"agfd\":[[[[4]]],{},{\"gtre\":null}],\"goo\":{}}");
 });
 
-#endif
 #endif

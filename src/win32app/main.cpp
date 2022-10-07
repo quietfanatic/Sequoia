@@ -10,9 +10,9 @@
 #include "nursery.h"
 #include "profile.h"
 
-//#ifndef TAP_DISABLE_TESTS
-//#include "../tap/tap.h"
-//#endif
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+#endif
 
 using namespace std;
 using namespace win32app;
@@ -20,9 +20,9 @@ using namespace win32app;
 #pragma warning(disable:4297)  // Yeah I'm throwing from main, deal with it
 
 int main (int argc, char** argv) {
-//#ifndef TAP_DISABLE_TESTS
-//    tap::allow_testing(argc, argv);
-//#endif
+#ifndef TAP_DISABLE_TESTS
+    tap::allow_testing(argc, argv);
+#endif
     try {
          // Parse arguments
         vector<String> positional_args;

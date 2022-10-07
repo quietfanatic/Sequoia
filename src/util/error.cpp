@@ -5,9 +5,9 @@
 
 #include "text.h"
 
-//#ifndef TAP_DISABLE_TESTS
-//#include "../tap/tap.h"
-//#endif
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+#endif
 
 const char* Error::what () const noexcept {
     if (longmess.empty()) {
@@ -20,9 +20,9 @@ const char* Error::what () const noexcept {
 }
 
 bool intercept_throw (const std::exception& ex) {
-//#ifndef TAP_DISABLE_TESTS
-//    if (tap::testing()) return false;
-//#endif
+#ifndef TAP_DISABLE_TESTS
+    if (tap::testing()) return false;
+#endif
     int btn = MessageBoxA(nullptr, ex.what(), "Error", MB_ABORTRETRYIGNORE);
     switch (btn) {
         case IDABORT: std::abort();
