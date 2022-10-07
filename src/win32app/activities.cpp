@@ -132,7 +132,7 @@ Activity::Activity (int64 t) : tab(t) {
             return S_OK;
         }).Get(), nullptr));
 
-        static std::wstring injection = to_utf16(slurp(exe_relative("res/injection.js")));
+        static std::wstring injection = to_utf16(slurp(exe_relative("res/win32app/injection.js")));
 
         AH(webview->AddScriptToExecuteOnDocumentCreated(injection.c_str(), nullptr));
 

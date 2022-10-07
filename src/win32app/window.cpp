@@ -56,7 +56,7 @@ Window::Window (int64 id) :
             ).Get(), nullptr
         );
 
-        shell->Navigate(to_utf16(exe_relative("res/shell.html")).c_str());
+        shell->Navigate(to_utf16(exe_relative("res/win32app/shell.html")).c_str());
 
         resize();
     });
