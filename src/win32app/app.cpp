@@ -7,6 +7,10 @@
 #include "../util/error.h"
 #include "bark.h"
 
+#ifndef TAP_DISABLE_TESTS
+#include "../tap/tap.h"
+#endif
+
 using namespace std;
 
 namespace win32app {
@@ -80,7 +84,32 @@ void App::quit (int code) {
     PostQuitMessage(code);
 }
 
+#ifndef TAP_DISABLE_TESTS
+static void app_tests () {
+    using namespace tap;
+    ProfileTestEnvironment env;
+
+    App* app = new App(std::move(env.profile));
+    app->headless = true;
+
+    doesnt_throw([&]{
+        app->start({});
+    }, "Start app (no urls)");
+
+    doesnt_throw([&]{
+         // Doing this in this order should make run quit immediately.
+        app->quit();
+        app->run();
+    }, "Run and quit app");
+
+    doesnt_throw([&]{
+        delete app;
+    }, "Delete app");
+
+    done_testing();
+}
+static tap::TestSet tests ("win32app/app", &app_tests);
+#endif
+
 } // namespace win32app
-
-
 
