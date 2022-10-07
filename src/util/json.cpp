@@ -250,7 +250,7 @@ String stringify (const Value& v) {
 #ifndef TAP_DISABLE_TESTS
 #include "../tap/tap.h"
 
-static tap::TestSet tests ("util/json", []{
+static tap::TestSet util_json_tests ("util/json", []{
     using namespace json;
     using namespace tap;
     auto t = [](const String& s){

@@ -1,5 +1,4 @@
-#
-// It is an error to try to bisect equal Bifractors.pragma once
+#pragma once
 
 #include <optional>
 #include <tuple>
@@ -85,7 +84,7 @@ struct Statement {
     Bifractor read_column<Bifractor> (int index) {
         const void* data = sqlite3_column_blob(handle, index);
         int size = sqlite3_column_bytes(handle, index);
-        return Bifractor(data, size);
+        return Bifractor((const uint8*)data, size);
     }
 
     bool done () {

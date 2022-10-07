@@ -231,20 +231,20 @@
     <CopyFileToFolders Include="../src/model/sql/schema-5.sql">
       <DestinationFolders>$(OutDir)/res/model/sql</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/domifier.js">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    <CopyFileToFolders Include="../src/util/domifier.js">
+      <DestinationFolders>$(OutDir)/res/util</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/injection.js">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    <CopyFileToFolders Include="../src/win32app/injection.js">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/shell.css">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    <CopyFileToFolders Include="../src/win32app/shell.css">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/shell.html">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    <CopyFileToFolders Include="../src/win32app/shell.html">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="../src/res/shell.js">
-      <DestinationFolders>$(OutDir)/res</DestinationFolders>
+    <CopyFileToFolders Include="../src/win32app/shell.js">
+      <DestinationFolders>$(OutDir)/res/win32app</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>

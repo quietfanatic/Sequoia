@@ -448,10 +448,10 @@ pair<int64, Bifractor> make_location (int64 reference, TabRelation rel) {
         static State<Bifractor>::Ment<int64, Bifractor> get_prev {R"(
 SELECT position FROM tabs WHERE parent = ? AND position < ? ORDER BY position DESC LIMIT 1
         )"};
-        Bifractor prev = get_prev.run_or(ref->parent, ref->position, 0);
+        Bifractor prev = get_prev.run_or(ref->parent, ref->position, Bifractor(0));
         return pair(
             ref->parent,
-            Bifractor(prev, ref->position, 0xf0)
+            Bifractor(prev, ref->position, 15/16.0)
         );
     }
     case TabRelation::AFTER: {
@@ -459,30 +459,30 @@ SELECT position FROM tabs WHERE parent = ? AND position < ? ORDER BY position DE
         static State<Bifractor>::Ment<int64, Bifractor> get_next {R"(
 SELECT position FROM tabs WHERE parent = ? AND position > ? ORDER BY position ASC LIMIT 1
         )"};
-        Bifractor next = get_next.run_or(ref->parent, ref->position, 1);
+        Bifractor next = get_next.run_or(ref->parent, ref->position, Bifractor(1));
         return pair(
             ref->parent,
-            Bifractor(ref->position, next, 0x10)
+            Bifractor(ref->position, next, 1/16.0)
         );
     }
     case TabRelation::FIRST_CHILD: {
         static State<Bifractor>::Ment<int64> get_first {R"(
 SELECT position FROM tabs WHERE parent = ? ORDER BY position ASC LIMIT 1
         )"};
-        Bifractor first = get_first.run_or(reference, 1);
+        Bifractor first = get_first.run_or(reference, Bifractor(1));
         return pair(
             reference,
-            Bifractor(0, first, 0xf8)
+            Bifractor(Bifractor(0), first, 31/32.0)
         );
     }
     case TabRelation::LAST_CHILD: {
         static State<Bifractor>::Ment<int64> get_last {R"(
 SELECT position FROM tabs WHERE parent = ? ORDER BY position DESC LIMIT 1
         )"};
-        Bifractor last = get_last.run_or(reference, 0);
+        Bifractor last = get_last.run_or(reference, Bifractor(0));
         return pair(
             reference,
-            Bifractor(last, 1, 0x08)
+            Bifractor(last, Bifractor(1), 1/32.0)
         );
     }
     default: throw std::logic_error("make_location called with invalid TabRelation");
