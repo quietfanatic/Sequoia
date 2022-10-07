@@ -9,6 +9,7 @@
 #include "profile.h"
 
 namespace win32app {
+struct Activity;
 struct Bark;
 
 struct App : Observer {
@@ -20,6 +21,7 @@ struct App : Observer {
     bool headless = false;
 
     std::unordered_map<int64, std::unique_ptr<Bark>> barks;
+    std::unordered_map<int64, std::unique_ptr<Activity>> activities;
 
     App (Profile&&);
     ~App ();
@@ -32,8 +34,9 @@ struct App : Observer {
     int run ();
     void quit (int code = 0);
 
-     // TEMP
-    static App& get ();
+    Activity* activity_for_tab (int64 id);
+    Activity* ensure_activity_for_tab (int64 id);
+    void delete_activity (int64 id);
 
     void Observer_after_commit (
         const std::vector<int64>& updated_tabs,

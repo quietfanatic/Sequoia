@@ -82,14 +82,14 @@ static HWND create_hwnd () {
         nullptr
     );
     AW(hwnd);
-    if (!App::get().headless) {
-        ShowWindow(hwnd, SW_SHOWDEFAULT);
-    }
     return hwnd;
 }
 
 OSWindow::OSWindow (Bark* bark) : hwnd(create_hwnd()) {
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)bark);
+    if (!bark->app.headless) {
+        ShowWindow(hwnd, SW_SHOWDEFAULT);
+    }
 }
 
 OSWindow::~OSWindow () {

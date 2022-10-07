@@ -10,8 +10,6 @@
 #include "../util/hash.h"
 #include "../util/log.h"
 #include "../util/text.h"
-#include "../win32app/activities.h"
-#include "../win32app/bark.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -339,17 +337,9 @@ void close_tab (int64 id) {
                 if (!s) s = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
                 successor = s;
             }
-             // Auto load successor if closed tab was loaded
-             // TODO: Apply preloading here?
-            if (auto activity = win32app::activity_for_tab(id)) {
-                if (activity->bark && activity->bark->id == w) {
-                    activity->bark->claim_activity(win32app::ensure_activity_for_tab(successor));
-                }
-            }
             set_window_focused_tab(w, successor);
         }
     }
-    delete win32app::activity_for_tab(id);
 }
 
 void close_tab_with_heritage (int64 id) {
@@ -386,7 +376,6 @@ void delete_tab_and_children (int64 id) {
         delete_tab_and_children(child);
     }
     data->deleted = true;
-    delete win32app::activity_for_tab(id);
 
     static State<>::Ment<int64> do_it {R"(
 DELETE FROM tabs WHERE id = ?

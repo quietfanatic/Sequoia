@@ -191,7 +191,7 @@ std::function<void()> Bark::get_key_handler (uint key, bool shift, bool ctrl, bo
                 if (int64 tab = get_last_closed_tab()) {
                     unclose_tab(tab);
                     set_window_focused_tab(id, tab);
-                    claim_activity(ensure_activity_for_tab(tab));
+                    claim_activity(app.ensure_activity_for_tab(tab));
                 }
             };
             else return [this]{
@@ -202,7 +202,7 @@ std::function<void()> Bark::get_key_handler (uint key, bool shift, bool ctrl, bo
                     "about:blank"
                 );
                 set_window_focused_tab(id, new_tab);
-                claim_activity(ensure_activity_for_tab(new_tab));
+                claim_activity(app.ensure_activity_for_tab(new_tab));
             };
         }
         break;
@@ -340,7 +340,7 @@ void Bark::message_from_shell (json::Value&& message) {
         Transaction tr;
         int64 new_tab = create_tab(0, TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
-        claim_activity(ensure_activity_for_tab(new_tab));
+        claim_activity(app.ensure_activity_for_tab(new_tab));
         break;
     }
      // Tab actions
@@ -353,7 +353,7 @@ void Bark::message_from_shell (json::Value&& message) {
         Transaction tr;
         int64 new_tab = create_tab(message[1], TabRelation::LAST_CHILD, "about:blank");
         set_window_focused_tab(id, new_tab);
-        claim_activity(ensure_activity_for_tab(new_tab));
+        claim_activity(app.ensure_activity_for_tab(new_tab));
         break;
     }
     case x31_hash("star"): {
@@ -447,17 +447,17 @@ void Bark::focus_tab (int64 tab) {
     unclose_tab(tab);
     set_window_focused_tab(id, tab);
      // Load this tab and, if traversing up or down, the next one
-    claim_activity(ensure_activity_for_tab(tab));
+    claim_activity(app.ensure_activity_for_tab(tab));
      // Start the search from old_focused_tab because it could be closed
     if (old_focused_tab) {
         if (get_next_unclosed_tab(old_focused_tab) == tab) {
             if (int64 next = get_next_unclosed_tab(tab)) {
-                ensure_activity_for_tab(next);
+                app.ensure_activity_for_tab(next);
             }
         }
         else if (get_prev_unclosed_tab(old_focused_tab) == tab) {
             if (int64 prev = get_prev_unclosed_tab(tab)) {
-                ensure_activity_for_tab(prev);
+                app.ensure_activity_for_tab(prev);
             }
         }
     }
@@ -498,7 +498,7 @@ void Bark::send_update (const std::vector<int64>& updated_tabs) {
             continue;
         }
 
-        Activity* activity = activity_for_tab(tab);
+        Activity* activity = app.activity_for_tab(tab);
         if (activity) {
             updates.emplace_back(json::array(
                 tab,
@@ -537,7 +537,7 @@ void Bark::send_update (const std::vector<int64>& updated_tabs) {
     if (focused_tab_changed) {
         Str title = get_tab_data(data->focused_tab)->title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
-        if (auto activity = activity_for_tab(data->focused_tab)) {
+        if (auto activity = app.activity_for_tab(data->focused_tab)) {
             if (activity->controller) {
                 activity->controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
             }
@@ -547,7 +547,7 @@ void Bark::send_update (const std::vector<int64>& updated_tabs) {
         }
     }
 
-    if (!activity_for_tab(data->focused_tab)) leave_fullscreen();
+    if (!app.activity_for_tab(data->focused_tab)) leave_fullscreen();
 
     message_to_shell(json::array(
         "update",

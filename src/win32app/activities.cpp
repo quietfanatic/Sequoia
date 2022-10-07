@@ -24,14 +24,11 @@ using namespace std;
 
 namespace win32app {
 
-static map<int64, Activity*> activities_by_tab;
-
-Activity::Activity (int64 t) : tab(t) {
+Activity::Activity (App& app, int64 t) : app(app), tab(t) {
     LOG("new Activity", this);
-    AA(!activities_by_tab.contains(t));
-    activities_by_tab.emplace(t, this);
 
-    App::get().nursery.new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
+     // TODO: WeakPtr
+    app.nursery.new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
@@ -172,38 +169,6 @@ Activity::Activity (int64 t) : tab(t) {
         set_tab_visited(tab);
     });
 
-     // Delete old activities
-     // TODO: configurable values
-    while (activities_by_tab.size() > 80) {
-        set<int64> keep_loaded;
-         // Don't unload self!
-        keep_loaded.emplace(tab);
-         // Don't unload tabs focused by any windows
-        for (auto w : get_all_unclosed_windows()) {
-            keep_loaded.emplace(get_window_data(w)->focused_tab);
-        }
-         // Keep last n loaded tabs regardless
-        for (auto t : get_last_visited_tabs(20)) {
-            keep_loaded.emplace(t);
-        }
-         // Find last unstarred tab or last starred tab
-        int64 victim_id = 0;
-        TabData* victim_dat = nullptr;
-        for (auto p : activities_by_tab) {
-            if (keep_loaded.contains(p.first)) continue;
-            auto dat = get_tab_data(p.first);
-             // Not yet visited?  Not quite sure why this would happen.
-            if (dat->visited_at == 0) continue;
-            if (!victim_id
-                || !dat->starred_at && victim_dat->starred_at
-                || dat->visited_at < victim_dat->visited_at
-            ) {
-                victim_id = p.first;
-                victim_dat = dat;
-            }
-        }
-        delete activity_for_tab(victim_id);
-    }
 }
 
 void Activity::message_from_webview(json::Value&& message) {
@@ -348,24 +313,8 @@ void Activity::leave_fullscreen () {
 
 Activity::~Activity () {
     LOG("delete Activity", this);
-    activities_by_tab.erase(tab);
     if (bark) bark->activity = nullptr;
     if (controller) controller->Close();
-    tab_updated(tab);
-}
-
-Activity* activity_for_tab (int64 id) {
-    auto iter = activities_by_tab.find(id);
-    if (iter == activities_by_tab.end()) return nullptr;
-    else return iter->second;
-}
-
-Activity* ensure_activity_for_tab (int64 id) {
-    auto iter = activities_by_tab.find(id);
-    if (iter == activities_by_tab.end()) {
-        iter = activities_by_tab.emplace(id, new Activity(id)).first;
-    }
-    return iter->second;
 }
 
 } // namespace win32app

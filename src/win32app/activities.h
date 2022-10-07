@@ -10,9 +10,11 @@
 namespace json { struct Value; }
 
 namespace win32app {
+struct App;
 struct Bark;
 
 struct Activity {
+    App& app;
     int64 tab;
     Bark* bark = nullptr;
 
@@ -27,7 +29,8 @@ struct Activity {
      // Workaround for special URLs not surviving a round-trip the navigation
     std::string navigated_url;
 
-    Activity(int64 tab);
+    Activity(App& app, int64 tab);
+    ~Activity();
 
     void resize (RECT available);
     bool navigate_url (Str url);
@@ -40,11 +43,6 @@ struct Activity {
 
     bool is_fullscreen ();
     void leave_fullscreen ();
-
-    ~Activity();
 };
-
-Activity* activity_for_tab (int64 id);
-Activity* ensure_activity_for_tab (int64 id);
 
 } // namespace win32app
