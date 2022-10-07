@@ -3,6 +3,7 @@
 #include <string>
 #include <wil/com.h>
 #include <windows.h>
+#include <webview2.h>
 
 #include "../util/types.h"
 
@@ -13,8 +14,8 @@ struct Activity {
     int64 tab;
     Window* window = nullptr;
 
-    wil::com_ptr<WebViewController> controller;
-    wil::com_ptr<WebView> webview;
+    wil::com_ptr<ICoreWebView2Controller> controller;
+    wil::com_ptr<ICoreWebView2> webview;
     HWND webview_hwnd = nullptr;
     bool can_go_back = false;
     bool can_go_forward = false;
@@ -27,9 +28,9 @@ struct Activity {
     Activity(int64 tab);
 
     void resize (RECT available);
-    bool navigate_url (const std::string& url);
-    void navigate_search (const std::string& search);
-    void navigate_url_or_search (const std::string& address);
+    bool navigate_url (Str url);
+    void navigate_search (Str search);
+    void navigate_url_or_search (Str address);
 
     void claimed_by_window (Window*);
     void message_from_webview (json::Value&& message);

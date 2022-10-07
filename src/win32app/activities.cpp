@@ -13,7 +13,7 @@
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"
-#include "../util/logging.h"
+#include "../util/log.h"
 #include "../util/text.h"
 #include "nursery.h"
 #include "window.h"
@@ -25,10 +25,10 @@ static map<int64, Activity*> activities_by_tab;
 
 Activity::Activity (int64 t) : tab(t) {
     LOG("new Activity", this);
-    A(!activities_by_tab.contains(t));
+    AA(!activities_by_tab.contains(t));
     activities_by_tab.emplace(t, this);
 
-    new_webview([this](WebViewController* wvc, WebView* wv, HWND hwnd){
+    new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         controller = wvc;
         webview = wv;
         webview_hwnd = hwnd;
@@ -204,17 +204,17 @@ Activity::Activity (int64 t) : tab(t) {
 }
 
 void Activity::message_from_webview(json::Value&& message) {
-    const string& command = message[0];
+    Str command = message[0];
 
     switch (x31_hash(command)) {
     case x31_hash("favicon"): {
-        const string& favicon = message[1];
+        Str favicon = message[1];
         set_tab_favicon(tab, favicon);
         break;
     }
     case x31_hash("click_link"): {
-        const string& url = message[1];
-        const string& title = message[2];
+        Str url = message[1];
+        Str title = message[2];
         int button = message[3];
         bool double_click = message[4];
         bool shift = message[5];
@@ -246,8 +246,8 @@ void Activity::message_from_webview(json::Value&& message) {
         const json::Array& children = message[1];
         Transaction tr;
         for (auto& child : children) {
-            const string& url = child[0];
-            const string& title = child[1];
+            Str url = child[0];
+            Str title = child[1];
             create_tab(tab, TabRelation::LAST_CHILD, url, title);
         }
         break;
@@ -275,7 +275,7 @@ void Activity::claimed_by_window (Window* w) {
         else {
             AH(controller->put_IsVisible(FALSE));
             auto wv8 = webview.try_query<ICoreWebView2_8>();
-            A(!!wv8);
+            AA(!!wv8);
             BOOL playing_audio;
             AH(wv8->get_IsDocumentPlayingAudio(&playing_audio));
             if (!playing_audio) {
@@ -296,7 +296,7 @@ void Activity::resize (RECT bounds) {
     if (controller) controller->put_Bounds(bounds);
 }
 
-bool Activity::navigate_url (const string& address) {
+bool Activity::navigate_url (Str address) {
     auto hr = webview->Navigate(to_utf16(address).c_str());
     if (SUCCEEDED(hr)) {
         navigated_url = address;
@@ -305,24 +305,24 @@ bool Activity::navigate_url (const string& address) {
     if (hr != E_INVALIDARG) AH(hr);
     return false;
 }
-void Activity::navigate_search (const string& search) {
+void Activity::navigate_search (Str search) {
      // Escape URL characters
-    string url = "https://duckduckgo.com/?q=" + escape_url(search);
+    String url = "https://duckduckgo.com/?q=" + escape_url(search);
      // If the search URL is invalid, treat it as a bug
-    A(navigate_url(url));
+    AA(navigate_url(url));
 }
 
-void Activity::navigate_url_or_search (const string& address) {
+void Activity::navigate_url_or_search (Str address) {
     LOG("navigate_url_or_search", address);
     if (webview) {
         if (navigate_url(address)) return;
-        if (address.find(' ') != string::npos
-            || address.find('.') == string::npos
+        if (address.find(' ') != String::npos
+            || address.find('.') == String::npos
         ) {
             navigate_search(address);
         }
         else {
-            string url = "http://" + address;
+            String url = "http://" + address;
             if (navigate_url(url)) return;
             navigate_search(address);
         }

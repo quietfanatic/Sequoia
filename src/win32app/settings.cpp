@@ -8,18 +8,18 @@
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"
-#include "../util/logging.h"
+#include "../util/log.h"
 #include "../util/text.h"
 
 using namespace std;
 
-std::string profile_name = "default";
+String profile_name = "default";
 bool profile_folder_specified = false;
-std::string profile_folder;
+String profile_folder;
 
 namespace settings {
 
-std::string theme = "dark";
+String theme = "dark";
 
 }
 
@@ -41,7 +41,7 @@ void load_profile () {
     else {
         profile_folder_specified = true;
     }
-    profile_folder = from_utf16(filesystem::absolute(profile_folder));
+    profile_folder = from_utf16(String16(filesystem::absolute(profile_folder)));
     filesystem::create_directories(profile_folder);
 }
 
@@ -51,7 +51,7 @@ void load_settings () {
     string settings_file = profile_folder + "/settings.json";
     if (!filesystem::exists(settings_file)) return;
     json::Object settings = json::parse(slurp(settings_file));
-    A(!settings.empty());
+    AA(!settings.empty());
     for (auto pair : settings) {
         switch (x31_hash(pair.first)) {
         case x31_hash("theme"): {
@@ -64,5 +64,5 @@ void load_settings () {
     }
 }
 void save_settings () {
-    A(false); // NYI
+    AA(false); // NYI
 }

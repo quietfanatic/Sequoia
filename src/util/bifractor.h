@@ -32,7 +32,7 @@ struct Bifractor {
         else return ptr;
     }
 
-    std::string hex () const;
+    String hex () const;
 
      // Manufacturing
     Bifractor (bool one = false) : size(1) {

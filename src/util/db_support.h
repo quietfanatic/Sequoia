@@ -58,7 +58,7 @@ struct Statement {
     }
 
     void step () {
-        A(result_code != SQLITE_DONE);
+        AA(result_code != SQLITE_DONE);
         result_code = sqlite3_step(handle);
         if (result_code != SQLITE_ROW && result_code != SQLITE_DONE) AS(1);
     }
@@ -148,7 +148,7 @@ struct Ment : Statement {
         std::vector<Result> r;
         bind(params...);
         step();
-        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        AA(sqlite3_column_count(handle) == sizeof...(Cols));
         while (!done()) {
             r.emplace_back(read());
             step();
@@ -160,17 +160,17 @@ struct Ment : Statement {
     void run_void (const Params&... params) {
         bind(params...);
         step();
-        A(done());
+        AA(done());
         reset();
     }
 
     Result run_single (const Params&... params) {
         bind(params...);
         step();
-        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        AA(sqlite3_column_count(handle) == sizeof...(Cols));
         Result r = read();
         step();
-        A(done());
+        AA(done());
         reset();
         return std::move(r);
     }
@@ -182,10 +182,10 @@ struct Ment : Statement {
             reset();
             return std::nullopt;
         }
-        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        AA(sqlite3_column_count(handle) == sizeof...(Cols));
         Result r = read();
         step();
-        A(done());
+        AA(done());
         reset();
         return std::move(r);
     }
@@ -197,10 +197,10 @@ struct Ment : Statement {
             reset();
             return def;
         }
-        A(sqlite3_column_count(handle) == sizeof...(Cols));
+        AA(sqlite3_column_count(handle) == sizeof...(Cols));
         Result r = read();
         step();
-        A(done());
+        AA(done());
         reset();
         return std::move(r);
     }

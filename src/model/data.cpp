@@ -8,7 +8,7 @@
 #include "../util/assert.h"
 #include "../util/db_support.h"
 #include "../util/hash.h"
-#include "../util/logging.h"
+#include "../util/log.h"
 #include "../util/text.h"
 #include "../win32app/activities.h"
 #include "../win32app/settings.h"
@@ -37,7 +37,7 @@ static std::vector<int64> updated_windows;
 
 void tab_updated (int64 id) {
     Transaction tr;
-    A(id > 0);
+    AA(id > 0);
     for (auto t : updated_tabs) {
         if (t == id) return;
     }
@@ -45,7 +45,7 @@ void tab_updated (int64 id) {
 }
 void window_updated (int64 id) {
     Transaction tr;
-    A(id > 0);
+    AA(id > 0);
     for (auto w : updated_windows) {
         if (w == id) return;
     }
@@ -79,7 +79,7 @@ void update_observers () {
 static size_t transaction_depth = 0;
 
 Transaction::Transaction () {
-    A(!uncaught_exceptions());
+    AA(!uncaught_exceptions());
     if (!transaction_depth) {
         static State<>::Ment<> begin {"BEGIN"};
         begin.run_void();
@@ -136,7 +136,7 @@ UPDATE tabs SET child_count = child_count + ? WHERE id = ?
 
 ///// TABS
 
-int64 create_tab (int64 reference, TabRelation rel, const string& url, const string& title) {
+int64 create_tab (int64 reference, TabRelation rel, Str url, Str title) {
     Transaction tr;
     LOG("create_webpage_tab", reference, uint(rel), url, title);
 
@@ -144,11 +144,11 @@ int64 create_tab (int64 reference, TabRelation rel, const string& url, const str
     Bifractor position;
     tie(parent, position) = make_location(reference, rel);
 
-    static State<>::Ment<int64, Bifractor, uint64, string, string, double> create {R"(
+    static State<>::Ment<int64, Bifractor, uint64, String, String, double> create {R"(
 INSERT INTO tabs (parent, position, url_hash, url, title, created_at)
 VALUES (?, ?, ?, ?, ?, ?)
     )"};
-    create.run_void(parent, position, x31_hash(url.c_str()), url, title, now());
+    create.run_void(parent, position, x31_hash(url), String(url), String(title), now());
     int64 id = sqlite3_last_insert_rowid(db);
     tab_updated(id);
 
@@ -162,7 +162,7 @@ TabData* get_tab_data (int64 id) {
         return &iter->second;
     }
 
-    static State<int64, Bifractor, int64, string, string, string, double, double, double, double>
+    static State<int64, Bifractor, int64, String, String, String, double, double, double, double>
         ::Ment<int64> get {R"(
 SELECT parent, position, child_count, url, title, favicon, created_at, visited_at, starred_at, closed_at
 FROM tabs WHERE id = ?
@@ -198,7 +198,7 @@ SELECT id FROM tabs WHERE closed_at IS NULL ORDER BY visited_at DESC LIMIT ?
     return get.run(n_tabs);
 }
 
-string get_tab_url (int64 id) {
+String get_tab_url (int64 id) {
     return get_tab_data(id)->url;
 }
 
@@ -222,46 +222,46 @@ SELECT id FROM tabs WHERE parent = ? AND position > ? AND closed_at IS NULL ORDE
     return get.run_or(data->parent, data->position, 0);
 }
 
-void set_tab_url (int64 id, const string& url) {
+void set_tab_url (int64 id, Str url) {
     LOG("set_tab_url", id, url);
-    string utf8_url = make_url_utf8(url);
+    String utf8_url = make_url_utf8(url);
     auto data = get_tab_data(id);
     if (utf8_url == data->url) return;
 
     Transaction tr;
     data->url = utf8_url;
-    static State<>::Ment<uint64, string, int64> set {R"(
+    static State<>::Ment<uint64, String, int64> set {R"(
 UPDATE tabs SET url_hash = ?, url = ? WHERE id = ?
     )"};
     set.run_void(x31_hash(utf8_url), utf8_url, id);
     tab_updated(id);
 }
 
-void set_tab_title (int64 id, const string& title) {
+void set_tab_title (int64 id, Str title) {
     LOG("set_tab_title", id, title);
     auto data = get_tab_data(id);
     if (title == data->title) return;
 
     Transaction tr;
     data->title = title;
-    static State<>::Ment<string, int64> set {R"(
+    static State<>::Ment<String, int64> set {R"(
 UPDATE tabs SET title = ? WHERE id = ?
     )"};
-    set.run_void(title, id);
+    set.run_void(String(title), id);
     tab_updated(id);
 }
 
-void set_tab_favicon (int64 id, const string& favicon) {
+void set_tab_favicon (int64 id, Str favicon) {
     LOG("set_tab_favicon", id, favicon);
     auto data = get_tab_data(id);
     if (favicon == data->favicon) return;
 
     Transaction tr;
     data->favicon = favicon;
-    static State<>::Ment<string, int64> set {R"(
+    static State<>::Ment<String, int64> set {R"(
 UPDATE tabs SET favicon = ? WHERE id = ?
     )"};
-    set.run_void(favicon, id);
+    set.run_void(String(favicon), id);
     tab_updated(id);
 }
 

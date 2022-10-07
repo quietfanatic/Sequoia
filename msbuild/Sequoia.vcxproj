@@ -175,7 +175,7 @@
     <ClCompile Include="../src/util/bifractor.cpp" />
     <ClCompile Include="../src/util/files.cpp" />
     <ClCompile Include="../src/util/json.cpp" />
-    <ClCompile Include="../src/util/logging.cpp" />
+    <ClCompile Include="../src/util/log.cpp" />
     <ClCompile Include="../src/util/text.cpp" />
     <ClCompile Include="../src/win32app/activities.cpp" />
     <ClCompile Include="../src/win32app/main.cpp" />
@@ -193,7 +193,7 @@
     <ClInclude Include="../src/util/db_support.h" />
     <ClInclude Include="../src/util/files.h" />
     <ClInclude Include="../src/util/json.h" />
-    <ClInclude Include="../src/util/logging.h" />
+    <ClInclude Include="../src/util/log.h" />
     <ClInclude Include="../src/util/types.h" />
     <ClInclude Include="../src/util/text.h" />
     <ClInclude Include="../src/win32app/activities.h" />

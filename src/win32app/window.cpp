@@ -10,7 +10,7 @@
 #include "../util/files.h"
 #include "../util/hash.h"
 #include "../util/json.h"
-#include "../util/logging.h"
+#include "../util/log.h"
 #include "../util/text.h"
 #include "activities.h"
 #include "main.h"
@@ -26,7 +26,7 @@ Window::Window (int64 id) :
     id(id), os_window(this)
 {
     open_windows.emplace(id, this);
-    new_webview([this](WebViewController* wvc, WebView* wv, HWND hwnd){
+    new_webview([this](ICoreWebView2Controller* wvc, ICoreWebView2* wv, HWND hwnd){
         shell_controller = wvc;
         shell = wv;
         shell_hwnd = hwnd;
@@ -42,7 +42,7 @@ Window::Window (int64 id) :
         {
             wil::unique_cotaskmem_string raw16;
             args->get_WebMessageAsJson(&raw16);
-            string raw = from_utf16(raw16.get());
+            String raw = from_utf16(raw16.get());
             LOG("message_from_shell", raw);
             message_from_shell(json::parse(raw));
             return S_OK;
@@ -280,9 +280,9 @@ std::function<void()> Window::get_key_handler (uint key, bool shift, bool ctrl, 
 }
 
 void Window::message_from_shell (json::Value&& message) {
-    const string& command = message[0];
+    Str command = message[0];
 
-    switch (x31_hash(command.c_str())) {
+    switch (x31_hash(command)) {
     case x31_hash("ready"): {
         message_to_shell(json::array(
             "settings",
@@ -563,7 +563,7 @@ void Window::send_update (const std::vector<int64>& updated_tabs) {
     }
 
     if (focused_tab_changed) {
-        const string& title = get_tab_data(data->focused_tab)->title;
+        Str title = get_tab_data(data->focused_tab)->title;
         os_window.set_title(title.empty() ? "Sequoia" : (title + " – Sequoia").c_str());
         if (auto activity = activity_for_tab(data->focused_tab)) {
             activity->controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);

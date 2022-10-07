@@ -1,6 +1,8 @@
 #pragma once
+
 #include <cassert>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,6 +21,7 @@ struct Value;
 
 using Char = char;
 using String = std::string;
+using Str = std::string_view;
 using Array = std::vector<Value>;
 using Object = std::vector<std::pair<String, Value>>;
 
@@ -95,6 +98,7 @@ struct Value {
     operator unsigned long long () const { assert(type == NUMBER); return unsigned long long(number); }
     operator float () const { assert(type == NUMBER); return float(number); }
     operator double () const { assert(type == NUMBER); return number; }
+    operator Str () const { assert(type == STRING); return *string; }
     operator const String& () const& { assert(type == STRING); return *string; }
     operator String&& () && { assert(type == STRING); return std::move(*string); }
     operator const Array& () const& { assert(type == ARRAY); return *array; }
@@ -181,8 +185,7 @@ inline bool operator!= (const Value& a, const Value& b) { return !(a == b); }
 
 String stringify (const Value& v);
 
-Value parse (const String& s);
-Value parse (const Char* s);
+Value parse (Str s);
 
 } // namespace json
 

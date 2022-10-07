@@ -6,8 +6,8 @@
 #include "assert.h"
 #include "text.h"
 
-std::string Bifractor::hex () const {
-    std::string r (size*2, 0);
+String Bifractor::hex () const {
+    String r (size*2, 0);
     for (size_t i = 0; i < size; i++) {
         r[i*2] = to_hex_digit(bytes()[i] >> 4);
         r[i*2+1] = to_hex_digit(bytes()[i] & 0xf);
@@ -16,7 +16,7 @@ std::string Bifractor::hex () const {
 }
 
 Bifractor::Bifractor (const Bifractor& a, const Bifractor& b, uint bias) {
-    A(a != b);
+    AA(a != b);
     size_t max_size = (a.size > b.size ? a.size : b.size) + 1;
 
     std::unique_ptr<uint8[]> buf {new uint8 [max_size]};

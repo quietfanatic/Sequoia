@@ -1,8 +1,9 @@
 #pragma once
 
 #include <functional>
-#include <string>
 #include <windows.h>
+#include <wil/com.h>
+#include <webview2.h>
 
 #include "../util/types.h"
 
@@ -11,6 +12,6 @@ HWND existing_nursery ();
 
 void init_nursery ();
 
-void new_webview (const std::function<void(WebViewController*, WebView*, HWND)>& then);
+void new_webview (const std::function<void(ICoreWebView2Controller*, ICoreWebView2*, HWND)>& then);
 
 

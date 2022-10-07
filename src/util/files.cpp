@@ -7,31 +7,31 @@
 
 using namespace std;
 
-const wstring exe_path16 = []{
+const String16 exe_path16 = []{
     wchar_t exe [MAX_PATH];
     GetModuleFileNameW(nullptr, exe, MAX_PATH);
-    return wstring(exe);
+    return String16(exe);
 }();
-const string exe_path = from_utf16(exe_path16);
+const String exe_path = from_utf16(exe_path16);
 
-const string exe_folder = []{
-    string r = exe_path;
+const String exe_folder = []{
+    String r = exe_path;
     size_t i = r.find_last_of(L'\\');
     return r.substr(0, i);
 }();
 
-string exe_relative (const string& filename) {
+String exe_relative (Str filename) {
     return exe_folder + '/' + filename;
 }
 
-string slurp (const string& filename) {
-    ifstream file (filename, ios::ate | ios::binary);
+String slurp (Str filename) {
+    ifstream file (String(filename), ios::ate | ios::binary);
     if (!file.is_open()) {
         throw std::logic_error("Failure opening a file, but I don't know why because C++ IO is terrible.");
     }
     size_t len = file.tellg();
     file.seekg(0, ios::beg);
-    string r (len, 0);
+    String r (len, 0);
     file.read(const_cast<char*>(r.data()), len);
     return r;
 }

@@ -5,6 +5,7 @@
 #include <vector>
 #include <wil/com.h>
 #include <windows.h>
+#include <webview2.h>
 
 #include "../model/data.h"
 #include "../util/types.h"
@@ -16,8 +17,8 @@ struct ICoreWebView2AcceleratorKeyPressedEventArgs;
 
 struct Window : Observer {
     int64 id;
-    wil::com_ptr<WebViewController> shell_controller;
-    wil::com_ptr<WebView> shell;
+    wil::com_ptr<ICoreWebView2Controller> shell_controller;
+    wil::com_ptr<ICoreWebView2> shell;
     HWND shell_hwnd = nullptr;
 
      // There are three sets of tabs the window is aware of:

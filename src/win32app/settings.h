@@ -1,14 +1,14 @@
 #pragma once
 
-#include <string>
+#include "../util/types.h"
 
-extern std::string profile_name;
+extern String profile_name;
 extern bool profile_folder_specified;
-extern std::string profile_folder;
+extern String profile_folder;
 
 namespace settings {
 
-extern std::string theme;
+extern String theme;
 
 }
 

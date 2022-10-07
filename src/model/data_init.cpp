@@ -2,13 +2,13 @@
 
 #include <filesystem>
 #include <stdexcept>
-#include <string>
 #include <sqlite3.h>
 
 #include "data.h"
 #include "../util/db_support.h"
 #include "../util/files.h"
-#include "../util/logging.h"
+#include "../util/log.h"
+#include "../util/types.h"
 #include "../win32app/settings.h"
 
 using namespace std;
@@ -17,12 +17,12 @@ sqlite3* db = nullptr;
 
 void init_db () {
     if (db) return;
-    string db_file = profile_folder + "/state.sqlite";
+    String db_file = profile_folder + "/state.sqlite";
     LOG("init_db", db_file);
     bool exists = filesystem::exists(db_file) && filesystem::file_size(db_file) > 0;
 
     if (!exists) {
-        string old_db = profile_folder + "/Sequoia-state.sqlite";
+        String old_db = profile_folder + "/Sequoia-state.sqlite";
         if (filesystem::exists(old_db) && filesystem::file_size(old_db) > 0) {
             filesystem::rename(old_db, db_file);
             exists = true;
@@ -31,7 +31,7 @@ void init_db () {
 
     AS(sqlite3_open(db_file.c_str(), &db));
 
-    string sql_dir = exe_relative("res/model/sql");
+    String sql_dir = exe_relative("res/model/sql");
 
     if (exists) {
          // Migrate database to new schema if necessary
@@ -45,29 +45,29 @@ void init_db () {
         switch (version) {
         default: throw std::logic_error("Unknown user_version number in db");
         case 0: {
-            string sql = slurp(sql_dir + "/migrate-0-1-before.sql")
+            String sql = slurp(sql_dir + "/migrate-0-1-before.sql")
                        + slurp(sql_dir + "/schema-1.sql")
                        + slurp(sql_dir + "/migrate-0-1-after.sql");
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             [[fallthrough]];
         }
         case 1: {
-            string sql = slurp(sql_dir + "/migrate-1-2.sql");
+            String sql = slurp(sql_dir + "/migrate-1-2.sql");
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             [[fallthrough]];
         }
         case 2: {
-            string sql = slurp(sql_dir + "/migrate-2-3.sql");
+            String sql = slurp(sql_dir + "/migrate-2-3.sql");
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             [[fallthrough]];
         }
         case 3: {
-            string sql = slurp(sql_dir + "/migrate-3-4.sql");
+            String sql = slurp(sql_dir + "/migrate-3-4.sql");
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
             [[fallthrough]];
         }
         case 4:
-            string sql = slurp(sql_dir + "/migrate-4-5.sql");
+            String sql = slurp(sql_dir + "/migrate-4-5.sql");
             AS(sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr));
         }
         LOG("Migration complete.");
@@ -75,7 +75,7 @@ void init_db () {
     else {
          // Create new database
         Transaction tr;
-        string schema = slurp(
+        String schema = slurp(
             sql_dir + "/schema-" + std::to_string(CURRENT_SCHEMA_VERSION) + ".sql"
         );
         LOG("Creating database...");

@@ -2,7 +2,7 @@
 
 #include "../model/data.h"
 #include "../util/assert.h"
-#include "../util/logging.h"
+#include "../util/log.h"
 #include "../util/text.h"
 
 using namespace std;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <vector>
 
 #include "../util/bifractor.h"
@@ -19,9 +18,9 @@ struct TabData {
     int64 parent;
     Bifractor position;
     int64 child_count;
-    std::string url;
-    std::string title;
-    std::string favicon;
+    String url;
+    String title;
+    String favicon;
     double created_at;
     double visited_at;
     double starred_at;
@@ -31,9 +30,9 @@ struct TabData {
         int64 parent,
         const Bifractor& position,
         int64 child_count,
-        const std::string& url,
-        const std::string& title,
-        const std::string& favicon,
+        Str url,
+        Str title,
+        Str favicon,
         double created_at,
         double visited_at,
         double starred_at,
@@ -55,8 +54,8 @@ struct TabData {
 int64 create_tab (
     int64 reference,
     TabRelation rel,
-    const std::string& url,
-    const std::string& title = ""
+    Str url,
+    Str title = ""
 );
 
 TabData* get_tab_data (int64 id);
@@ -65,9 +64,9 @@ int64 get_next_unclosed_tab (int64 id);
 std::vector<int64> get_all_children (int64 parent);
 std::vector<int64> get_all_unclosed_children (int64 parent);
 std::vector<int64> get_last_visited_tabs (int n_tabs);
-void set_tab_url (int64 id, const std::string& url);
-void set_tab_title (int64 id, const std::string& title);
-void set_tab_favicon (int64 id, const std::string& favicon);
+void set_tab_url (int64 id, Str url);
+void set_tab_title (int64 id, Str title);
+void set_tab_favicon (int64 id, Str favicon);
 void set_tab_visited (int64 id);
 void star_tab (int64 id);
 void unstar_tab (int64 id);
