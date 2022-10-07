@@ -7,8 +7,10 @@
 
 #include "../util/types.h"
 
-struct Window;
 namespace json { struct Value; }
+
+namespace win32app {
+struct Window;
 
 struct Activity {
     int64 tab;
@@ -44,3 +46,5 @@ struct Activity {
 
 Activity* activity_for_tab (int64 id);
 Activity* ensure_activity_for_tab (int64 id);
+
+} // namespace win32app

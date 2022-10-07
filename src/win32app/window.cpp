@@ -19,8 +19,8 @@
 
 using namespace Microsoft::WRL;
 using namespace std;
- // TEMP
-using namespace win32app;
+
+namespace win32app {
 
 static std::map<int64, Window*> open_windows;
 
@@ -593,3 +593,5 @@ void Window::message_to_shell (json::Value&& message) {
     LOG("message_to_shell", s);
     shell->PostWebMessageAsJson(to_utf16(s).c_str());
 }
+
+} // namespace win32app

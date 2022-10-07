@@ -21,8 +21,8 @@
 
 using namespace Microsoft::WRL;
 using namespace std;
- // TEMP
-using namespace win32app;
+
+namespace win32app {
 
 static map<int64, Activity*> activities_by_tab;
 
@@ -367,3 +367,5 @@ Activity* ensure_activity_for_tab (int64 id) {
     }
     return iter->second;
 }
+
+} // namespace win32app

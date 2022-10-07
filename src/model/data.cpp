@@ -341,15 +341,15 @@ void close_tab (int64 id) {
             }
              // Auto load successor if closed tab was loaded
              // TODO: Apply preloading here?
-            if (auto activity = activity_for_tab(id)) {
+            if (auto activity = win32app::activity_for_tab(id)) {
                 if (activity->window && activity->window->id == w) {
-                    activity->window->claim_activity(ensure_activity_for_tab(successor));
+                    activity->window->claim_activity(win32app::ensure_activity_for_tab(successor));
                 }
             }
             set_window_focused_tab(w, successor);
         }
     }
-    delete activity_for_tab(id);
+    delete win32app::activity_for_tab(id);
 }
 
 void close_tab_with_heritage (int64 id) {
@@ -386,7 +386,7 @@ void delete_tab_and_children (int64 id) {
         delete_tab_and_children(child);
     }
     data->deleted = true;
-    delete activity_for_tab(id);
+    delete win32app::activity_for_tab(id);
 
     static State<>::Ment<int64> do_it {R"(
 DELETE FROM tabs WHERE id = ?

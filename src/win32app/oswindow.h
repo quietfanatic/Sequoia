@@ -2,8 +2,8 @@
 
 #include <windows.h>
 
+namespace win32app {
 struct Activity;
-
 struct Window;
 
 struct OSWindow {
@@ -20,3 +20,5 @@ struct OSWindow {
 
     LRESULT WndProc (UINT message, WPARAM w, LPARAM l);
 };
+
+} // namespace win32app

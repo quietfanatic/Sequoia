@@ -7,8 +7,8 @@
 #include "app.h"
 
 using namespace std;
- // TEMP
-using namespace win32app;
+
+namespace win32app {
 
 static LRESULT CALLBACK WndProcStatic (HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     auto window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -116,4 +116,6 @@ void OSWindow::leave_fullscreen () {
         hwnd, nullptr, 0, 0, 0, 0,
         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
     );
+}
+
 }

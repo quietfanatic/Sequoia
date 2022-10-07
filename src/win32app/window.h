@@ -11,9 +11,10 @@
 #include "../util/types.h"
 #include "oswindow.h"
 
+struct ICoreWebView2AcceleratorKeyPressedEventArgs;
 namespace json { struct Value; }
 
-struct ICoreWebView2AcceleratorKeyPressedEventArgs;
+namespace win32app {
 
 struct Window : Observer {
     int64 id;
@@ -66,3 +67,4 @@ struct Window : Observer {
     ~Window();
 };
 
+} // namespace win32app
