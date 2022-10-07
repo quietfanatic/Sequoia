@@ -310,10 +310,6 @@ function create_tab (id) {
             click: on_close_clicked,
         }),
         $("div", {
-            class: "new-child",
-            click: on_new_child_clicked,
-        }),
-        $("div", {
             class: "star",
             click: on_star_clicked,
         }),

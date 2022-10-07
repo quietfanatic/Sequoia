@@ -14,7 +14,7 @@ struct App {
     Nursery nursery;
 
      // Makes all windows invisible, intended for testing.
-    bool headless;
+    bool headless = false;
 
     App (Profile&&);
     ~App ();
